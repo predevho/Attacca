@@ -21,7 +21,13 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
             + "(select max(m2.id) from ChatMessage m2 where m2.roomId in :roomIds group by m2.roomId)")
     List<ChatMessage> findLatestPerRoom(@Param("roomIds") List<Long> roomIds);
 
-    /** 방별 안 읽은 수: 내 읽음커서 이후의 '상대' 메시지 수를 한 번에 집계. */
+    /**
+     * 방별 안 읽은 수: 내 읽음커서 이후의 '상대' 메시지 수를 한 번에 집계.
+     *
+     * <p>불변식: 호출측은 반드시 memberId가 활성 참여 중인 roomIds만 전달해야 한다
+     * (LEFT JOIN 특성상 비참여 방은 전부 안읽음으로 집계됨). listRooms가 findRoomsForMember로
+     * 이 불변식을 보장한다.
+     */
     @Query("select m.roomId as roomId, count(m) as unreadCount from ChatMessage m "
             + "left join ChatParticipant p on p.roomId = m.roomId and p.memberId = :memberId "
             + "where m.roomId in :roomIds and m.senderId <> :memberId "

@@ -1,25 +1,33 @@
 package com.back.domain.chat.service;
 
 import com.back.domain.chat.dto.ChatRoomResponse;
+import com.back.domain.chat.dto.ChatRoomSummaryResponse;
+import com.back.domain.chat.dto.ChatRoomSummaryResponse.LastMessage;
 import com.back.domain.chat.dto.CreateRoomRequest;
 import com.back.domain.chat.dto.InviteRequest;
 import com.back.domain.chat.dto.ParticipantView;
+import com.back.domain.chat.entity.ChatMessage;
 import com.back.domain.chat.entity.ChatParticipant;
 import com.back.domain.chat.entity.ChatRoom;
 import com.back.domain.chat.entity.RoomType;
+import com.back.domain.chat.repository.ChatMessageRepository;
 import com.back.domain.chat.repository.ChatParticipantRepository;
 import com.back.domain.chat.repository.ChatRoomRepository;
+import com.back.domain.chat.repository.RoomUnreadCount;
 import com.back.domain.member.dto.MemberDisplay;
 import com.back.domain.member.service.MemberQueryService;
 import com.back.global.exception.BusinessException;
 import com.back.global.exception.ErrorCode;
 import com.back.global.websocket.PresenceRegistry;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +41,7 @@ public class ChatRoomService {
     private final MemberQueryService memberQueryService;
     private final PresenceRegistry presenceRegistry;
     private final DirectRoomInitializer directRoomInitializer;
+    private final ChatMessageRepository messageRepository;
 
     @Transactional
     public ChatRoomResponse createRoom(Long memberId, CreateRoomRequest request) {
@@ -135,5 +144,64 @@ public class ChatRoomService {
             return new ParticipantView(memberId, null, false, online);
         }
         return new ParticipantView(d.memberId(), d.nickname(), d.verified(), online);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ChatRoomSummaryResponse> listRooms(Long memberId, Pageable pageable) {
+        Page<ChatRoom> rooms = roomRepository.findRoomsForMember(memberId, pageable);
+        List<Long> roomIds = rooms.getContent().stream().map(ChatRoom::getId).toList();
+        if (roomIds.isEmpty()) {
+            return rooms.map(r -> null); // 빈 페이지
+        }
+        Map<Long, ChatMessage> lastMessages = messageRepository.findLatestPerRoom(roomIds).stream()
+                .collect(Collectors.toMap(ChatMessage::getRoomId, m -> m));
+        Map<Long, Long> unread = new HashMap<>();
+        for (RoomUnreadCount c : messageRepository.countUnreadPerRoom(memberId, roomIds)) {
+            unread.put(c.getRoomId(), c.getUnreadCount());
+        }
+        Map<Long, String> directNames = directDisplayNames(memberId, rooms.getContent());
+        return rooms.map(room -> toSummary(room, lastMessages.get(room.getId()),
+                unread.getOrDefault(room.getId(), 0L), directNames.get(room.getId())));
+    }
+
+    /** DIRECT 방의 표시 이름(상대 닉네임)을 배치로 파생한다. */
+    private Map<Long, String> directDisplayNames(Long memberId, List<ChatRoom> rooms) {
+        Map<Long, Long> roomToOther = new HashMap<>();
+        for (ChatRoom room : rooms) {
+            if (room.getType() == RoomType.DIRECT) {
+                participantRepository.findByRoomIdAndLeftAtIsNull(room.getId()).stream()
+                        .map(ChatParticipant::getMemberId)
+                        .filter(id -> !id.equals(memberId))
+                        .findFirst()
+                        .ifPresent(other -> roomToOther.put(room.getId(), other));
+            }
+        }
+        Map<Long, MemberDisplay> displays = memberQueryService
+                .findDisplaysByIds(Set.copyOf(roomToOther.values()));
+        Map<Long, String> names = new HashMap<>();
+        roomToOther.forEach((roomId, other) -> {
+            MemberDisplay d = displays.get(other);
+            names.put(roomId, d == null ? null : d.nickname());
+        });
+        return names;
+    }
+
+    private ChatRoomSummaryResponse toSummary(ChatRoom room, ChatMessage last, long unreadCount,
+            String directName) {
+        String displayName = room.getType() == RoomType.DIRECT ? directName : room.getTitle();
+        LastMessage lastMessage = last == null ? null
+                : new LastMessage(last.getContent(), last.getSenderId(), last.getCreatedAt());
+        return new ChatRoomSummaryResponse(room.getId(), room.getType(), displayName, lastMessage,
+                unreadCount, room.getLastMessageAt());
+    }
+
+    @Transactional
+    public void markRead(Long memberId, Long roomId, Long lastReadMessageId) {
+        findRoom(roomId);
+        ChatParticipant participant = participantRepository
+                .findByRoomIdAndMemberId(roomId, memberId)
+                .filter(ChatParticipant::isActive)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_ROOM_PARTICIPANT));
+        participant.updateLastRead(lastReadMessageId);
     }
 }
