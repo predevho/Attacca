@@ -4,6 +4,15 @@
 
 ---
 
+* [x] (2026-07-27) CHAT(채팅) BE 도메인 구현 (TDD, 서브에이전트 주도 14태스크, 브랜치 `feat/chat-domain`)
+  * 통합 방 모델: 1:1(DIRECT)+그룹(GROUP)을 "방+참여자" 한 모델로. 엔티티 3종 `ChatRoom`(type/title/createdBy/`directKey`(unique)/`lastMessageAt`(비정규화 정렬키)) + `ChatParticipant`(roomId/memberId 원시 Long, `leftAt` soft leave, `lastReadMessageId` 읽음커서, `(roomId,memberId)` unique) + `ChatMessage`(append-only, `(roomId,id)` 인덱스)
+  * 1:1 유일성: 정렬 키 `directKey="min:max"` + DB unique + find-or-create. 동시 생성 경합은 insert를 `DirectRoomInitializer`(REQUIRES_NEW)로 격리해 바깥 트랜잭션 오염 없이 재조회(멱등)
+  * 리포지토리 3종: `findByDirectKey`, 활성 참여 방 목록(오프셋 페이징, lastMessageAt desc), 메시지 커서 이력(id desc), 방별 마지막 메시지(`max(id) group by`)·안읽은 수(`countUnreadPerRoom` LEFT JOIN 배치, 호출측 참여검증 불변식) 집계 — 모두 IN 배치로 N+1 없음
+  * 서비스 2종: `ChatRoomService`(생성 find-or-create/상세/초대(평평한 모델, 그룹만)/퇴장 soft leave/방 목록(안읽은수·마지막메시지·displayName 파생)/읽음), `ChatMessageService`(전송 영속화+lastMessageAt 갱신/커서 이력). 표시정보는 `MemberQueryService.findDisplaysByIds` 배치 재사용
+  * REST `/api/chat/**` 7종 + WebSocket/STOMP: 엔드포인트 `/ws`, `enableSimpleBroker`(인메모리, Redis는 scale-out 시 교체), 인증은 CONNECT 프레임 JWT(`StompAuthChannelInterceptor` → Principal=memberId), SUBSCRIBE/SEND는 활성 참여자 인가(fail-closed). `ChatStompController`(send 브로드캐스트/typing 비영속), presence는 `PresenceRegistry`(연결수 카운팅, 인메모리·단일서버 한계) + 연결/해제 이벤트 브로드캐스트
+  * 전역 `ErrorCode` 4종: `CHAT_ROOM_NOT_FOUND`(404-10)/`CHAT_MESSAGE_NOT_FOUND`(404-11)/`NOT_ROOM_PARTICIPANT`(403-03)/`CHAT_INVALID_PARTICIPANTS`(400-03, 400-02는 INVALID_FILE 점유)
+  * WebSocket 통합 테스트: `@SpringBootTest(RANDOM_PORT)`+`WebSocketStompClient` 실연결 3종(유효토큰 송수신·무토큰 거절·비참여자 구독 ERROR 거절, 서버측 원예외 "참여자" 단언). 전 계층 TDD, 태스크마다 독립 리뷰(리뷰 지적 반영: DIRECT 경합 REQUIRES_NEW 격리·방목록 DIRECT 표시명 N+1 제거·테스트 단언 정밀화). 전체 `test` 307/307 통과
+  * 범위 밖: FE 화면, 메시지 수정/삭제, 파일 첨부, 메시지 검색, 알림 푸시, 다중 서버 정확 presence·릴레이(Redis), 방장 권한/kick, 타 도메인 채팅 연계
 * [x] (2026-07-23) RECRUITMENT(구인) BE 도메인 구현 (TDD, 서브에이전트 주도 8태스크)
   * 엔티티 2종: `RecruitmentPosting`(authorId=원시 Long, title/description/instruments(다중 악기 `@ElementCollection`, `@BatchSize`)/recruitCount/location/fee/deadline(nullable=상시)/status(OPEN/CLOSED), soft delete) + `RecruitmentApplication`(postingId/applicantId 원시 Long, message, 상태머신 PENDING→ACCEPTED/REJECTED/WITHDRAWN)
   * 리포지토리: 공고 scope별(open=OPEN·미마감 / closed=CLOSED·마감지남 / all) + `instrument` 필터(JPQL `member of`) + soft delete 필터; 지원 활성지원 존재판정(`existsBy...StatusIn` [PENDING,ACCEPTED]) + 공고별/지원자별 페이징. `deadline==now`는 CLOSED(경계 결정적 테스트)
