@@ -64,7 +64,13 @@ public enum ErrorCode {
     RECRUITMENT_CLOSED("409-07", HttpStatus.CONFLICT, "마감된 공고에는 지원할 수 없습니다."),
     ALREADY_APPLIED("409-08", HttpStatus.CONFLICT, "이미 지원한 공고입니다."),
     CANNOT_APPLY_OWN_RECRUITMENT("409-09", HttpStatus.CONFLICT, "본인이 올린 공고에는 지원할 수 없습니다."),
-    RECRUITMENT_INVALID_APPLICATION_STATE("409-10", HttpStatus.CONFLICT, "이미 처리된 지원은 다시 처리할 수 없습니다.");
+    RECRUITMENT_INVALID_APPLICATION_STATE("409-10", HttpStatus.CONFLICT, "이미 처리된 지원은 다시 처리할 수 없습니다."),
+
+    // --- CHAT(채팅) ---
+    CHAT_ROOM_NOT_FOUND("404-10", HttpStatus.NOT_FOUND, "채팅방을 찾을 수 없습니다."),
+    CHAT_MESSAGE_NOT_FOUND("404-11", HttpStatus.NOT_FOUND, "메시지를 찾을 수 없습니다."),
+    NOT_ROOM_PARTICIPANT("403-03", HttpStatus.FORBIDDEN, "채팅방 참여자만 접근할 수 있습니다."),
+    CHAT_INVALID_PARTICIPANTS("400-03", HttpStatus.BAD_REQUEST, "채팅 참여자 구성이 올바르지 않습니다.");
 
     private final String resultCode;
     private final HttpStatus status;

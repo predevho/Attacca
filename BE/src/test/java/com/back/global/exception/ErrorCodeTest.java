@@ -72,4 +72,16 @@ class ErrorCodeTest {
         assertThat(ErrorCode.MEMBER_NOT_FOUND.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(ErrorCode.MEMBER_NOT_FOUND.getCode()).isEqualTo("MEMBER_NOT_FOUND");
     }
+
+    @Test
+    void chat_에러코드의_resultCode가_규약대로다() {
+        assertThat(ErrorCode.CHAT_ROOM_NOT_FOUND.getResultCode())
+                .isEqualTo("404-10");
+        assertThat(ErrorCode.CHAT_MESSAGE_NOT_FOUND.getResultCode())
+                .isEqualTo("404-11");
+        assertThat(ErrorCode.NOT_ROOM_PARTICIPANT.getResultCode())
+                .isEqualTo("403-03");
+        assertThat(ErrorCode.CHAT_INVALID_PARTICIPANTS.getResultCode())
+                .isEqualTo("400-03");
+    }
 }
