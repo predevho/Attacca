@@ -12,4 +12,6 @@ public interface ChatParticipantRepository extends JpaRepository<ChatParticipant
     boolean existsByRoomIdAndMemberIdAndLeftAtIsNull(Long roomId, Long memberId);
 
     List<ChatParticipant> findByRoomIdAndLeftAtIsNull(Long roomId);
+
+    List<ChatParticipant> findByRoomIdInAndLeftAtIsNull(List<Long> roomIds);
 }

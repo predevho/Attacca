@@ -28,11 +28,13 @@ class ChatRoomListTest {
 
     private Long alice;
     private Long bob;
+    private Long carol;
 
     @BeforeEach
     void setUp() {
         alice = memberRepository.save(Member.createLocal("alice", "pw", "a@x.com", "앨리스")).getId();
         bob = memberRepository.save(Member.createLocal("bob", "pw", "b@x.com", "밥")).getId();
+        carol = memberRepository.save(Member.createLocal("carol", "pw", "c@x.com", "캐롤")).getId();
     }
 
     @Test
@@ -62,5 +64,24 @@ class ChatRoomListTest {
 
         var page = roomService.listRooms(alice, PageRequest.of(0, 20));
         assertThat(page.getContent().get(0).unreadCount()).isEqualTo(0);
+    }
+
+    @Test
+    void DIRECT_방이_여러개면_각각_상대_닉네임을_배치로_표시한다() {
+        ChatRoomResponse roomWithBob = roomService.createRoom(alice,
+                new CreateRoomRequest(RoomType.DIRECT, List.of(bob), null));
+        ChatRoomResponse roomWithCarol = roomService.createRoom(alice,
+                new CreateRoomRequest(RoomType.DIRECT, List.of(carol), null));
+        messageService.send(bob, roomWithBob.id(), "밥이 보냄");
+        messageService.send(carol, roomWithCarol.id(), "캐롤이 보냄");
+
+        var page = roomService.listRooms(alice, PageRequest.of(0, 20));
+
+        assertThat(page.getContent()).hasSize(2);
+        var byRoomId = page.getContent().stream()
+                .collect(java.util.stream.Collectors.toMap(ChatRoomSummaryResponse::id,
+                        ChatRoomSummaryResponse::displayName));
+        assertThat(byRoomId.get(roomWithBob.id())).isEqualTo("밥");
+        assertThat(byRoomId.get(roomWithCarol.id())).isEqualTo("캐롤");
     }
 }

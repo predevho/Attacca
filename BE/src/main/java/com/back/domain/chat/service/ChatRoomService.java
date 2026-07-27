@@ -166,16 +166,22 @@ public class ChatRoomService {
 
     /** DIRECT 방의 표시 이름(상대 닉네임)을 배치로 파생한다. */
     private Map<Long, String> directDisplayNames(Long memberId, List<ChatRoom> rooms) {
-        Map<Long, Long> roomToOther = new HashMap<>();
-        for (ChatRoom room : rooms) {
-            if (room.getType() == RoomType.DIRECT) {
-                participantRepository.findByRoomIdAndLeftAtIsNull(room.getId()).stream()
-                        .map(ChatParticipant::getMemberId)
-                        .filter(id -> !id.equals(memberId))
-                        .findFirst()
-                        .ifPresent(other -> roomToOther.put(room.getId(), other));
-            }
+        List<Long> directRoomIds = rooms.stream()
+                .filter(room -> room.getType() == RoomType.DIRECT)
+                .map(ChatRoom::getId)
+                .toList();
+        if (directRoomIds.isEmpty()) {
+            return Map.of();
         }
+        Map<Long, List<ChatParticipant>> byRoom = participantRepository
+                .findByRoomIdInAndLeftAtIsNull(directRoomIds).stream()
+                .collect(Collectors.groupingBy(ChatParticipant::getRoomId));
+        Map<Long, Long> roomToOther = new HashMap<>();
+        byRoom.forEach((roomId, participants) -> participants.stream()
+                .map(ChatParticipant::getMemberId)
+                .filter(id -> !id.equals(memberId))
+                .findFirst()
+                .ifPresent(other -> roomToOther.put(roomId, other)));
         Map<Long, MemberDisplay> displays = memberQueryService
                 .findDisplaysByIds(Set.copyOf(roomToOther.values()));
         Map<Long, String> names = new HashMap<>();
