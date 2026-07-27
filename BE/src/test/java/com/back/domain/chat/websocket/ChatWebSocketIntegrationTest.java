@@ -16,19 +16,26 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompFrameHandler;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
+import org.springframework.messaging.support.ChannelInterceptor;
+import org.springframework.messaging.support.InterceptableChannel;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.socket.WebSocketHttpHeaders;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
@@ -47,6 +54,7 @@ class ChatWebSocketIntegrationTest {
     @Autowired ChatRoomService roomService;
     @Autowired MemberRepository memberRepository;
     @Autowired JwtProvider jwtProvider;
+    @Autowired @Qualifier("clientInboundChannel") MessageChannel clientInboundChannel;
 
     private WebSocketStompClient stompClient;
     private Long alice;
@@ -114,9 +122,13 @@ class ChatWebSocketIntegrationTest {
 
     @Test
     void 토큰_없으면_연결이_거절된다() {
+        // ExecutionException 은 서버가 CONNECT 를 실제로 능동 거부했다는 뜻이다.
+        // TimeoutException 이면 서버가 아무 응답 없이 그냥 멈춰버린 것(행)이므로 이 케이스는 반드시 배제한다.
         assertThatThrownBy(() -> stompClient.connectAsync("ws://localhost:" + port + "/ws",
                         new StompSessionHandlerAdapter() {})
-                .get(3, TimeUnit.SECONDS)).isInstanceOf(Exception.class);
+                .get(3, TimeUnit.SECONDS))
+                .isInstanceOf(ExecutionException.class)
+                .isNotInstanceOf(TimeoutException.class);
     }
 
     /**
@@ -131,15 +143,41 @@ class ChatWebSocketIntegrationTest {
      */
     @Test
     void 비참여자가_방을_구독하면_ERROR로_끊긴다() throws Exception {
+        // STOMP ERROR 프레임은 (Spring 6.2 기준, 검증 완료) 클라이언트에 "message" 헤더로
+        // AbstractMessageChannel 이 감싼 일반 문구("Failed to send message to ...")만 실어 보내고
+        // 바디는 비워 보낸다 — 원본 IllegalArgumentException("채팅방 참여자만 접근할 수 있습니다.")의
+        // 메시지는 와이어로 전달되지 않는다(NestedRuntimeException 이 getMessage() 를 오버라이드하지
+        // 않으므로 cause 텍스트가 합성되지 않음). 따라서 "정말 참여자 인가 실패인지"는 와이어가 아니라
+        // 서버 쪽 clientInboundChannel 에 임시 ChannelInterceptor 를 index 0(=StompAuthChannelInterceptor
+        // 보다 앞)에 꽂아 afterSendCompletion 으로 원본 예외를 직접 캡처해 검증한다.
+        // 이 인터셉터는 이 테스트 안에서만 추가/제거되며 production 코드는 건드리지 않는다.
         BlockingQueue<Throwable> errors = new LinkedBlockingDeque<>();
+        BlockingQueue<Throwable> serverSideAuthFailures = new LinkedBlockingDeque<>();
+        ChannelInterceptor authFailureCapture = new ChannelInterceptor() {
+            @Override
+            public void afterSendCompletion(Message<?> message, MessageChannel channel, boolean sent,
+                    Exception ex) {
+                if (ex != null) {
+                    serverSideAuthFailures.add(ex);
+                }
+            }
+        };
+        InterceptableChannel interceptableChannel = (InterceptableChannel) clientInboundChannel;
+        interceptableChannel.addInterceptor(0, authFailureCapture);
+
         StompSessionHandlerAdapter errorCapturingHandler = new StompSessionHandlerAdapter() {
             @Override
             public void handleFrame(StompHeaders headers, Object payload) {
                 // 세션 레벨 핸들러로 오는 프레임은 이 시나리오에서 서버발 STOMP ERROR 뿐이다.
+                // Spring 의 StompSubProtocolHandler.sendErrorMessage 는 예외 메시지를 프레임
+                // 바디가 아니라 "message" 네이티브 헤더(accessor.setMessage(ex.getMessage()))에
+                // 담고 바디는 빈 값으로 보내므로, 인가 실패 문구는 payload 가 아니라 헤더에서 읽어야 한다.
                 String body = (payload instanceof byte[] bytes)
                         ? new String(bytes, StandardCharsets.UTF_8)
                         : String.valueOf(payload);
-                errors.add(new IllegalStateException("STOMP ERROR 수신: " + body));
+                String messageHeader = headers.getFirst("message");
+                errors.add(new IllegalStateException(
+                        "STOMP ERROR 수신: message=" + messageHeader + ", body=" + body));
             }
 
             @Override
@@ -154,20 +192,37 @@ class ChatWebSocketIntegrationTest {
             }
         };
 
-        StompSession carolSession = connectWithHandler(carolToken, errorCapturingHandler); // carol 은 이 방 참여자 아님
-        carolSession.subscribe("/topic/rooms/" + roomId, new StompFrameHandler() {
-            @Override public Type getPayloadType(StompHeaders headers) {
-                return Map.class;
-            }
-            @Override public void handleFrame(StompHeaders headers, Object payload) {
-                // 정상적으로는 도달하지 않아야 한다(구독 자체가 거부됨).
-            }
-        });
+        try {
+            StompSession carolSession = connectWithHandler(carolToken, errorCapturingHandler); // carol 은 이 방 참여자 아님
+            carolSession.subscribe("/topic/rooms/" + roomId, new StompFrameHandler() {
+                @Override public Type getPayloadType(StompHeaders headers) {
+                    return Map.class;
+                }
+                @Override public void handleFrame(StompHeaders headers, Object payload) {
+                    // 정상적으로는 도달하지 않아야 한다(구독 자체가 거부됨).
+                }
+            });
 
-        Throwable error = errors.poll(3, TimeUnit.SECONDS);
-        assertThat(error)
-                .as("비참여자의 구독 시도는 인터셉터가 거부해 ERROR 프레임/예외로 이어져야 한다")
-                .isNotNull();
+            Throwable error = errors.poll(3, TimeUnit.SECONDS);
+            assertThat(error)
+                    .as("비참여자의 구독 시도는 인터셉터가 거부해 ERROR 프레임/예외로 이어져야 한다")
+                    .isNotNull();
+
+            // 단순히 "무언가" 실패한 게 아니라 StompAuthChannelInterceptor.authorize 가 던지는
+            // "채팅방 참여자만 접근할 수 있습니다." 인가 실패인지까지 확인한다.
+            // 위에서 확인했듯 와이어로 온 error 자체는 일반화된 문구뿐이라 이 문자열을 담고 있지
+            // 않으므로, authFailureCapture 인터셉터가 서버에서 직접 캡처한 원본 예외로 검증한다.
+            Throwable serverSideError = serverSideAuthFailures.poll(3, TimeUnit.SECONDS);
+            assertThat(serverSideError)
+                    .as("서버 clientInboundChannel 에서 인가 실패 예외가 실제로 발생해야 한다")
+                    .isNotNull();
+            assertThat(allMessagesInCauseChain(serverSideError))
+                    .as("서버에서 캡처한 예외(또는 cause 체인)는 '참여자' 인가 실패 메시지를 포함해야 한다")
+                    .contains("참여자");
+        } finally {
+            // 다른 테스트/공유 스프링 컨텍스트에 영향이 남지 않도록 반드시 제거한다.
+            interceptableChannel.removeInterceptor(authFailureCapture);
+        }
 
         // carol 이 거부된 뒤에도 실제 참여자(alice/bob) 경로는 정상 동작함을 재확인한다.
         // (test 3 이 우연히 통과하는 vacuous 단언이 아님을 보장하기 위한 대조군)
@@ -195,5 +250,25 @@ class ChatWebSocketIntegrationTest {
         Map message = received.poll(3, TimeUnit.SECONDS);
         assertThat(message).isNotNull();
         assertThat(message.get("content")).isEqualTo("여전히 정상 동작");
+    }
+
+    /**
+     * throwable 자신의 메시지부터 시작해 getCause() 체인을 끝까지 따라가며
+     * 모든 메시지를 하나의 문자열로 이어붙인다.
+     * STOMP ERROR 는 handleFrame(바디 문자열을 담은 IllegalStateException)로 오거나
+     * handleException/handleTransportError(원본 예외 혹은 그 cause)로 올 수 있어
+     * 메시지가 어느 depth 에 있는지 특정할 수 없으므로, 체인 전체를 대상으로 검사한다.
+     */
+    private static String allMessagesInCauseChain(Throwable throwable) {
+        StringBuilder combined = new StringBuilder();
+        Throwable current = throwable;
+        while (current != null) {
+            if (current.getMessage() != null) {
+                combined.append(current.getMessage()).append(" | ");
+            }
+            Throwable cause = current.getCause();
+            current = (cause == current) ? null : cause; // 자기참조 cause 로 인한 무한루프 방지
+        }
+        return combined.toString();
     }
 }
