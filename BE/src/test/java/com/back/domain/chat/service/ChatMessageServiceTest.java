@@ -45,15 +45,25 @@ class ChatMessageServiceTest {
     }
 
     @Test
-    void 전송하면_저장되고_방의_lastMessageAt이_갱신된다() {
-        var before = roomRepository.findById(roomId).orElseThrow().getLastMessageAt();
-
+    void 전송하면_저장되고_방의_lastMessageAt이_갱신된다() throws Exception {
         var sent = messageService.send(alice, roomId, "안녕");
 
         assertThat(sent.content()).isEqualTo("안녕");
         assertThat(sent.sender().nickname()).isEqualTo("앨리스");
-        var after = roomRepository.findById(roomId).orElseThrow().getLastMessageAt();
-        assertThat(after).isAfterOrEqualTo(before);
+        var first = roomRepository.findById(roomId).orElseThrow().getLastMessageAt();
+
+        Thread.sleep(10);
+        messageService.send(alice, roomId, "또 안녕");
+        var second = roomRepository.findById(roomId).orElseThrow().getLastMessageAt();
+
+        assertThat(second).isAfter(first);
+    }
+
+    @Test
+    void 존재하지_않는_방에_전송하면_방없음_404이다() {
+        assertThatThrownBy(() -> messageService.send(alice, 999999L, "x"))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(ErrorCode.CHAT_ROOM_NOT_FOUND);
     }
 
     @Test
