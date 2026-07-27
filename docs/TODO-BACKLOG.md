@@ -25,7 +25,10 @@
   * 남은 범위 밖: 관심/북마크, 피드 카드 노출, 곡목 구조화, 좌석/예매, 공개 조회, 태그/장르 필터.
 * [x] ~~RECRUITMENT: 구인 공고 + 지원~~ — 2026-07-23 BE 구현 완료(TDD, 서브에이전트 주도 8태스크). 구인만(구직은 범위 밖). 엔티티 2종(공고 soft delete + 지원 상태머신) + 리포지토리(scope/instrument `member of` 필터) + 서비스 2종(등록=인증 회원 누구나, 지원 게이팅/상태전이) + 컨트롤러 2종 + MEMBER 배치 협력. 에러코드 404-08/09·409-07~10. instruments N+1은 `@BatchSize`로 해결. 전체 266/266 통과, 최종 리뷰 통과.
   * 남은 범위 밖: 구직 공고, PERFORMANCE 연결(`performanceId`), 지원 첨부파일, 지원자↔작성자 메시징(CHAT), 키워드/태그 검색, 알림, 마감 자동화 배치, `applicationCount` 응답, 공통 `PageResponse<T>` DTO(코드베이스 공통 BACKLOG).
-* [ ] CHAT: WebSocket(STOMP)+Redis 기반 1:1 / 1:N 채팅
+* [x] ~~CHAT: WebSocket(STOMP)+Redis 기반 1:1 / 1:N 채팅~~ — 2026-07-27 BE 구현 완료(TDD, 서브에이전트 주도 14태스크). 통합 방 모델(1:1 directKey 유일성+find-or-create, 그룹 평평한 모델), 인메모리 Simple Broker, CONNECT 프레임 JWT 인증, 읽음/안읽은수·presence·typing. 에러코드 404-10/404-11/403-03/400-03. 전체 307/307 통과.
+  * 남은 범위 밖: FE 화면(채팅 UI), 메시지 수정/삭제, 파일 첨부, 메시지 검색, 알림 푸시, RECRUITMENT/PERFORMANCE 채팅 연계.
+  * Redis 이연: 다중 서버 확장 시 `enableStompBrokerRelay`로 브로커 교체 + Redis 기반 `PresenceRegistry`(현재 인메모리·단일서버만 정확) + refresh 토큰 로테이션(COMMON-STATUTE §4)을 함께 도입.
+  * 리뷰 이연(Minor): (1)DIRECT 방 2스레드 실경합 통합테스트(REQUIRES_NEW 구조는 correct-by-construction, 테스트만 이연), (2)`WebSocketConfig.setAllowedOriginPatterns("*")`를 프로덕션 시 FE origin으로 좁히기, (3)WS 통합테스트 `@AfterEach` 세션 disconnect/`stompClient.stop()` 정리(누수·공유 채널 인터셉터 변경창 하드닝), (4)`StompAuthChannelInterceptor` 미사용 import·`ChatPresenceEventListener` Principal FQN→import 정리.
 * [x] ~~FE: MEMBER 프로필 화면(조회/수정/이미지)~~ — 2026-07-16 완료(조회/수정 모드, 이미지 즉시 업로드, beFetch 멀티파트 지원). 라이브 수동 검증까지 성공(멀티파트 실체인: 브라우저→BFF→Spring @RequestPart→디스크→/files/** 서빙→DB key 저장·새로고침 유지). 실이미지 S3 검증만 별개 BACKLOG.
 * [x] ~~FE: 카카오 실제 로그인 왕복 수동 검증~~ — 2026-07-15 완료. 실제 카카오 앱 키/Client Secret/Redirect URI/이메일 동의로 브라우저 왕복 성공(로그인→/dashboard). 개인 개발자 비즈 앱 전환, redirect_uri는 `/config/callback`에 등록.
 
