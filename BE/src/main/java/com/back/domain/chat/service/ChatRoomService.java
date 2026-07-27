@@ -32,6 +32,7 @@ public class ChatRoomService {
     private final ChatParticipantRepository participantRepository;
     private final MemberQueryService memberQueryService;
     private final PresenceRegistry presenceRegistry;
+    private final DirectRoomInitializer directRoomInitializer;
 
     @Transactional
     public ChatRoomResponse createRoom(Long memberId, CreateRoomRequest request) {
@@ -52,14 +53,12 @@ public class ChatRoomService {
 
     private ChatRoom openDirect(Long memberId, Long other, String key) {
         try {
-            ChatRoom room = roomRepository.save(ChatRoom.createDirect(memberId, other));
-            participantRepository.save(ChatParticipant.join(room.getId(), memberId));
-            participantRepository.save(ChatParticipant.join(room.getId(), other));
-            return room;
+            return directRoomInitializer.insertDirect(memberId, other);
         } catch (DataIntegrityViolationException e) {
             // 동시 생성 경합: unique 위반이면 이미 만들어진 방을 재사용(멱등).
-            return roomRepository.findByDirectKey(key)
-                    .orElseThrow(() -> new BusinessException(ErrorCode.CHAT_INVALID_PARTICIPANTS));
+            // insertDirect 는 REQUIRES_NEW 로 격리되어 있어 이 트랜잭션은 오염되지 않는다.
+            // 재조회 실패 = 진짜 DB 오류이므로 원 예외를 그대로 전파(errorCode 로 위장하지 않는다)
+            return roomRepository.findByDirectKey(key).orElseThrow(() -> e);
         }
     }
 

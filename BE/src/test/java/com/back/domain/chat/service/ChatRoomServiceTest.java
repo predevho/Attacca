@@ -87,4 +87,29 @@ class ChatRoomServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode").isEqualTo(ErrorCode.CHAT_ROOM_NOT_FOUND);
     }
+
+    @Test
+    void DIRECT방에_초대하면_거절한다() {
+        var room = service.createRoom(alice,
+                new CreateRoomRequest(RoomType.DIRECT, List.of(bob), null));
+
+        assertThatThrownBy(() -> service.invite(alice, room.id(), new InviteRequest(List.of(carol))))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(ErrorCode.CHAT_INVALID_PARTICIPANTS);
+    }
+
+    @Test
+    void 퇴장자를_다시_초대하면_중복없이_재합류한다() {
+        var room = service.createRoom(alice,
+                new CreateRoomRequest(RoomType.GROUP, List.of(bob), "합주"));
+        int beforeLeaveCount = room.participants().size(); // alice + bob
+
+        service.leave(bob, room.id());
+        var afterLeave = service.getRoom(alice, room.id());
+        assertThat(afterLeave.participants()).extracting("id").doesNotContain(bob);
+
+        var invited = service.invite(alice, room.id(), new InviteRequest(List.of(bob)));
+        assertThat(invited.participants()).extracting("id").contains(bob);
+        assertThat(invited.participants()).hasSize(beforeLeaveCount); // 중복 행 없이 원래 인원수로 복귀
+    }
 }
