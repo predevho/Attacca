@@ -4,6 +4,7 @@ import com.back.domain.chat.entity.ChatParticipant;
 import com.back.domain.chat.entity.ChatRoom;
 import com.back.domain.chat.repository.ChatParticipantRepository;
 import com.back.domain.chat.repository.ChatRoomRepository;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -27,5 +28,16 @@ public class DirectRoomInitializer {
         participantRepository.save(ChatParticipant.join(room.getId(), creatorId));
         participantRepository.save(ChatParticipant.join(room.getId(), otherId));
         return room;
+    }
+
+    /**
+     * 경합 복구용 재조회를 새 트랜잭션에서 수행한다.
+     * 바깥 트랜잭션(REPEATABLE READ)의 스냅샷은 최초 findByDirectKey 시점에 고정되어 있어
+     * 경합 트랜잭션이 커밋한 행이 보이지 않는다. REQUIRES_NEW 로 새 스냅샷을 얻어야
+     * 방금 커밋된 방을 조회할 수 있다.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW, readOnly = true)
+    public Optional<ChatRoom> findExistingDirect(String directKey) {
+        return roomRepository.findByDirectKey(directKey);
     }
 }

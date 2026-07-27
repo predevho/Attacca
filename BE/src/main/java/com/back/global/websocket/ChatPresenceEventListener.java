@@ -2,6 +2,7 @@ package com.back.global.websocket;
 
 import com.back.domain.chat.entity.ChatParticipant;
 import com.back.domain.chat.repository.ChatParticipantRepository;
+import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -54,7 +55,7 @@ public class ChatPresenceEventListener {
         }
     }
 
-    private Long memberId(java.security.Principal principal) {
+    private Long memberId(Principal principal) {
         if (principal instanceof UsernamePasswordAuthenticationToken token
                 && token.getPrincipal() instanceof Long id) {
             return id;

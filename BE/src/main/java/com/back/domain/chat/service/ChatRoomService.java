@@ -67,14 +67,16 @@ public class ChatRoomService {
             // 동시 생성 경합: unique 위반이면 이미 만들어진 방을 재사용(멱등).
             // insertDirect 는 REQUIRES_NEW 로 격리되어 있어 이 트랜잭션은 오염되지 않는다.
             // 재조회 실패 = 진짜 DB 오류이므로 원 예외를 그대로 전파(errorCode 로 위장하지 않는다)
-            return roomRepository.findByDirectKey(key).orElseThrow(() -> e);
+            // 재조회는 새 트랜잭션(findExistingDirect)에서 수행: 바깥 트랜잭션의 REPEATABLE READ
+            // 스냅샷은 최초 findByDirectKey 시점에 고정돼 있어 경합 트랜잭션이 커밋한 행이 보이지 않는다.
+            return directRoomInitializer.findExistingDirect(key).orElseThrow(() -> e);
         }
     }
 
     private ChatRoom createGroup(Long memberId, CreateRoomRequest request) {
         ChatRoom room = roomRepository.save(ChatRoom.createGroup(memberId, request.title()));
         participantRepository.save(ChatParticipant.join(room.getId(), memberId));
-        for (Long id : request.participantIdsOrEmpty()) {
+        for (Long id : dedupe(request.participantIdsOrEmpty())) {
             if (!id.equals(memberId)) {
                 participantRepository.save(ChatParticipant.join(room.getId(), id));
             }
@@ -96,12 +98,17 @@ public class ChatRoomService {
         if (room.getType() == RoomType.DIRECT) {
             throw new BusinessException(ErrorCode.CHAT_INVALID_PARTICIPANTS); // 1:1 에 초대 불가
         }
-        for (Long invitee : request.memberIds()) {
+        for (Long invitee : dedupe(request.memberIds())) {
             participantRepository.findByRoomIdAndMemberId(roomId, invitee).ifPresentOrElse(
                     ChatParticipant::rejoin, // 과거 퇴장자면 재활성(활성이면 no-op 과 동일)
                     () -> participantRepository.save(ChatParticipant.join(roomId, invitee)));
         }
         return toResponse(room);
+    }
+
+    /** 요청에 중복 id가 섞여 들어와도 (roomId, memberId) unique 위반이 나지 않도록 순서를 보존해 중복 제거한다. */
+    private List<Long> dedupe(List<Long> ids) {
+        return ids.stream().distinct().toList();
     }
 
     @Transactional

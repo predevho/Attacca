@@ -7,7 +7,6 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
@@ -40,7 +39,7 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
         switch (accessor.getCommand()) {
             case CONNECT -> authenticate(accessor);
             case SUBSCRIBE -> authorize(accessor, accessor.getDestination(), ROOM_PREFIX_TOPIC);
-            case SEND -> authorize(accessor, accessor.getDestination(), ROOM_PREFIX_APP);
+            case SEND -> authorizeSend(accessor);
             default -> {
                 // 그 외 프레임(UNSUBSCRIBE/DISCONNECT 등)은 통과
             }
@@ -63,6 +62,19 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
         } catch (Exception e) {
             throw new IllegalArgumentException("유효하지 않은 토큰입니다.", e);
         }
+    }
+
+    /**
+     * 클라이언트 SEND 는 애플리케이션 목적지(/app/**)로만 허용한다.
+     * /topic, /user 등 브로커 목적지로의 SEND 는 SimpleBroker 가 구독자에게 그대로 릴레이하여
+     * @MessageMapping 핸들러(참여자 검증·영속화)를 우회할 수 있으므로 차단한다.
+     */
+    private void authorizeSend(StompHeaderAccessor accessor) {
+        String destination = accessor.getDestination();
+        if (destination == null || !destination.startsWith("/app/")) {
+            throw new IllegalArgumentException("허용되지 않은 전송 대상입니다.");
+        }
+        authorize(accessor, destination, ROOM_PREFIX_APP);
     }
 
     private void authorize(StompHeaderAccessor accessor, String destination, String prefix) {

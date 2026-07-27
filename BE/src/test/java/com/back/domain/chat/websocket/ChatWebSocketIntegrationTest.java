@@ -253,6 +253,99 @@ class ChatWebSocketIntegrationTest {
     }
 
     /**
+     * 참여자(alice)라도 클라이언트가 브로커 목적지(/topic/rooms/{id})로 직접 SEND 하면
+     * StompAuthChannelInterceptor.authorizeSend 가 "/app/" 접두사가 아니라는 이유로 거부해야 한다.
+     * 이 경로가 막혀 있지 않으면 SimpleBroker 가 SEND 를 구독자에게 그대로 릴레이해
+     * @MessageMapping 핸들러(참여자 검증·영속화)를 완전히 우회하게 된다 — 이번 수정의 핵심 시나리오.
+     *
+     * 검증 방식은 test 3(비참여자 구독 거부)과 동일하게, 와이어로 오는 STOMP ERROR 는 일반화된
+     * 문구뿐이므로 서버 clientInboundChannel 에 임시 인터셉터를 꽂아 원본 예외를 직접 캡처한다.
+     */
+    @Test
+    void 참여자여도_브로커목적지로_직접SEND하면_거부된다() throws Exception {
+        BlockingQueue<Throwable> errors = new LinkedBlockingDeque<>();
+        BlockingQueue<Throwable> serverSideFailures = new LinkedBlockingDeque<>();
+        ChannelInterceptor sendFailureCapture = new ChannelInterceptor() {
+            @Override
+            public void afterSendCompletion(Message<?> message, MessageChannel channel, boolean sent,
+                    Exception ex) {
+                if (ex != null) {
+                    serverSideFailures.add(ex);
+                }
+            }
+        };
+        InterceptableChannel interceptableChannel = (InterceptableChannel) clientInboundChannel;
+        interceptableChannel.addInterceptor(0, sendFailureCapture);
+
+        StompSessionHandlerAdapter errorCapturingHandler = new StompSessionHandlerAdapter() {
+            @Override
+            public void handleFrame(StompHeaders headers, Object payload) {
+                String body = (payload instanceof byte[] bytes)
+                        ? new String(bytes, StandardCharsets.UTF_8)
+                        : String.valueOf(payload);
+                String messageHeader = headers.getFirst("message");
+                errors.add(new IllegalStateException(
+                        "STOMP ERROR 수신: message=" + messageHeader + ", body=" + body));
+            }
+
+            @Override
+            public void handleException(StompSession session, StompCommand command, StompHeaders headers,
+                    byte[] payload, Throwable exception) {
+                errors.add(exception);
+            }
+
+            @Override
+            public void handleTransportError(StompSession session, Throwable exception) {
+                errors.add(exception);
+            }
+        };
+
+        try {
+            // alice 는 이 방의 정당한 참여자이지만, 브로커 목적지(/topic/...)로 직접 SEND 하는 것 자체가 금지된다.
+            StompSession aliceSession = connectWithHandler(aliceToken, errorCapturingHandler);
+            aliceSession.send("/topic/rooms/" + roomId, Map.of("content", "위조 메시지"));
+
+            Throwable error = errors.poll(3, TimeUnit.SECONDS);
+            assertThat(error)
+                    .as("브로커 목적지로의 직접 SEND 는 인터셉터가 거부해 ERROR 프레임/예외로 이어져야 한다")
+                    .isNotNull();
+
+            Throwable serverSideError = serverSideFailures.poll(3, TimeUnit.SECONDS);
+            assertThat(serverSideError)
+                    .as("서버 clientInboundChannel 에서 SEND 거부 예외가 실제로 발생해야 한다")
+                    .isNotNull();
+            assertThat(allMessagesInCauseChain(serverSideError))
+                    .as("서버에서 캡처한 예외(또는 cause 체인)는 '허용되지 않은 전송 대상' 문구를 포함해야 한다")
+                    .contains("허용되지 않은 전송 대상");
+        } finally {
+            interceptableChannel.removeInterceptor(sendFailureCapture);
+        }
+
+        // 브로커 목적지 SEND 가 거부된 뒤에도 정상적인 /app/ 경로 SEND 는 여전히 동작함을 재확인한다
+        // (인터셉터가 과도하게 막아버려 test 1 이 우연히 통과하는 게 아님을 보장하는 대조군).
+        StompSession aliceSession2 = connect(aliceToken);
+        StompSession bobSession = connect(bobToken);
+        BlockingQueue<Map> received = new LinkedBlockingDeque<>();
+        bobSession.subscribe("/topic/rooms/" + roomId, new StompFrameHandler() {
+            @Override public Type getPayloadType(StompHeaders headers) {
+                return Map.class;
+            }
+            @Override public void handleFrame(StompHeaders headers, Object payload) {
+                if (payload instanceof Map<?, ?> map && map.containsKey("content")) {
+                    received.add((Map) map);
+                }
+            }
+        });
+        Thread.sleep(300); // 구독 반영 대기
+
+        aliceSession2.send("/app/rooms/" + roomId + "/send", Map.of("content", "정상 경로는 여전히 동작"));
+
+        Map message = received.poll(3, TimeUnit.SECONDS);
+        assertThat(message).isNotNull();
+        assertThat(message.get("content")).isEqualTo("정상 경로는 여전히 동작");
+    }
+
+    /**
      * throwable 자신의 메시지부터 시작해 getCause() 체인을 끝까지 따라가며
      * 모든 메시지를 하나의 문자열로 이어붙인다.
      * STOMP ERROR 는 handleFrame(바디 문자열을 담은 IllegalStateException)로 오거나
