@@ -1,0 +1,140 @@
+package com.back.domain.chat.service;
+
+import com.back.domain.chat.dto.ChatRoomResponse;
+import com.back.domain.chat.dto.CreateRoomRequest;
+import com.back.domain.chat.dto.InviteRequest;
+import com.back.domain.chat.dto.ParticipantView;
+import com.back.domain.chat.entity.ChatParticipant;
+import com.back.domain.chat.entity.ChatRoom;
+import com.back.domain.chat.entity.RoomType;
+import com.back.domain.chat.repository.ChatParticipantRepository;
+import com.back.domain.chat.repository.ChatRoomRepository;
+import com.back.domain.member.dto.MemberDisplay;
+import com.back.domain.member.service.MemberQueryService;
+import com.back.global.exception.BusinessException;
+import com.back.global.exception.ErrorCode;
+import com.back.global.websocket.PresenceRegistry;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/** 채팅방 생성/상세/초대/퇴장. 참여자 표시정보는 MEMBER 협력으로 파생한다. */
+@Service
+@RequiredArgsConstructor
+public class ChatRoomService {
+
+    private final ChatRoomRepository roomRepository;
+    private final ChatParticipantRepository participantRepository;
+    private final MemberQueryService memberQueryService;
+    private final PresenceRegistry presenceRegistry;
+
+    @Transactional
+    public ChatRoomResponse createRoom(Long memberId, CreateRoomRequest request) {
+        ChatRoom room = request.type() == RoomType.DIRECT
+                ? createDirect(memberId, request.participantIdsOrEmpty())
+                : createGroup(memberId, request);
+        return toResponse(room);
+    }
+
+    private ChatRoom createDirect(Long memberId, List<Long> participantIds) {
+        if (participantIds.size() != 1) {
+            throw new BusinessException(ErrorCode.CHAT_INVALID_PARTICIPANTS);
+        }
+        Long other = participantIds.get(0);
+        String key = ChatRoom.directKey(memberId, other); // memberId==other 면 아래 createDirect 가 거절
+        return roomRepository.findByDirectKey(key).orElseGet(() -> openDirect(memberId, other, key));
+    }
+
+    private ChatRoom openDirect(Long memberId, Long other, String key) {
+        try {
+            ChatRoom room = roomRepository.save(ChatRoom.createDirect(memberId, other));
+            participantRepository.save(ChatParticipant.join(room.getId(), memberId));
+            participantRepository.save(ChatParticipant.join(room.getId(), other));
+            return room;
+        } catch (DataIntegrityViolationException e) {
+            // 동시 생성 경합: unique 위반이면 이미 만들어진 방을 재사용(멱등).
+            return roomRepository.findByDirectKey(key)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.CHAT_INVALID_PARTICIPANTS));
+        }
+    }
+
+    private ChatRoom createGroup(Long memberId, CreateRoomRequest request) {
+        ChatRoom room = roomRepository.save(ChatRoom.createGroup(memberId, request.title()));
+        participantRepository.save(ChatParticipant.join(room.getId(), memberId));
+        for (Long id : request.participantIdsOrEmpty()) {
+            if (!id.equals(memberId)) {
+                participantRepository.save(ChatParticipant.join(room.getId(), id));
+            }
+        }
+        return room;
+    }
+
+    @Transactional(readOnly = true)
+    public ChatRoomResponse getRoom(Long memberId, Long roomId) {
+        ChatRoom room = findRoom(roomId);
+        assertActiveParticipant(roomId, memberId);
+        return toResponse(room);
+    }
+
+    @Transactional
+    public ChatRoomResponse invite(Long memberId, Long roomId, InviteRequest request) {
+        ChatRoom room = findRoom(roomId);
+        assertActiveParticipant(roomId, memberId);
+        if (room.getType() == RoomType.DIRECT) {
+            throw new BusinessException(ErrorCode.CHAT_INVALID_PARTICIPANTS); // 1:1 에 초대 불가
+        }
+        for (Long invitee : request.memberIds()) {
+            participantRepository.findByRoomIdAndMemberId(roomId, invitee).ifPresentOrElse(
+                    ChatParticipant::rejoin, // 과거 퇴장자면 재활성(활성이면 no-op 과 동일)
+                    () -> participantRepository.save(ChatParticipant.join(roomId, invitee)));
+        }
+        return toResponse(room);
+    }
+
+    @Transactional
+    public void leave(Long memberId, Long roomId) {
+        findRoom(roomId);
+        participantRepository.findByRoomIdAndMemberId(roomId, memberId)
+                .filter(ChatParticipant::isActive)
+                .ifPresent(ChatParticipant::leave);
+    }
+
+    /** 활성 참여자가 아니면 403. WebSocket 인가·다른 서비스에서도 재사용. */
+    public void assertActiveParticipant(Long roomId, Long memberId) {
+        if (!participantRepository.existsByRoomIdAndMemberIdAndLeftAtIsNull(roomId, memberId)) {
+            throw new BusinessException(ErrorCode.NOT_ROOM_PARTICIPANT);
+        }
+    }
+
+    private ChatRoom findRoom(Long roomId) {
+        return roomRepository.findById(roomId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CHAT_ROOM_NOT_FOUND));
+    }
+
+    private ChatRoomResponse toResponse(ChatRoom room) {
+        List<ChatParticipant> participants = participantRepository
+                .findByRoomIdAndLeftAtIsNull(room.getId());
+        Set<Long> ids = participants.stream().map(ChatParticipant::getMemberId)
+                .collect(Collectors.toSet());
+        Map<Long, MemberDisplay> displays = memberQueryService.findDisplaysByIds(ids);
+        Set<Long> online = presenceRegistry.onlineAmong(ids);
+        List<ParticipantView> views = participants.stream()
+                .map(p -> toView(displays.get(p.getMemberId()), p.getMemberId(),
+                        online.contains(p.getMemberId())))
+                .toList();
+        return new ChatRoomResponse(room.getId(), room.getType(), room.getTitle(), views,
+                room.getCreatedAt());
+    }
+
+    private ParticipantView toView(MemberDisplay d, Long memberId, boolean online) {
+        if (d == null) {
+            return new ParticipantView(memberId, null, false, online);
+        }
+        return new ParticipantView(d.memberId(), d.nickname(), d.verified(), online);
+    }
+}
