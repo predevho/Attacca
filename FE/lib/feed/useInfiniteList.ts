@@ -21,7 +21,9 @@ export function useInfiniteList<T extends { id: number }>(
 
   // 최신 값을 옵저버 콜백에서 읽기 위한 ref(재구독 없이).
   const stateRef = useRef({ isLoading, nextCursor, loaded });
-  stateRef.current = { isLoading, nextCursor, loaded };
+  useEffect(() => {
+    stateRef.current = { isLoading, nextCursor, loaded };
+  });
 
   const load = useCallback(async (cursor: number | null, isFirst: boolean) => {
     setIsLoading(true);
