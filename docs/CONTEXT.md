@@ -6,7 +6,8 @@
 
 ## 현재 상태
 
-* 단계: BE 6개 도메인 전부 완료(인증/프로필/파일/DB + VERIFIED-PERFORMER + FEED + PERFORMANCE + RECRUITMENT + CHAT) + FE(인증/프로필/카카오/피드) 완료. **다음은 FE 화면**(인증연주자/공연/구인/채팅). CHAT은 main에 병합 완료(커밋 `7b5cff4`, `feat/chat-domain` 브랜치 종료). FE 피드는 브랜치 `feature/feed-fe`(2026-08-02, 13태스크 TDD, main 병합 대기).
+* 단계: BE 6개 도메인 전부 완료(인증/프로필/파일/DB + VERIFIED-PERFORMER + FEED + PERFORMANCE + RECRUITMENT + CHAT) + FE(인증/프로필/카카오/피드/공연) 완료. **다음은 FE 화면**(인증연주자/구인/채팅). CHAT은 main에 병합 완료(커밋 `7b5cff4`, `feat/chat-domain` 브랜치 종료). FE 피드는 브랜치 `feature/feed-fe`(2026-08-02, 13태스크 TDD, main 병합 대기).
+* FE 공연(PERFORMANCE): `/performances`(scope 탭·무한스크롤)/`/performances/new`(2단계 마법사·등록 자격 게이팅)/`/performances/[id]`(상세)/`/performances/[id]/edit`(수정)/포스터. BFF `/api/bff/performances/**`, BE 오프셋 페이징을 `useInfiniteList`+`toCursorPage`로 커서 인터페이스처럼 재사용. 브랜치 `feature/performance-fe`(2026-08-02, 8태스크 TDD, main 병합 대기).
 * 확정된 기술 스택
   * BE: Spring Boot 3.4.x / Java 21 / MySQL / Spring Security(JWT + OAuth2) / WebSocket(STOMP)+Redis / FileStorage 추상화(로컬 기본/S3 opt-in)
   * FE: Next.js 16(App Router)/React 19/TS/Tailwind/Vitest, 위치 `FE/`. BFF+httpOnly 쿠키. `cd FE && npm run dev`(:3000)
