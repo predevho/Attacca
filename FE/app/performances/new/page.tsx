@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getBff, postBff, putBffForm } from '@/lib/api';
@@ -44,7 +45,7 @@ export default function NewPerformancePage() {
     return (
       <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-gray-500">
         인증 연주자만 공연을 등록할 수 있습니다.
-        <div className="mt-4"><a href="/performances" className="text-indigo-600">공연 목록으로</a></div>
+        <div className="mt-4"><Link href="/performances" className="text-indigo-600">공연 목록으로</Link></div>
       </main>
     );
   }
