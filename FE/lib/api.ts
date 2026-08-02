@@ -37,3 +37,8 @@ export async function putBffForm<T = unknown>(path: string, form: FormData): Pro
   const res = await fetch(path, { method: 'PUT', body: form });
   return parse<T>(res);
 }
+
+export async function deleteBff<T = unknown>(path: string): Promise<BffResult<T>> {
+  const res = await fetch(path, { method: 'DELETE' });
+  return parse<T>(res);
+}

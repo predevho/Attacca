@@ -1,5 +1,6 @@
 package com.back.domain.member.controller;
 
+import com.back.domain.member.dto.MemberIdentityResponse;
 import com.back.domain.member.dto.ProfileImageResponse;
 import com.back.domain.member.dto.ProfileOptionsResponse;
 import com.back.domain.member.dto.ProfileResponse;
@@ -26,6 +27,11 @@ import org.springframework.web.multipart.MultipartFile;
 public class MemberProfileController {
 
     private final MemberProfileService memberProfileService;
+
+    @GetMapping("/me")
+    public ApiResponse<MemberIdentityResponse> getMyIdentity(@AuthenticationPrincipal Long memberId) {
+        return ApiResponse.success(memberProfileService.getMyIdentity(memberId));
+    }
 
     @GetMapping("/me/profile")
     public ApiResponse<ProfileResponse> getMyProfile(@AuthenticationPrincipal Long memberId) {

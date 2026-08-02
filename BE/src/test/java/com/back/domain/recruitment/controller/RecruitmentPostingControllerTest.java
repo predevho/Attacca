@@ -53,7 +53,8 @@ class RecruitmentPostingControllerTest {
                         .contentType(MediaType.APPLICATION_JSON).content(BODY))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
-        return json.replaceAll(".*\"id\":(\\d+).*", "$1");
+        // author.id(중첩) 등 다른 "id" 필드와 섞이지 않도록 첫 번째 "id"(최상위 공고 id)만 지연 매칭한다.
+        return json.replaceAll(".*?\"id\":(\\d+).*", "$1");
     }
 
     @Test
