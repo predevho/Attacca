@@ -45,13 +45,12 @@ export default function FeedDetailPage() {
 
   async function likePost() {
     if (!post) return;
-    const before = post;
     const after = toggleLike(post);
     setPost(after);
     const r = after.likedByMe
       ? await postBff(`/api/bff/feed/posts/${post.id}/like`)
       : await deleteBff(`/api/bff/feed/posts/${post.id}/like`);
-    if (!r.ok) setPost(before);
+    if (!r.ok) setPost((prev) => (prev ? toggleLike(prev) : prev));
   }
 
   async function likeComment(c: Comment) {
@@ -60,12 +59,13 @@ export default function FeedDetailPage() {
     const r = after.likedByMe
       ? await postBff(`/api/bff/feed/comments/${c.id}/like`)
       : await deleteBff(`/api/bff/feed/comments/${c.id}/like`);
-    if (!r.ok) setComments((prev) => prev.map((x) => (x.id === c.id ? c : x)));
+    if (!r.ok) setComments((prev) => prev.map((x) => (x.id === c.id ? toggleLike(x) : x)));
   }
 
   async function addComment(content: string): Promise<boolean> {
     const r = await postBff<Comment>(`/api/bff/feed/posts/${postId}/comments`, { content });
     if (r.ok) setComments((prev) => [...prev, r.data as Comment]);
+    else setError(r.message ?? '댓글 작성에 실패했습니다.');
     return r.ok;
   }
 

@@ -51,7 +51,8 @@ class FeedControllerTest {
                         .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"글\"}"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
-        return json.replaceAll(".*\"id\":(\\d+).*", "$1");
+        // author.id(중첩) 등 다른 "id" 필드와 섞이지 않도록 첫 번째 "id"(최상위 게시글 id)만 지연 매칭한다.
+        return json.replaceAll(".*?\"id\":(\\d+).*", "$1");
     }
 
     @Test
@@ -67,7 +68,9 @@ class FeedControllerTest {
         mockMvc.perform(get("/api/feed/posts").header("Authorization", authorBearer))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.items[0].content").value("글"))
-                .andExpect(jsonPath("$.data.items[0].author.nickname").value("글쓴이"));
+                .andExpect(jsonPath("$.data.items[0].author.nickname").value("글쓴이"))
+                .andExpect(jsonPath("$.data.items[0].author.id").value(authorId))
+                .andExpect(jsonPath("$.data.items[0].author.memberId").doesNotExist());
     }
 
     @Test

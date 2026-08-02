@@ -33,13 +33,12 @@ export default function FeedPage() {
   }
 
   async function like(post: Post) {
-    const before = post;
     const after = toggleLike(post);
     setItems((prev) => prev.map((p) => (p.id === post.id ? after : p)));
     const r = after.likedByMe
       ? await postBff(`/api/bff/feed/posts/${post.id}/like`)
       : await deleteBff(`/api/bff/feed/posts/${post.id}/like`);
-    if (!r.ok) setItems((prev) => prev.map((p) => (p.id === post.id ? before : p)));
+    if (!r.ok) setItems((prev) => prev.map((p) => (p.id === post.id ? toggleLike(p) : p)));
   }
 
   return (
