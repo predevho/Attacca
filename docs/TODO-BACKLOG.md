@@ -34,7 +34,14 @@
 
 ## FE 공통 (정리)
 
-* [ ] FE: BFF 라우트 status 폴백 일괄 수정 — 모든 BFF 라우트가 `{ status: res.status || 200 }`을 써서 BE 연결 실패(`beFetch` status 0)를 HTTP 200으로 응답한다. 현재 클라이언트는 바디의 `ok`로 판단해 무해하나, status 기준 소비처가 생기면 오작동. `res.status || 502`(또는 `=== 0 ? 502`)로 login/signup/logout/me/oauth·프로필 등 전체를 한 번에 정리. (2026-07-16 프로필 리뷰에서 식별)
+* [ ] FE: BFF 라우트 status 폴백 일괄 수정 — 모든 BFF 라우트가 `{ status: res.status || 200 }`을 써서 BE 연결 실패(`beFetch` status 0)를 HTTP 200으로 응답한다. 현재 클라이언트는 바디의 `ok`로 판단해 무해하나, status 기준 소비처가 생기면 오작동. `res.status || 502`(또는 `=== 0 ? 502`)로 login/signup/logout/me/oauth·프로필 등 전체를 한 번에 정리. (2026-07-16 프로필 리뷰에서 식별) *(신규 피드 라우트는 `proxyAuthed` 헬퍼로 이미 502 처리 — 기존 인증/프로필 라우트만 남음)*
+
+## 피드 FE 후속 (2026-08-02 최종 리뷰 이연 Minor)
+
+* [ ] FE 접근성(a11y) — 모바일 이식 목표와 연계: `LikeButton`(하트+숫자만, 접근명 없음)·`ComposeForm` textarea(placeholder만, label 없음)에 접근명 부여, `PostCard`의 `<article onClick>`을 키보드 도달 가능하게(role/tabIndex/onKeyDown). 스펙 참조 코드에서 그대로 내려온 갭.
+* [ ] FE 피드: `commentCount` 낙관적 증감 — 상세에서 댓글 작성/삭제 시 게시글 카드의 댓글 수가 새로고침 전까지 드리프트(현재 미갱신). 목록/상세 상태에 반영.
+* [ ] FE: BFF 동적 라우트의 `type Ctx = { params: Promise<{ id: string }> }` 중복(피드 라우트 5+개) → `lib/server` 공용 타입으로 추출.
+* [ ] BE: `MemberProfileService.getMyIdentity`/`getMyProfile`가 `isVerified`+member 조회를 각각 중복 — 3번째 신원 인접 엔드포인트가 생기면 공용 헬퍼로 추출 검토.
 
 ## BE 공통 정리 (도메인 리뷰에서 이연된 Minor)
 
