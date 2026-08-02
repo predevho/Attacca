@@ -18,4 +18,4 @@ export function middleware(req: NextRequest) {
   return NextResponse.next();
 }
 
-export const config = { matcher: ['/dashboard/:path*', '/profile/:path*', '/feed/:path*'] };
+export const config = { matcher: ['/dashboard/:path*', '/profile/:path*', '/feed/:path*', '/performances/:path*'] };
