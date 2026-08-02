@@ -6,7 +6,7 @@
 
 ## 현재 상태
 
-* 단계: BE 6개 도메인 전부 완료(인증/프로필/파일/DB + VERIFIED-PERFORMER + FEED + PERFORMANCE + RECRUITMENT + CHAT) + FE(인증/프로필/카카오) 완료. **다음은 FE 화면**(인증연주자/피드/공연/구인/채팅). CHAT은 main에 병합 완료(커밋 `7b5cff4`, `feat/chat-domain` 브랜치 종료).
+* 단계: BE 6개 도메인 전부 완료(인증/프로필/파일/DB + VERIFIED-PERFORMER + FEED + PERFORMANCE + RECRUITMENT + CHAT) + FE(인증/프로필/카카오/피드) 완료. **다음은 FE 화면**(인증연주자/공연/구인/채팅). CHAT은 main에 병합 완료(커밋 `7b5cff4`, `feat/chat-domain` 브랜치 종료). FE 피드는 브랜치 `feature/feed-fe`(2026-08-02, 13태스크 TDD, main 병합 대기).
 * 확정된 기술 스택
   * BE: Spring Boot 3.4.x / Java 21 / MySQL / Spring Security(JWT + OAuth2) / WebSocket(STOMP)+Redis / FileStorage 추상화(로컬 기본/S3 opt-in)
   * FE: Next.js 16(App Router)/React 19/TS/Tailwind/Vitest, 위치 `FE/`. BFF+httpOnly 쿠키. `cd FE && npm run dev`(:3000)
@@ -31,6 +31,7 @@
 * MEMBER 식별자: `loginId`=자체 로그인 열쇠(unique, nullable) / `email`=인증·소셜연결 키(unique, 전원 필수) / `nickname`=활동명(unique) / 내부 신원=`id`. `password`/`loginId`는 소셜 전용 회원에서 null(자체 로그인 경로에 null 가드).
 * MEMBER API(모두 `/api/auth/**` permit): `POST /signup{loginId,password,email,nickname}`, `POST /login{loginId,password}`, `POST /oauth/kakao{code,redirectUri}`. 로그인/소셜 모두 access+refresh 발급. 비번 BCrypt.
 * MEMBER 프로필 API(인증 필요): `GET/PUT /api/members/me/profile`, `PUT /api/members/me/profile/image`(image/*만), `GET /api/members/profile-options`. `Instrument` enum 21종(VOICE=성악/VOCAL=보컬 분리, 장르 없음). `MEMBER_NOT_FOUND`(404-03).
+* MEMBER 신원 API(인증 필요): `GET /api/members/me` → `{id,nickname,role,verified}`(FEED FE의 "내 신원" 프로브·작성자 판정용, 2026-08-02 FEED FE 선행 구현).
 * 소셜: 프론트 인가코드→백엔드 교환(`OAuthClient`/`KakaoOAuthClient`). 검증된 이메일만 자동연결, 미검증 거절(401-08). 카카오 키는 env(`KAKAO_CLIENT_ID`/`KAKAO_CLIENT_SECRET`) 주입·커밋 금지.
 * VERIFIED-PERFORMER(인증 연주자): 상태머신 엔티티 `VerificationApplication`(PENDING/APPROVED/REJECTED/REVOKED, `memberId`=원시 Long, 재신청=새 레코드). 회원 API `POST/GET /api/verified-performers/applications(/me)`. 어드민 API `/api/admin/verified-performers/**`(ROLE_ADMIN): 목록(`?status`+Pageable)·`{id}/approve|reject|revoke`·`grant`(직접지정). 활성 신청(PENDING/APPROVED) 유일 → 재신청 409. 뱃지는 `VerifiedPerformerService.isVerified`(APPROVED만 true)로 파생, MEMBER `ProfileResponse.verified`가 서비스 협력으로 채움(엔티티 직접참조 없음). 에러코드 409-04(ALREADY_PENDING)/409-05(ALREADY_APPROVED)/409-06(INVALID_APPLICATION_STATE)/404-04(APPLICATION_NOT_FOUND).
 * MEMBER 에러코드(전역 `ErrorCode`): EMAIL/NICKNAME/LOGIN_ID_ALREADY_EXISTS 409-01/02/03, LOGIN_FAILED 401-07, OAUTH_EMAIL_UNVERIFIED 401-08, OAUTH_PROVIDER_ERROR 502-01.
@@ -41,6 +42,7 @@
 * FE 인증: BFF 3계층(`lib/server/*`→`app/api/bff/**`→UI). 토큰은 httpOnly 쿠키, UI는 토큰 안 만짐. 통신은 네이티브 fetch(라이브러리 미도입). BE 주소는 서버 env `BE_BASE_URL`. `/dashboard`는 미들웨어가 쿠키 존재로 보호, reissue는 `lib/server/session.ts`가 401 시 1회 재시도. 실연동은 BE 기동 후 수동 검증.
 * FE 카카오 로그인: `/login` 버튼→`/api/bff/oauth/kakao/start`(CSRF state httpOnly 쿠키+카카오 302)→카카오→`/api/bff/oauth/kakao/callback`(state 대조→BE `/api/auth/oauth/kakao` 교환→인증쿠키→/dashboard). 에러는 `/login?error=`. `KAKAO_CLIENT_ID`/`KAKAO_REDIRECT_URI` 서버 env. **실제 카카오 왕복은 앱 키 미확보로 미검증**(배선만 목/로컬 확인).
 * FE 프로필: `/profile`(인증 필요, 미들웨어 보호). 조회 기본 + 수정 모드(악기 칩 최대10·자기소개 500자, `PUT /api/bff/me/profile`). 이미지는 파일 선택 즉시 업로드(`PUT /api/bff/me/profile/image`, 멀티파트). 악기 코드↔label은 `/api/bff/profile-options`로 변환. `beFetch`는 FormData면 content-type 미설정(멀티파트).
+* FE 피드: `/feed`(무한스크롤 타임라인+인라인 작성)·`/feed/[id]`(상세+댓글, 인증 필요·미들웨어 보호). BFF `/api/bff/feed/**`(게시글/댓글 CRUD+좋아요) + `/api/bff/me/identity`(위 MEMBER `GET /api/members/me` 프록시, 작성자 판정용). 인증 프록시는 신설 `proxyAuthed` 헬퍼(`res.status || 502`, 기존 BFF `status||200` 폴백 버그를 신규 라우트에서 선제 회피)로 통일. 좋아요는 낙관적 업데이트+실패 롤백, 커서 페이지는 `mergeCursorPage`로 중복 없이 병합.
 
 ## 보류된 결정
 

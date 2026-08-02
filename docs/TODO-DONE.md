@@ -4,6 +4,8 @@
 
 ---
 
+* [x] (2026-08-02) FE 피드(FEED) 화면 구현 (TDD, 서브에이전트 주도 13태스크) — 무한스크롤 타임라인/인라인 작성/상세·댓글/게시글·댓글 좋아요(낙관적+롤백)/수정·삭제. BE 선행: 신원 엔드포인트 GET /api/members/me. BFF 프록시 헬퍼(status||502) 신설. 브랜치 feature/feed-fe.
+  * 범위 밖: 이미지 첨부/대댓글/댓글 수정/팔로우 타임라인/신고/PERFORMANCE 카드.
 * [x] (2026-07-27) CHAT(채팅) BE 도메인 구현 (TDD, 서브에이전트 주도 14태스크) — main 병합 완료(커밋 `7b5cff4`)
   * 통합 방 모델: 1:1(DIRECT)+그룹(GROUP)을 "방+참여자" 한 모델로. 엔티티 3종 `ChatRoom`(type/title/createdBy/`directKey`(unique)/`lastMessageAt`(비정규화 정렬키)) + `ChatParticipant`(roomId/memberId 원시 Long, `leftAt` soft leave, `lastReadMessageId` 읽음커서, `(roomId,memberId)` unique) + `ChatMessage`(append-only, `(roomId,id)` 인덱스)
   * 1:1 유일성: 정렬 키 `directKey="min:max"` + DB unique + find-or-create. 동시 생성 경합은 insert를 `DirectRoomInitializer`(REQUIRES_NEW)로 격리해 바깥 트랜잭션 오염 없이 재조회(멱등)
