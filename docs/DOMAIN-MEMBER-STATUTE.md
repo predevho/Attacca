@@ -76,6 +76,7 @@ com.back.domain.member
 
 ### 3.2 프로필 API (구현 완료, 2026-07-15 — 모두 인증 필요, principal = JWT 회원 id)
 
+* `GET /api/members/me` (인증) → `{id, nickname, role, verified}`. 프로필과 분리된 공용 신원 소스(작성자/어드민 판정용). verified는 VERIFIED-PERFORMER 파생.
 * `GET /api/members/me/profile` : 내 프로필. 미생성 시 빈 기본값(404 아님) → `ProfileResponse{instruments[], bio, profileImageUrl}`
 * `PUT /api/members/me/profile` : 전체 교체 upsert. body `{instruments: [코드], bio}` (악기 최대 10개, bio 최대 500자)
 * `PUT /api/members/me/profile/image` : multipart(`file`) 이미지 교체. `image/*`만 허용(위반 시 400-02), 새 파일 저장 확정 후 옛 파일 삭제

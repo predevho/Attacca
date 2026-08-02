@@ -1,5 +1,6 @@
 package com.back.domain.member.service;
 
+import com.back.domain.member.dto.MemberIdentityResponse;
 import com.back.domain.member.dto.ProfileImageResponse;
 import com.back.domain.member.dto.ProfileResponse;
 import com.back.domain.member.dto.UpdateProfileRequest;
@@ -35,6 +36,15 @@ public class MemberProfileService {
     // 인증 뱃지는 이 도메인의 값이 아니라 VERIFIED-PERFORMER 도메인의 파생 정보다.
     // 서비스 계층으로만 협력하고 그 엔티티는 직접 참조하지 않는다(도메인 경계 유지).
     private final VerifiedPerformerService verifiedPerformerService;
+
+    @Transactional(readOnly = true)
+    public MemberIdentityResponse getMyIdentity(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+        boolean verified = verifiedPerformerService.isVerified(memberId);
+        return new MemberIdentityResponse(
+                member.getId(), member.getNickname(), member.getRole(), verified);
+    }
 
     @Transactional(readOnly = true)
     public ProfileResponse getMyProfile(Long memberId) {
