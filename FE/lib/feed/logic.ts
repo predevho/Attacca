@@ -5,7 +5,10 @@ export function mergeCursorPage<T extends { id: number }>(prev: CursorPage<T>, p
   const seen = new Set(prev.items.map((i) => i.id));
   const merged = [...prev.items];
   for (const item of page.items) {
-    if (!seen.has(item.id)) merged.push(item);
+    if (!seen.has(item.id)) {
+      seen.add(item.id);
+      merged.push(item);
+    }
   }
   return { items: merged, nextCursor: page.nextCursor };
 }

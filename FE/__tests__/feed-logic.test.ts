@@ -13,6 +13,11 @@ describe('mergeCursorPage', () => {
     const page = { items: [{ id: 2 }, { id: 1 }], nextCursor: null };
     expect(mergeCursorPage(prev, page).items).toEqual([{ id: 2 }, { id: 1 }]);
   });
+  it('들어오는 페이지 내부의 중복 id도 제거한다', () => {
+    const prev = { items: [{ id: 1 }], nextCursor: 2 as number | null };
+    const page = { items: [{ id: 5 }, { id: 5 }], nextCursor: null };
+    expect(mergeCursorPage(prev, page).items).toEqual([{ id: 1 }, { id: 5 }]);
+  });
 });
 
 describe('shouldLoadMore', () => {
@@ -24,6 +29,9 @@ describe('shouldLoadMore', () => {
 describe('toggleLike', () => {
   it('안좋아요→좋아요: count+1', () => {
     expect(toggleLike({ id: 1, likeCount: 2, likedByMe: false })).toEqual({ id: 1, likeCount: 3, likedByMe: true });
+  });
+  it('좋아요→안좋아요: count-1', () => {
+    expect(toggleLike({ id: 1, likeCount: 3, likedByMe: true })).toEqual({ id: 1, likeCount: 2, likedByMe: false });
   });
   it('두 번 적용하면 원상복구(롤백)', () => {
     const item = { id: 1, likeCount: 2, likedByMe: false };
