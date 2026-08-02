@@ -22,7 +22,7 @@ FE가 "현재 사용자가 이 게시글/댓글의 작성자인가"를 판단해
 
 * `GET /api/members/me` (인증 필요) → `{ id, nickname, role, verified }`
   * `id`/`nickname`/`role`은 `Member` 엔티티에서, `verified`는 `VerifiedPerformerService.isVerified`(APPROVED만 true) 협력으로 파생(기존 프로필 뱃지 파생과 동일 패턴).
-  * `role`은 `ROLE_ADMIN` 판정에 사용(어드민은 타인 게시글/댓글 삭제 버튼 노출).
+  * `role`은 어드민 판정에 사용(enum name `ADMIN`; 어드민은 타인 게시글/댓글 삭제 버튼 노출).
 * 이 엔드포인트는 피드뿐 아니라 향후 화면(구인 "내 지원", 채팅 참여자 판정 등)에서도 재사용되는 공용 신원 소스다.
 * BE 테스트(신설): 인증 시 id/nickname/role/verified 반환, 미인증 401, verified 파생(승인/미승인).
 * 문서: 이 엔드포인트는 MEMBER 도메인 변경이므로 구현 시 `docs/DOMAIN-MEMBER-STATUTE.md`에 반영한다(프로젝트 규칙).
@@ -40,7 +40,7 @@ FE가 "현재 사용자가 이 게시글/댓글의 작성자인가"를 판단해
 
 ### 1.2 `/feed/[id]` — 상세 (client component)
 
-* 게시글 카드: **수정** 버튼은 `author.id === me.id`일 때만, **삭제** 버튼은 `author.id === me.id || me.role === 'ROLE_ADMIN'`일 때 노출(`me`는 §0.1 신원 엔드포인트에서 조회).
+* 게시글 카드: **수정** 버튼은 `author.id === me.id`일 때만, **삭제** 버튼은 `author.id === me.id || me.role === 'ADMIN'`일 때 노출(`me`는 §0.1 신원 엔드포인트에서 조회). `role`은 enum name(`'USER'`/`'ADMIN'`)으로 직렬화된다.
 * 댓글 목록(**오래된순**, 무한스크롤: 아래로 스크롤 시 다음 페이지 = 더 최신 댓글).
 * 댓글 작성 폼(≤500자, 카운터).
 * 게시글이 없거나 삭제됨(404) → "삭제되었거나 없는 게시글입니다" 상태.
