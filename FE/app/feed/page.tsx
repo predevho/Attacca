@@ -1,22 +1,20 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getBff, postBff, deleteBff } from '@/lib/api';
 import { useInfiniteList } from '@/lib/feed/useInfiniteList';
 import { toggleLike } from '@/lib/feed/logic';
 import { PostCard } from '@/components/feed/PostCard';
 import { ComposeForm } from '@/components/feed/ComposeForm';
-import type { CursorPage, Me, Post } from '@/lib/feed/types';
+import type { CursorPage, Post } from '@/lib/feed/types';
 
 export default function FeedPage() {
   const router = useRouter();
-  const [me, setMe] = useState<Me | null>(null);
 
   useEffect(() => {
     getBff('/api/bff/me/identity').then((r) => {
-      if (r.ok) setMe(r.data as Me);
-      else router.push('/login');
+      if (!r.ok) router.push('/login');
     });
   }, [router]);
 
