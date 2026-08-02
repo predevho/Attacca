@@ -43,6 +43,14 @@
 * [ ] FE: BFF 동적 라우트의 `type Ctx = { params: Promise<{ id: string }> }` 중복(피드 라우트 5+개) → `lib/server` 공용 타입으로 추출.
 * [ ] BE: `MemberProfileService.getMyIdentity`/`getMyProfile`가 `isVerified`+member 조회를 각각 중복 — 3번째 신원 인접 엔드포인트가 생기면 공용 헬퍼로 추출 검토.
 
+## 공연 FE 후속 (2026-08-02 최종 리뷰 이연)
+
+* [ ] FE(전역): `getBff('/api/bff/me/identity')` 등 신원 조회에 네트워크 레벨 fetch reject용 `.catch` 없음 — 정상 경로는 middleware 쿠키 보장으로 동작하나, fetch 자체가 reject하면 unhandled rejection + 페이지가 "불러오는 중…"에 영구 정지. 피드+공연 8+개 호출부 공통 → `getBff`/`beClient` 레벨 또는 공용 훅으로 **한 번에** 처리(개별 페이지 말고). (opus 최종 리뷰 Important, 비블로커)
+* [ ] FE 공연 a11y: `/performances/new`의 포스터 `<input type=file>`에 접근명 없음(다른 폼 필드는 aria-label 있음). edit 페이지는 `<label>` 래핑으로 회피 — new도 동일 처리.
+* [ ] FE 목록 empty-state 1프레임 flash: `/performances`(및 피드)에서 첫 렌더 시 `isLoading` 세팅 전 "등록된 공연이 없습니다"가 한 프레임 노출 → 훅의 `loaded` 플래그로 게이팅하면 해소.
+* [ ] FE 공연: 삭제 확인(confirm) 없음 — 상세에서 삭제 1클릭 즉시 실행(BE soft delete라 서버측 복구 가능). 피드와 동일 정책이나 확인 다이얼로그 검토 여지.
+* [ ] FE 공연 테스트 갭: ADMIN 비주최자 삭제버튼 페이지레벨 미테스트(canDelete 단위테스트는 있음), 포스터 즉시업로드 성공 후 `<img>` 재렌더 미단언.
+
 ## BE 공통 정리 (도메인 리뷰에서 이연된 Minor)
 
 * [ ] BE: 오프셋 페이징 응답을 안정적 `PageResponse<T>` DTO로 공통화 — 현재 VERIFIED-PERFORMER 어드민 목록·PERFORMANCE 목록이 `Page<T>`(PageImpl)를 그대로 직렬화해 Spring Boot 3.4의 "PageImpl 직렬화 비권장" 경고가 뜬다(동작·테스트는 정상). JSON 계약 안정화를 위해 공통 DTO로 감싸는 것을 검토. (2026-07-22 PERFORMANCE 최종 리뷰 식별)
