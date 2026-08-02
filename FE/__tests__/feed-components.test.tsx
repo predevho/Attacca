@@ -24,6 +24,18 @@ describe('LikeButton', () => {
     expect(onToggle).toHaveBeenCalledOnce();
     expect(screen.getByText('2')).toBeInTheDocument();
   });
+  it('클릭이 부모 컨테이너로 버블링되지 않는다', () => {
+    const onToggle = vi.fn();
+    const onParentClick = vi.fn();
+    render(
+      <div onClick={onParentClick}>
+        <LikeButton liked={false} count={0} onToggle={onToggle} />
+      </div>,
+    );
+    fireEvent.click(screen.getByRole('button'));
+    expect(onToggle).toHaveBeenCalledOnce();
+    expect(onParentClick).not.toHaveBeenCalled();
+  });
 });
 
 describe('ComposeForm', () => {
