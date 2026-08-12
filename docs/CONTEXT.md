@@ -6,7 +6,7 @@
 
 ## 현재 상태
 
-* 단계: BE 6개 도메인 전부 완료(인증/프로필/파일/DB + VERIFIED-PERFORMER + FEED + PERFORMANCE + RECRUITMENT + CHAT) + FE(인증/프로필/카카오/피드/공연) 완료. **다음은 FE 화면**(인증연주자/구인/채팅). CHAT은 main에 병합 완료(커밋 `7b5cff4`, `feat/chat-domain` 브랜치 종료). FE 피드는 브랜치 `feature/feed-fe`(2026-08-02, 13태스크 TDD, main 병합 대기).
+* 단계: BE 6개 도메인 전부 완료(인증/프로필/파일/DB + VERIFIED-PERFORMER + FEED + PERFORMANCE + RECRUITMENT + CHAT) + FE(인증/프로필/카카오/피드/공연/구인) 완료. **다음은 FE 화면**(인증연주자/채팅). CHAT은 main에 병합 완료(커밋 `7b5cff4`, `feat/chat-domain` 브랜치 종료). FE 피드는 브랜치 `feature/feed-fe`(2026-08-02, 13태스크 TDD, main 병합 대기). FE 구인은 브랜치 `feature/recruitment-fe`(2026-08-12, 15태스크 TDD, main 병합 대기).
 * FE 공연(PERFORMANCE): `/performances`(scope 탭·무한스크롤)/`/performances/new`(2단계 마법사·등록 자격 게이팅)/`/performances/[id]`(상세)/`/performances/[id]/edit`(수정)/포스터. BFF `/api/bff/performances/**`, BE 오프셋 페이징을 `useInfiniteList`+`toCursorPage`로 커서 인터페이스처럼 재사용. 브랜치 `feature/performance-fe`(2026-08-02, 8태스크 TDD, main 병합 대기).
 * 확정된 기술 스택
   * BE: Spring Boot 3.4.x / Java 21 / MySQL / Spring Security(JWT + OAuth2) / WebSocket(STOMP)+Redis / FileStorage 추상화(로컬 기본/S3 opt-in)
@@ -44,6 +44,7 @@
 * FE 카카오 로그인: `/login` 버튼→`/api/bff/oauth/kakao/start`(CSRF state httpOnly 쿠키+카카오 302)→카카오→`/api/bff/oauth/kakao/callback`(state 대조→BE `/api/auth/oauth/kakao` 교환→인증쿠키→/dashboard). 에러는 `/login?error=`. `KAKAO_CLIENT_ID`/`KAKAO_REDIRECT_URI` 서버 env. **실제 카카오 왕복은 앱 키 미확보로 미검증**(배선만 목/로컬 확인).
 * FE 프로필: `/profile`(인증 필요, 미들웨어 보호). 조회 기본 + 수정 모드(악기 칩 최대10·자기소개 500자, `PUT /api/bff/me/profile`). 이미지는 파일 선택 즉시 업로드(`PUT /api/bff/me/profile/image`, 멀티파트). 악기 코드↔label은 `/api/bff/profile-options`로 변환. `beFetch`는 FormData면 content-type 미설정(멀티파트).
 * FE 피드: `/feed`(무한스크롤 타임라인+인라인 작성)·`/feed/[id]`(상세+댓글, 인증 필요·미들웨어 보호). BFF `/api/bff/feed/**`(게시글/댓글 CRUD+좋아요) + `/api/bff/me/identity`(위 MEMBER `GET /api/members/me` 프록시, 작성자 판정용). 인증 프록시는 신설 `proxyAuthed` 헬퍼(`res.status || 502`, 기존 BFF `status||200` 폴백 버그를 신규 라우트에서 선제 회피)로 통일. 좋아요는 낙관적 업데이트+실패 롤백, 커서 페이지는 `mergeCursorPage`로 중복 없이 병합.
+* FE 구인(RECRUITMENT): `/recruitments`(scope 탭 OPEN/CLOSED/ALL·악기 필터·무한스크롤, 등록 게이팅 없음=로그인 회원 누구나)·`/new`·`/[id]`(상세·역할별 분기)·`/[id]/edit`·`/applications/me`(내 지원·철회). 상세 분기: 작성자→ApplicantList(지원자 첫 페이지·수락/거절)+수정·마감·삭제 / 비작성자·미마감→ApplyPanel(인라인 펼 토글) / 마감→안내. 지원 여부는 낙관적 제출+409 피드백(추가 왕복 없음). BFF `/api/bff/recruitments/**` 8라우트(proxyAuthed, 지원 액션 세그먼트=aid). 타입/로직 `lib/recruitment/*`(closed는 BE 파생값 사용, deadline 비우면 상시모집). 공용 `InstrumentPicker`(폼+필터 재사용, 프로필 리팩터는 미적용). 악기는 현재 enum명 표시(라벨 변환 후속). 내 지원 응답에 공고 제목 없어 postingId 링크. 브랜치 `feature/recruitment-fe`, vitest 183/183·build 통과, main 병합 대기.
 
 ## 보류된 결정
 

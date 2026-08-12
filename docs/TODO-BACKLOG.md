@@ -12,6 +12,19 @@
 * [ ] DOMAIN-RECRUITMENT-CONSTITUTION.md / STATUTE.md
 * [ ] DOMAIN-CHAT-CONSTITUTION.md / STATUTE.md
 
+## FE 화면 (남은 도메인)
+
+* [x] ~~FE: 구인(RECRUITMENT) 화면~~ — 2026-08-12 완료(TDD, 서브에이전트 주도 15태스크, 브랜치 feature/recruitment-fe). 공고 CRUD/목록(scope·악기필터)/마감 + 지원 플로우(인라인 펼 토글 지원/지원자 관리/내 지원/수락·거절·철회). 낙관적 지원+409 피드백, InstrumentPicker 공용 추출. 전체 vitest 183/183·build 통과. 설계 `docs/superpowers/specs/2026-08-12-recruitment-fe-design.md`, 계획 `docs/superpowers/plans/2026-08-12-recruitment-fe.md`. **main 병합 대기**.
+* [ ] FE: 인증 연주자(VERIFIED-PERFORMER) 화면 — 신청 폼 + 내 신청 상태 + (어드민) 승인/거절/철회.
+* [ ] FE: 채팅(CHAT) 화면 — 방 목록/대화창 + WebSocket(STOMP) 실시간 연동.
+
+## 구인 FE 후속 (2026-08-12 구현 시 범위 밖으로 남긴 Minor)
+
+* [ ] FE 구인: 상세 페이지 지원자 목록이 첫 페이지(최대 20명)만 로드 — 20명 초과 시 페이지네이션/더보기 필요. 현재는 명시적으로 첫 페이지만.
+* [ ] FE 구인: PostingCard/상세의 악기 표시가 enum명(PIANO 등) 그대로 — profile-options의 label 맵을 넘겨 한글 라벨로 변환. 목록 성능 위해 이번엔 단순화.
+* [ ] FE 구인: 상세 지원 여부 사전판정이 없어 이미 지원한 공고도 "지원하기"가 보임(제출 시 409로 안내). 필요하면 /applications/me 교차조회로 선제 비활성화 검토.
+* [ ] FE 구인 a11y: 목록 PostingCard의 `<article onClick>` 키보드 도달 불가(피드/공연 카드와 동일 갭) — role/tabIndex/onKeyDown. 모바일 이식과 연계.
+
 ## 기능
 
 * [ ] MEMBER: 소셜 로그인 provider 확장(구글 등 — `OAuthClient` 어댑터 추가) *(카카오는 2026-07-13 완료)*
