@@ -6,7 +6,7 @@
 
 ## 현재 상태
 
-* 단계: BE 6개 도메인 전부 완료(인증/프로필/파일/DB + VERIFIED-PERFORMER + FEED + PERFORMANCE + RECRUITMENT + CHAT) + FE(인증/프로필/카카오/피드/공연) 완료. **다음은 FE 화면**(인증연주자/구인/채팅). CHAT은 main에 병합 완료(커밋 `7b5cff4`, `feat/chat-domain` 브랜치 종료). FE 피드는 브랜치 `feature/feed-fe`(2026-08-02, 13태스크 TDD, main 병합 대기).
+* 단계: BE 6개 도메인 전부 완료 + **FE 전 도메인 화면 완료**(인증/프로필/카카오/피드/공연/구인/인증연주자/채팅). 각 FE는 독립 브랜치에서 완료돼 main 병합 대기(피드 `feature/feed-fe`, 공연 `feature/performance-fe`, 구인 `feature/recruitment-fe`, 인증연주자 `feature/verified-performer-fe`, 채팅 `feature/chat-fe`). CHAT BE는 main 병합 완료(커밋 `7b5cff4`). **다음: 미병합 FE 브랜치들 순차 병합**(docs 충돌 해소 필요).
 * FE 공연(PERFORMANCE): `/performances`(scope 탭·무한스크롤)/`/performances/new`(2단계 마법사·등록 자격 게이팅)/`/performances/[id]`(상세)/`/performances/[id]/edit`(수정)/포스터. BFF `/api/bff/performances/**`, BE 오프셋 페이징을 `useInfiniteList`+`toCursorPage`로 커서 인터페이스처럼 재사용. 브랜치 `feature/performance-fe`(2026-08-02, 8태스크 TDD, main 병합 대기).
 * 확정된 기술 스택
   * BE: Spring Boot 3.4.x / Java 21 / MySQL / Spring Security(JWT + OAuth2) / WebSocket(STOMP)+Redis / FileStorage 추상화(로컬 기본/S3 opt-in)
@@ -44,6 +44,7 @@
 * FE 카카오 로그인: `/login` 버튼→`/api/bff/oauth/kakao/start`(CSRF state httpOnly 쿠키+카카오 302)→카카오→`/api/bff/oauth/kakao/callback`(state 대조→BE `/api/auth/oauth/kakao` 교환→인증쿠키→/dashboard). 에러는 `/login?error=`. `KAKAO_CLIENT_ID`/`KAKAO_REDIRECT_URI` 서버 env. **실제 카카오 왕복은 앱 키 미확보로 미검증**(배선만 목/로컬 확인).
 * FE 프로필: `/profile`(인증 필요, 미들웨어 보호). 조회 기본 + 수정 모드(악기 칩 최대10·자기소개 500자, `PUT /api/bff/me/profile`). 이미지는 파일 선택 즉시 업로드(`PUT /api/bff/me/profile/image`, 멀티파트). 악기 코드↔label은 `/api/bff/profile-options`로 변환. `beFetch`는 FormData면 content-type 미설정(멀티파트).
 * FE 피드: `/feed`(무한스크롤 타임라인+인라인 작성)·`/feed/[id]`(상세+댓글, 인증 필요·미들웨어 보호). BFF `/api/bff/feed/**`(게시글/댓글 CRUD+좋아요) + `/api/bff/me/identity`(위 MEMBER `GET /api/members/me` 프록시, 작성자 판정용). 인증 프록시는 신설 `proxyAuthed` 헬퍼(`res.status || 502`, 기존 BFF `status||200` 폴백 버그를 신규 라우트에서 선제 회피)로 통일. 좋아요는 낙관적 업데이트+실패 롤백, 커서 페이지는 `mergeCursorPage`로 중복 없이 병합.
+* FE 채팅(CHAT, **MVP**): `/chat`(방 목록·안읽은 배지·새 대화)·`/chat/[id]`(대화창·이력+실시간 송수신+읽음). **실시간=STOMP 직결**: 클라이언트가 `NEXT_PUBLIC_BE_WS_URL`(로컬 `ws://localhost:8080/ws`)로 BE에 직접 STOMP 연결(BFF 프록시 아님), CONNECT 토큰은 BFF `GET /api/bff/chat/ws-token`이 httpOnly access 쿠키를 읽어 반환(**WS 연결 동안 토큰 JS 노출** — 사용자 승인 트레이드오프). STOMP 로직은 `lib/chat/stompClient.ts`(`@stomp/stompjs` — 프로젝트 유일 라이브러리 예외)에 캡슐화. `SEND /app/rooms/{id}/send`→`/topic/rooms/{id}` 구독, 자기 전송분 브로드캐스트 재수신은 `mergeMessages` id 중복 제거, typing 프레임(id 없음)은 필터. REST는 `/api/bff/chat/**`(rooms/messages/read + ws-token). 1:1 시작은 회원 id 입력(검색 API 부재). **WS 실왕복은 BE 기동 후 수동 검증 대상**(자동 테스트는 stompClient 배선 목 검증). 브랜치 `feature/chat-fe`, vitest 163/163·build 통과, main 병합 대기. 범위 밖(후속): 그룹/타이핑/presence/검색/WS reissue 완전화/알림.
 
 ## 보류된 결정
 

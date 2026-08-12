@@ -12,6 +12,20 @@
 * [ ] DOMAIN-RECRUITMENT-CONSTITUTION.md / STATUTE.md
 * [ ] DOMAIN-CHAT-CONSTITUTION.md / STATUTE.md
 
+## FE 화면 (도메인별)
+
+* [x] ~~FE: 채팅(CHAT) 화면 MVP~~ — 2026-08-12 완료(TDD 7태스크, 브랜치 feature/chat-fe). 방 목록/대화창 실시간 송수신/1:1 시작/읽음. 설계 `docs/superpowers/specs/2026-08-12-chat-fe-design.md`, 계획 `docs/superpowers/plans/2026-08-12-chat-fe.md`. main 병합 대기. (구인·인증연주자 FE는 별도 브랜치에서 완료 — 이 브랜치 기준 미반영, 병합 시 합류.)
+
+## 채팅 FE 후속 (2026-08-12 MVP 범위 밖)
+
+* [ ] FE 채팅: 그룹 방 생성/초대/퇴장 UI(BE는 `POST /rooms`(GROUP)·`POST /rooms/{id}/participants`·`DELETE /participants/me` 제공).
+* [ ] FE 채팅: 타이핑 표시(STOMP `/typing` 프레임 수신·표시), presence(`ParticipantView.online`) 표시.
+* [ ] FE 채팅: 회원 검색/디렉터리 — 현재 1:1 시작이 회원 id 입력. 닉네임 검색 API(BE 신규) 후 개선.
+* [ ] FE 채팅: WS 토큰 만료 완전 처리 — 현재는 대화창 진입 시 REST 선행 reissue에 의존. access 만료 중 재연결 시 ws-token이 stale일 수 있음(전용 단수명 WS 티켓 BE 도입 검토).
+* [ ] FE 채팅: 대화창 `markRead`를 `setMessages` 업데이터 내부에서 호출 — StrictMode 이중호출 시 중복 read POST(BE 멱등이라 무해). 별도 effect로 분리 검토.
+* [ ] FE 채팅: 이력 "이전 메시지 더 보기"(현재 첫 페이지만 로드, `nextCursor` 미사용) + 새 메시지 도착 시 스크롤 하단 고정.
+* [ ] 배포 시 `NEXT_PUBLIC_BE_WS_URL`을 실제 BE WS 주소(wss)로 설정 + Nginx WebSocket 프록시.
+
 ## 기능
 
 * [ ] MEMBER: 소셜 로그인 provider 확장(구글 등 — `OAuthClient` 어댑터 추가) *(카카오는 2026-07-13 완료)*
