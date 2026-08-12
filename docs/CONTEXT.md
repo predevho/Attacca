@@ -6,7 +6,7 @@
 
 ## 현재 상태
 
-* 단계: BE 6개 도메인 전부 완료 + FE(인증/프로필/카카오/피드/공연/구인/인증연주자) 완료. **구인·인증연주자 FE는 main 병합 완료**(2026-08-12). **다음: 채팅 FE 병합**. CHAT BE는 main 병합 완료(커밋 `7b5cff4`). FE 피드/공연은 브랜치 `feature/feed-fe`/`feature/performance-fe` 병합 대기(이 로컬 레포엔 해당 브랜치 부재 — 다른 PC 작업 흔적).
+* 단계: BE 6개 도메인 전부 완료 + **FE 전 도메인 화면 완료**(인증/프로필/카카오/피드/공연/구인/인증연주자/채팅). **구인·인증연주자·채팅 FE는 main 병합 완료**(2026-08-12). CHAT BE도 main 병합 완료(커밋 `7b5cff4`). FE 피드/공연은 브랜치 `feature/feed-fe`/`feature/performance-fe` 병합 대기(이 로컬 레포엔 해당 브랜치 부재 — 다른 PC 작업 흔적). **프로젝트 기능 구현 사실상 완결**, 남은 건 배포·실환경 검증(WS 실왕복 등).
 * FE 공연(PERFORMANCE): `/performances`(scope 탭·무한스크롤)/`/performances/new`(2단계 마법사·등록 자격 게이팅)/`/performances/[id]`(상세)/`/performances/[id]/edit`(수정)/포스터. BFF `/api/bff/performances/**`, BE 오프셋 페이징을 `useInfiniteList`+`toCursorPage`로 커서 인터페이스처럼 재사용. 브랜치 `feature/performance-fe`(2026-08-02, 8태스크 TDD, main 병합 대기).
 * 확정된 기술 스택
   * BE: Spring Boot 3.4.x / Java 21 / MySQL / Spring Security(JWT + OAuth2) / WebSocket(STOMP)+Redis / FileStorage 추상화(로컬 기본/S3 opt-in)
@@ -46,6 +46,7 @@
 * FE 피드: `/feed`(무한스크롤 타임라인+인라인 작성)·`/feed/[id]`(상세+댓글, 인증 필요·미들웨어 보호). BFF `/api/bff/feed/**`(게시글/댓글 CRUD+좋아요) + `/api/bff/me/identity`(위 MEMBER `GET /api/members/me` 프록시, 작성자 판정용). 인증 프록시는 신설 `proxyAuthed` 헬퍼(`res.status || 502`, 기존 BFF `status||200` 폴백 버그를 신규 라우트에서 선제 회피)로 통일. 좋아요는 낙관적 업데이트+실패 롤백, 커서 페이지는 `mergeCursorPage`로 중복 없이 병합.
 * FE 구인(RECRUITMENT): `/recruitments`(scope 탭 OPEN/CLOSED/ALL·악기 필터·무한스크롤, 등록 게이팅 없음=로그인 회원 누구나)·`/new`·`/[id]`(상세·역할별 분기)·`/[id]/edit`·`/applications/me`(내 지원·철회). 상세 분기: 작성자→ApplicantList(지원자 첫 페이지·수락/거절)+수정·마감·삭제 / 비작성자·미마감→ApplyPanel(인라인 펼 토글) / 마감→안내. 지원 여부는 낙관적 제출+409 피드백(추가 왕복 없음). BFF `/api/bff/recruitments/**` 8라우트(proxyAuthed, 지원 액션 세그먼트=aid). 타입/로직 `lib/recruitment/*`(closed는 BE 파생값 사용, deadline 비우면 상시모집). 공용 `InstrumentPicker`(등록/수정 폼의 다중 선택에 사용, 프로필 리팩터는 미적용). 목록의 악기 필터는 단일 선택이라 네이티브 `<select>`. 악기는 현재 enum명 표시(라벨 변환 후속). 내 지원 응답에 공고 제목 없어 postingId 링크. main 병합 완료(2026-08-12).
 * FE 인증연주자(VERIFIED-PERFORMER): `/verified-performer`(회원 — `GET /applications/me` 상태별 분기: 이력없음/REJECTED/REVOKED→신청·재신청 폼, PENDING/APPROVED→상태 카드) + `/admin/verified-performers`(어드민 — 신원 게이트 `role!=='ADMIN'`→/dashboard, status 탭 PENDING/APPROVED/REJECTED/REVOKED 무한스크롤, 승인 즉시·거절/철회 인라인 사유 토글, 직접지정 grant 폼). 프로필에 진입 링크 추가. BFF `/api/bff/verified-performers/**`(회원 2) + `/api/bff/admin/verified-performers/**`(어드민 5, approve는 무body). 타입/로직 `lib/verification/*`. 어드민 액션 성공 시 목록 재조회는 `<ReviewList>` key 리마운트. **제약**: 응답에 memberId만 있어 어드민 목록은 "회원 #{id}"로 표시(닉네임 없음, BE 표시정보 확장 시 개선). main 병합 완료(2026-08-12).
+* FE 채팅(CHAT, **MVP**): `/chat`(방 목록·안읽은 배지·새 대화)·`/chat/[id]`(대화창·이력+실시간 송수신+읽음). **실시간=STOMP 직결**: 클라이언트가 `NEXT_PUBLIC_BE_WS_URL`(로컬 `ws://localhost:8080/ws`)로 BE에 직접 STOMP 연결(BFF 프록시 아님), CONNECT 토큰은 BFF `GET /api/bff/chat/ws-token`이 httpOnly access 쿠키를 읽어 반환(**WS 연결 동안 토큰 JS 노출** — 사용자 승인 트레이드오프). STOMP 로직은 `lib/chat/stompClient.ts`(`@stomp/stompjs` — 프로젝트 유일 라이브러리 예외)에 캡슐화. `SEND /app/rooms/{id}/send`→`/topic/rooms/{id}` 구독, 자기 전송분 브로드캐스트 재수신은 `mergeMessages` id 중복 제거, typing 프레임(id 없음)은 필터. REST는 `/api/bff/chat/**`(rooms/messages/read + ws-token). 1:1 시작은 회원 id 입력(검색 API 부재). **WS 실왕복은 BE 기동 후 수동 검증 대상**(자동 테스트는 stompClient 배선 목 검증). main 병합 완료(2026-08-12). 범위 밖(후속): 그룹/타이핑/presence/검색/WS reissue 완전화/알림.
 
 ## 보류된 결정
 

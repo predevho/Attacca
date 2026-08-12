@@ -12,11 +12,11 @@
 * [ ] DOMAIN-RECRUITMENT-CONSTITUTION.md / STATUTE.md
 * [ ] DOMAIN-CHAT-CONSTITUTION.md / STATUTE.md
 
-## FE 화면 (남은 도메인)
+## FE 화면 (도메인별 완료)
 
 * [x] ~~FE: 구인(RECRUITMENT) 화면~~ — 2026-08-12 완료(TDD 15태스크). 공고 CRUD/목록/마감 + 지원 플로우. main 병합 완료. 설계·계획 `docs/superpowers/{specs,plans}/2026-08-12-recruitment-fe*`.
 * [x] ~~FE: 인증 연주자(VERIFIED-PERFORMER) 화면~~ — 2026-08-12 완료(TDD 11태스크). 회원 신청/상태 + 어드민 심사/직접지정. main 병합 완료. 설계·계획 `docs/superpowers/{specs,plans}/2026-08-12-verified-performer-fe*`.
-* [ ] FE: 채팅(CHAT) 화면 — 방 목록/대화창 + WebSocket(STOMP) 실시간 연동.
+* [x] ~~FE: 채팅(CHAT) 화면 MVP~~ — 2026-08-12 완료(TDD 7태스크). 방 목록/대화창 실시간 송수신/1:1 시작/읽음. main 병합 완료. 설계·계획 `docs/superpowers/{specs,plans}/2026-08-12-chat-fe*`.
 
 ## 구인 FE 후속 (2026-08-12 범위 밖으로 남긴 Minor)
 
@@ -32,6 +32,15 @@
 * [ ] BE+FE: 어드민 신청 목록에 회원 표시정보(닉네임) 노출 — 현재 응답은 `memberId`만 → FE가 "회원 #{id}"로만 표시. BE에 표시정보 확장(예: `MemberQueryService.findDisplaysByIds` 협력) 후 FE 반영.
 * [ ] FE 인증연주자: 증빙 링크 URL 형식 검증(현재는 개수/공백만 검증, 형식 미검증).
 * [ ] FE 인증연주자: 어드민 목록·회원 상태의 "회원측 PENDING 신청 취소"는 BE 엔드포인트 없어 미구현 — 필요 시 BE 추가 후 FE 반영.
+## 채팅 FE 후속 (2026-08-12 MVP 범위 밖)
+
+* [ ] FE 채팅: 그룹 방 생성/초대/퇴장 UI(BE는 `POST /rooms`(GROUP)·`POST /rooms/{id}/participants`·`DELETE /participants/me` 제공).
+* [ ] FE 채팅: 타이핑 표시(STOMP `/typing` 프레임 수신·표시), presence(`ParticipantView.online`) 표시.
+* [ ] FE 채팅: 회원 검색/디렉터리 — 현재 1:1 시작이 회원 id 입력. 닉네임 검색 API(BE 신규) 후 개선.
+* [ ] FE 채팅: WS 토큰 만료 완전 처리 — 현재는 대화창 진입 시 REST 선행 reissue에 의존. access 만료 중 재연결 시 ws-token이 stale일 수 있음(전용 단수명 WS 티켓 BE 도입 검토).
+* [ ] FE 채팅: 대화창 `markRead`를 `setMessages` 업데이터 내부에서 호출 — StrictMode 이중호출 시 중복 read POST(BE 멱등이라 무해). 별도 effect로 분리 검토.
+* [ ] FE 채팅: 이력 "이전 메시지 더 보기"(현재 첫 페이지만 로드, `nextCursor` 미사용) + 새 메시지 도착 시 스크롤 하단 고정.
+* [ ] 배포 시 `NEXT_PUBLIC_BE_WS_URL`을 실제 BE WS 주소(wss)로 설정 + Nginx WebSocket 프록시.
 
 ## 기능
 

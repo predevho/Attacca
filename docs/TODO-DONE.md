@@ -19,6 +19,11 @@
   * 제약: 응답에 memberId만 있어 어드민 목록은 "회원 #{id}" 표시(닉네임 없음 — BE 표시정보 확장 후속)
   * 전 계층 TDD, 태스크별 독립 검증. 전체 vitest 175/175·lint(verification 파일 0경고)·next build 통과. 최종 리뷰 반영(refreshKey 불필요 의존성 제거)
   * 범위 밖: 회원측 PENDING 취소(BE 없음), 어드민 목록 닉네임 표시, evidenceUrl URL 형식 검증
+* [x] (2026-08-12) FE 채팅(CHAT) 화면 **MVP** 구현 (TDD, 서브에이전트 주도 7태스크) — main 병합 완료. 방 목록 + 대화창(실시간 송수신) + 1:1 시작 + 읽음.
+  * 페이지 2: `/chat`(방 목록·안읽은 배지·회원 id로 새 대화)·`/chat/[id]`(대화창·이력+STOMP 실시간+읽음). 컴포넌트 4(RoomListItem/NewChatForm/MessageBubble/MessageComposer). BFF 5라우트(rooms/messages/read + 특수 ws-token).
+  * 실시간: `@stomp/stompjs`(프로젝트 유일 라이브러리 예외)로 BE(`NEXT_PUBLIC_BE_WS_URL`)에 직접 STOMP 연결. CONNECT 토큰은 BFF `ws-token`이 httpOnly access 쿠키를 반환(WS 동안 토큰 JS 노출 — 승인된 트레이드오프). STOMP 로직은 `lib/chat/stompClient.ts`에 캡슐화. 자기 전송분 재수신은 `mergeMessages` id 중복 제거, typing 프레임 필터.
+  * 태스크별 독립 검증. 전체 vitest 163/163·lint(chat 파일 0경고)·next build 통과. **WS 실왕복은 BE 기동 후 수동 검증 필요**(자동 테스트는 배선 목).
+  * 범위 밖(후속): 그룹 생성·초대·퇴장, 타이핑, presence(online), 회원 검색, WS reissue 완전화, 알림.
 * [x] (2026-08-02) FE 공연(PERFORMANCE) 화면 구현 (TDD, 서브에이전트 주도 8태스크) — 목록(scope 탭·무한스크롤)/등록(2단계 마법사·자격 게이팅)/상세/수정/포스터. useInfiniteList 오프셋 재사용(toCursorPage), proxyAuthed·AuthorBadge·canEdit/canDelete·신원 재사용. 브랜치 feature/performance-fe.
   * 범위 밖: 관심/북마크, 피드 카드 노출, 곡목 구조화, 좌석/예매, 공개 조회, 태그/장르 필터.
 * [x] (2026-08-02) FE 피드(FEED) 화면 구현 (TDD, 서브에이전트 주도 13태스크) — 무한스크롤 타임라인/인라인 작성/상세·댓글/게시글·댓글 좋아요(낙관적+롤백)/수정·삭제. BE 선행: 신원 엔드포인트 GET /api/members/me. BFF 프록시 헬퍼(status||502) 신설. 브랜치 feature/feed-fe.
