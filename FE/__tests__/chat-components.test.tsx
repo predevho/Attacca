@@ -78,4 +78,19 @@ describe('MessageComposer', () => {
     expect(onSend).toHaveBeenCalledWith('안녕');
     expect(input.value).toBe('');
   });
+  it('Enter 키로 전송', () => {
+    const onSend = vi.fn();
+    render(<MessageComposer onSend={onSend} />);
+    const input = screen.getByLabelText('메시지 입력');
+    fireEvent.change(input, { target: { value: '안녕' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(onSend).toHaveBeenCalledWith('안녕');
+  });
+  it('disabled면 전송 버튼 비활성 + onSend 미호출', () => {
+    const onSend = vi.fn();
+    render(<MessageComposer onSend={onSend} disabled />);
+    expect(screen.getByRole('button', { name: '전송' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: '전송' }));
+    expect(onSend).not.toHaveBeenCalled();
+  });
 });

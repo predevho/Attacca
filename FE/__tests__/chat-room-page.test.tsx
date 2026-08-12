@@ -69,6 +69,22 @@ describe('ChatRoomPage', () => {
     await waitFor(() => expect(postBff).toHaveBeenCalledWith('/api/bff/chat/rooms/3/read', { lastReadMessageId: 10 }));
   });
 
+  it('DIRECT 헤더는 본인을 제외한 참여자만 표시', async () => {
+    getBff.mockImplementation((p: string) => {
+      if (p.startsWith('/api/bff/me/identity')) return Promise.resolve({ ok: true, data: { id: 9, nickname: '나', role: 'USER', verified: false } });
+      if (p === '/api/bff/chat/rooms/3') return Promise.resolve({ ok: true, data: { ...detail, participants: [
+        { id: 2, nickname: '홍길동', verified: false, online: true },
+        { id: 9, nickname: '나', verified: false, online: true },
+      ] } });
+      if (p.startsWith('/api/bff/chat/rooms/3/messages')) return Promise.resolve({ ok: true, data: history });
+      return Promise.resolve({ ok: false, message: 'x' });
+    });
+    render(<ChatRoomPage />);
+    const h = await screen.findByRole('heading', { level: 1 });
+    expect(h).toHaveTextContent('홍길동');
+    expect(h).not.toHaveTextContent('나');
+  });
+
   it('상세 실패 시 안내', async () => {
     getBff.mockImplementation((p: string) => {
       if (p.startsWith('/api/bff/me/identity')) return Promise.resolve({ ok: true, data: { id: 9, nickname: 'Me', role: 'USER', verified: false } });

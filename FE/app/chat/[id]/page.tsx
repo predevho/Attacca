@@ -22,14 +22,15 @@ export default function ChatRoomPage() {
   const [room, setRoom] = useState<RoomDetail | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [notFound, setNotFound] = useState(false);
+  const [connected, setConnected] = useState(false);
   const [connError, setConnError] = useState<string | null>(null);
   const socketRef = useRef<ReturnType<typeof createChatSocket> | null>(null);
 
-  // 최신 메시지 id로 읽음 처리.
+  // 최신 메시지 id로 읽음 처리(부수효과라 catch로 unhandled rejection 방어).
   const markRead = useCallback((msgs: ChatMessage[]) => {
     if (msgs.length === 0) return;
     const last = msgs[msgs.length - 1].id;
-    postBff(`/api/bff/chat/rooms/${roomId}/read`, { lastReadMessageId: last });
+    postBff(`/api/bff/chat/rooms/${roomId}/read`, { lastReadMessageId: last }).catch(() => {});
   }, [roomId]);
 
   useEffect(() => {
@@ -37,34 +38,38 @@ export default function ChatRoomPage() {
   }, [router]);
 
   useEffect(() => {
+    let cancelled = false;
     let unsub: (() => void) | null = null;
     const socket = createChatSocket();
     socketRef.current = socket;
 
     async function init() {
       const detail = await getBff<RoomDetail>(`/api/bff/chat/rooms/${roomId}`);
+      if (cancelled) return;
       if (!detail.ok) { setNotFound(true); return; }
       setRoom(detail.data as RoomDetail);
 
       const hist = await getBff<History>(`/api/bff/chat/rooms/${roomId}/messages`);
+      if (cancelled) return;
       if (hist.ok) {
         const initial = sortByIdAsc((hist.data as History).items);
         setMessages(initial);
         markRead(initial);
       }
 
-      socket.connect({ onError: (m) => setConnError(m) });
+      socket.connect({
+        onConnect: () => { setConnected(true); setConnError(null); },
+        onError: (m) => setConnError(m),
+      });
+      // 브로드캐스트 수신: 상태 업데이터는 순수하게 병합만, 읽음 처리는 업데이터 밖에서.
       unsub = socket.subscribeRoom(roomId, (incoming: ChatMessage) => {
-        setMessages((cur) => {
-          const next = mergeMessages(cur, [incoming]);
-          markRead(next);
-          return next;
-        });
+        setMessages((cur) => mergeMessages(cur, [incoming]));
+        markRead([incoming]);
       });
     }
     init();
 
-    return () => { if (unsub) unsub(); socket.disconnect(); };
+    return () => { cancelled = true; if (unsub) unsub(); socket.disconnect(); setConnected(false); };
   }, [roomId, markRead]);
 
   function sendMessage(content: string) {
@@ -75,11 +80,16 @@ export default function ChatRoomPage() {
     return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-gray-500">없거나 접근할 수 없는 방입니다.</main>;
   }
 
+  // DIRECT 방은 title이 없으므로 본인을 제외한 참여자 닉네임으로 헤더를 만든다.
+  const headerName = room?.title
+    ?? room?.participants.filter((p) => p.id !== me?.id).map((p) => p.nickname).join(', ')
+    ?? '';
+
   return (
     <main className="mx-auto flex h-[calc(100vh-2rem)] max-w-xl flex-col px-4 pt-4">
       <div className="mb-2 flex items-center gap-2">
         <button type="button" onClick={() => router.push('/chat')} className="text-sm text-gray-500">← 채팅</button>
-        <h1 className="font-semibold">{room?.title ?? room?.participants.map((p) => p.nickname).join(', ') ?? ''}</h1>
+        <h1 className="font-semibold">{headerName}</h1>
       </div>
       {connError && <p className="mb-2 rounded bg-amber-50 px-3 py-1 text-xs text-amber-700">실시간 연결이 끊겼습니다. 재연결 중…</p>}
 
@@ -89,7 +99,7 @@ export default function ChatRoomPage() {
         </div>
       </div>
 
-      <MessageComposer onSend={sendMessage} />
+      <MessageComposer onSend={sendMessage} disabled={!connected} />
     </main>
   );
 }
