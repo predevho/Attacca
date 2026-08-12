@@ -18,19 +18,19 @@ const TABS: { key: VerificationStatus; label: string }[] = [
 ];
 
 function ReviewList({
-  status, refreshKey, onApprove, onReject, onRevoke,
+  status, onApprove, onReject, onRevoke,
 }: {
   status: VerificationStatus;
-  refreshKey: number;
   onApprove: (id: number) => void;
   onReject: (id: number, reason: string) => void;
   onRevoke: (id: number, reason: string) => void;
 }) {
+  // 재조회는 부모가 key(`status:refreshKey`)를 바꿔 이 컴포넌트를 리마운트하는 것으로 처리한다.
   const fetchPage = useCallback(async (cursor: number | null): Promise<CursorPage<Application> | null> => {
     const pageNum = cursor ?? 0;
     const r = await getBff<SpringPage<Application>>(`/api/bff/admin/verified-performers/applications?status=${status}&page=${pageNum}`);
     return r.ok ? toCursorPage(r.data as SpringPage<Application>) : null;
-  }, [status, refreshKey]); // refreshKey 변경 시 새 fetchPage → 재조회
+  }, [status]);
 
   const { items, isLoading, error, hasMore, sentinelRef } = useInfiniteList<Application>(fetchPage);
 
@@ -106,7 +106,7 @@ export default function AdminVerifiedPerformersPage() {
         ))}
       </div>
 
-      <ReviewList key={`${status}:${refreshKey}`} status={status} refreshKey={refreshKey}
+      <ReviewList key={`${status}:${refreshKey}`} status={status}
         onApprove={onApprove} onReject={onReject} onRevoke={onRevoke} />
     </main>
   );
