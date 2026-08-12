@@ -24,6 +24,8 @@
 * [ ] FE 구인: PostingCard/상세의 악기 표시가 enum명(PIANO 등) 그대로 — profile-options의 label 맵을 넘겨 한글 라벨로 변환. 목록 성능 위해 이번엔 단순화.
 * [ ] FE 구인: 상세 지원 여부 사전판정이 없어 이미 지원한 공고도 "지원하기"가 보임(제출 시 409로 안내). 필요하면 /applications/me 교차조회로 선제 비활성화 검토.
 * [ ] FE 구인 a11y: 목록 PostingCard의 `<article onClick>` 키보드 도달 불가(피드/공연 카드와 동일 갭) — role/tabIndex/onKeyDown. 모바일 이식과 연계.
+* [ ] FE 구인: 상세 지원 실패(409) 에러가 페이지 상단(`<dl>` 위)에 뜨는데 `ApplyPanel`은 하단이라 스크롤해야 보임 — 에러를 액션 지점(패널) 근처에 렌더하거나 토스트로. (최종 리뷰 Minor)
+* [ ] FE 구인: 마감/수락/거절 버튼에 진행 중 비활성화·중복클릭 가드 없음(지원 제출만 submitting으로 막힘) — 연타 시 중복 요청 가능. (최종 리뷰 Minor)
 
 ## 기능
 

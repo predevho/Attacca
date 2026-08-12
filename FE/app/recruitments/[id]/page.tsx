@@ -80,7 +80,9 @@ export default function RecruitmentDetailPage() {
   if (notFound) {
     return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-gray-500">삭제되었거나 없는 공고입니다.</main>;
   }
-  if (!posting) return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-gray-400">불러오는 중...</main>;
+  // me·posting 둘 다 로드된 뒤에 렌더한다. 신원보다 공고가 먼저 도착하면 isAuthor가 일시적으로 false가 되어
+  // 작성자에게 지원 패널이 잠깐 보이는 레이스를 막는다.
+  if (!posting || !me) return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-gray-400">불러오는 중...</main>;
 
   return (
     <main className="mx-auto mt-8 max-w-xl px-4">

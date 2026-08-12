@@ -74,6 +74,19 @@ describe('RecruitmentDetailPage', () => {
     expect(screen.queryByRole('button', { name: '지원하기' })).not.toBeInTheDocument();
   });
 
+  it('신원 로드 전엔 공고가 먼저 와도 역할 UI를 렌더하지 않음(레이스 가드)', async () => {
+    getBff.mockImplementation((p: string) => {
+      if (p.startsWith('/api/bff/me/identity')) return new Promise(() => {}); // 영원히 미해결(신원 지연)
+      if (p === '/api/bff/recruitments/7') return Promise.resolve({ ok: true, data: posting });
+      return Promise.resolve({ ok: false, message: 'x' });
+    });
+    render(<RecruitmentDetailPage />);
+    // 공고가 도착해도 me가 없으면 로딩 유지 — 작성자에게 지원 패널이 잠깐 노출되는 레이스 방지.
+    expect(await screen.findByText('불러오는 중...')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '지원하기' })).not.toBeInTheDocument();
+    expect(screen.queryByText('수정')).not.toBeInTheDocument();
+  });
+
   it('없는 공고면 안내', async () => {
     getBff.mockImplementation((p: string) => {
       if (p.startsWith('/api/bff/me/identity')) return Promise.resolve({ ok: true, data: { id: 2, nickname: 'X', role: 'USER', verified: false } });
