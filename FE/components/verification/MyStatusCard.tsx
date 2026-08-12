@@ -1,4 +1,4 @@
-import { statusLabel } from '@/lib/verification/logic';
+import { isHttpUrl, statusLabel } from '@/lib/verification/logic';
 import type { Application } from '@/lib/verification/types';
 
 const MESSAGE: Record<Application['status'], string> = {
@@ -21,7 +21,11 @@ export function MyStatusCard({ application }: { application: Application }) {
       {application.evidenceUrls.length > 0 && (
         <ul className="text-sm">
           {application.evidenceUrls.map((u, i) => (
-            <li key={i}><a href={u} target="_blank" rel="noreferrer" className="text-indigo-600 underline">{u}</a></li>
+            <li key={i}>
+              {isHttpUrl(u)
+                ? <a href={u} target="_blank" rel="noreferrer" className="text-indigo-600 underline">{u}</a>
+                : <span>{u}</span>}
+            </li>
           ))}
         </ul>
       )}

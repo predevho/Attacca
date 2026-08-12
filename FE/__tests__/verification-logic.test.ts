@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   toCursorPage, validateApply, validateReason, validateGrant,
-  statusLabel, canReapply, toApplyRequest, toGrantRequest,
+  statusLabel, canReapply, toApplyRequest, toGrantRequest, isHttpUrl,
 } from '@/lib/verification/logic';
 import type { ApplyFormValues } from '@/lib/verification/types';
 
@@ -24,6 +24,21 @@ describe('validateApply', () => {
     expect(validateApply({ ...base, evidenceUrls: Array(11).fill('http://x') })).toMatch(/10개/));
   it('빈 링크는 개수에서 제외', () =>
     expect(validateApply({ ...base, evidenceUrls: ['http://x', '', '  '] })).toBeNull());
+  it('http(s) 아닌 링크는 에러', () =>
+    expect(validateApply({ ...base, evidenceUrls: ['javascript:alert(1)'] })).toMatch(/http/));
+  it('https 링크는 통과', () =>
+    expect(validateApply({ ...base, evidenceUrls: ['https://a.com'] })).toBeNull());
+});
+
+describe('isHttpUrl', () => {
+  it('http/https만 true', () => {
+    expect(isHttpUrl('http://a')).toBe(true);
+    expect(isHttpUrl('https://a')).toBe(true);
+    expect(isHttpUrl(' https://a ')).toBe(true);
+    expect(isHttpUrl('javascript:alert(1)')).toBe(false);
+    expect(isHttpUrl('ftp://a')).toBe(false);
+    expect(isHttpUrl('a.com')).toBe(false);
+  });
 });
 
 describe('validateReason', () => {

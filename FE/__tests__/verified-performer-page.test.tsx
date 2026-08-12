@@ -57,4 +57,23 @@ describe('VerifiedPerformerPage', () => {
     await waitFor(() => expect(screen.getByText(/심사 중/)).toBeInTheDocument());
     expect(postBff).toHaveBeenCalledWith('/api/bff/verified-performers/applications', { statement: '5년', evidenceUrls: [] });
   });
+
+  it('신청 실패(409) 시 BE 메시지 노출', async () => {
+    mockMe(null);
+    postBff.mockResolvedValue({ ok: false, message: '이미 신청 중입니다.' });
+    render(<VerifiedPerformerPage />);
+    fireEvent.change(await screen.findByLabelText('지원 사유'), { target: { value: '5년' } });
+    fireEvent.click(screen.getByRole('button', { name: '신청' }));
+    expect(await screen.findByText('이미 신청 중입니다.')).toBeInTheDocument();
+  });
+
+  it('비로그인이면 로그인으로 리다이렉트(폼 미노출)', async () => {
+    getBff.mockImplementation((p: string) => {
+      if (p.startsWith('/api/bff/me/identity')) return Promise.resolve({ ok: false, message: '로그인이 필요합니다.' });
+      return Promise.resolve({ ok: false, message: 'x' });
+    });
+    render(<VerifiedPerformerPage />);
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/login'));
+    expect(screen.queryByRole('button', { name: '신청' })).not.toBeInTheDocument();
+  });
 });

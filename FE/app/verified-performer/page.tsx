@@ -18,15 +18,17 @@ export default function VerifiedPerformerPage() {
   const loadStatus = useCallback(async () => {
     const r = await getBff<Application | null>('/api/bff/verified-performers/applications/me');
     if (r.ok) setApplication((r.data as Application | null) ?? null);
+    setLoaded(true);
   }, []);
 
   useEffect(() => {
-    getBff('/api/bff/me/identity').then((r) => { if (!r.ok) router.push('/login'); });
-    getBff<Application | null>('/api/bff/verified-performers/applications/me').then((r) => {
-      if (r.ok) setApplication((r.data as Application | null) ?? null);
-      setLoaded(true);
+    // 신원 확인이 먼저다. 실패 시 로그인으로 보내고 loaded를 세우지 않아 로딩 화면을 유지한다
+    // (신원 실패인데 신청 폼이 잠깐 노출되던 레이스 방지). 성공 시에만 상태를 조회한다.
+    getBff('/api/bff/me/identity').then((r) => {
+      if (!r.ok) { router.push('/login'); return; }
+      loadStatus();
     });
-    // 마운트 시 1회만 조회한다. router는 매 렌더마다 새 참조가 될 수 있어 의존성에서 제외한다.
+    // 마운트 시 1회만. router는 매 렌더마다 새 참조가 될 수 있어 의존성에서 제외한다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

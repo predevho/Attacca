@@ -6,12 +6,18 @@ export function toCursorPage<T>(page: SpringPage<T>): CursorPage<T> {
   return { items: page.content, nextCursor: page.last ? null : page.number + 1 };
 }
 
+/** 증빙 링크가 http(s) 스킴인지. `javascript:` 등 위험 스킴을 막아 링크 클릭 XSS를 차단한다. */
+export function isHttpUrl(u: string): boolean {
+  return /^https?:\/\//i.test(u.trim());
+}
+
 /** 신청 폼 검증. 첫 에러 또는 null. BE ApplyRequest 규칙과 일치(빈 링크는 개수에서 제외). */
 export function validateApply(v: ApplyFormValues): string | null {
   if (!v.statement.trim()) return '지원 사유를 입력해 주세요.';
   if (v.statement.length > 1000) return '지원 사유는 1000자를 넘을 수 없습니다.';
   const nonEmpty = v.evidenceUrls.filter((u) => u.trim() !== '');
   if (nonEmpty.length > 10) return '증빙 링크는 최대 10개까지 첨부할 수 있습니다.';
+  if (nonEmpty.some((u) => !isHttpUrl(u))) return '증빙 링크는 http:// 또는 https:// 형식이어야 합니다.';
   return null;
 }
 
@@ -48,7 +54,8 @@ export function toApplyRequest(v: ApplyFormValues) {
   return { statement: v.statement, evidenceUrls: v.evidenceUrls.map((u) => u.trim()).filter((u) => u !== '') };
 }
 
-/** 폼 값 → 직접지정 요청. memberId 숫자화, 빈 reason은 null. */
+/** 폼 값 → 직접지정 요청. memberId 숫자화, 빈 reason은 null(공백 trim). */
 export function toGrantRequest(v: GrantFormValues) {
-  return { memberId: Number(v.memberId), reason: v.reason.trim() === '' ? null : v.reason };
+  const reason = v.reason.trim();
+  return { memberId: Number(v.memberId), reason: reason === '' ? null : reason };
 }

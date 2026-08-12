@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { statusLabel, validateReason } from '@/lib/verification/logic';
+import { isHttpUrl, statusLabel, validateReason } from '@/lib/verification/logic';
 import type { Application } from '@/lib/verification/types';
 
 export function ApplicationReviewItem({
@@ -15,6 +15,17 @@ export function ApplicationReviewItem({
   const [mode, setMode] = useState<'reject' | 'revoke' | null>(null);
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  function open(next: 'reject' | 'revoke') {
+    setMode(next);
+    setReason('');
+    setError(null);
+  }
+  function cancel() {
+    setMode(null);
+    setReason('');
+    setError(null);
+  }
 
   function submitReason() {
     const err = validateReason(reason);
@@ -34,7 +45,11 @@ export function ApplicationReviewItem({
       {application.evidenceUrls.length > 0 && (
         <ul className="text-sm">
           {application.evidenceUrls.map((u, i) => (
-            <li key={i}><a href={u} target="_blank" rel="noreferrer" className="text-indigo-600 underline">{u}</a></li>
+            <li key={i}>
+              {isHttpUrl(u)
+                ? <a href={u} target="_blank" rel="noreferrer" className="text-indigo-600 underline">{u}</a>
+                : <span>{u}</span>}
+            </li>
           ))}
         </ul>
       )}
@@ -46,13 +61,13 @@ export function ApplicationReviewItem({
         <div className="flex gap-2">
           <button type="button" onClick={() => onApprove(application.id)}
             className="rounded bg-black px-3 py-1 text-xs text-white">승인</button>
-          <button type="button" onClick={() => { setMode('reject'); setError(null); }}
+          <button type="button" onClick={() => open('reject')}
             className="rounded border px-3 py-1 text-xs">거절</button>
         </div>
       )}
       {application.status === 'APPROVED' && (
         <div className="flex gap-2">
-          <button type="button" onClick={() => { setMode('revoke'); setError(null); }}
+          <button type="button" onClick={() => open('revoke')}
             className="rounded border px-3 py-1 text-xs">철회</button>
         </div>
       )}
@@ -66,7 +81,7 @@ export function ApplicationReviewItem({
           <div className="flex gap-2">
             <button type="button" onClick={submitReason}
               className="rounded bg-black px-3 py-1 text-xs text-white">제출</button>
-            <button type="button" onClick={() => { setMode(null); setError(null); }}
+            <button type="button" onClick={cancel}
               className="rounded border px-3 py-1 text-xs">취소</button>
           </div>
         </div>
