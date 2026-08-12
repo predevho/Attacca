@@ -105,6 +105,7 @@ export default function ProfilePage() {
           <div className="mt-2 flex gap-2">
             <button onClick={startEdit} className="rounded bg-black px-4 py-2 text-white">수정</button>
             <a href="/dashboard" className="rounded border px-4 py-2 text-center">대시보드</a>
+            <button onClick={() => router.push('/verified-performer')} className="rounded border px-4 py-2 text-center">인증 연주자</button>
           </div>
         </section>
       ) : (
