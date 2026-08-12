@@ -4,6 +4,13 @@
 
 ---
 
+* [x] (2026-08-12) FE 인증 연주자(VERIFIED-PERFORMER) 화면 구현 (TDD, 서브에이전트 주도 11태스크) — 브랜치 feature/verified-performer-fe. 회원 신청/상태 + 어드민 심사/직접지정 전체.
+  * 페이지 2: `/verified-performer`(회원 — 상태별 분기: 신청/재신청 폼·심사중·승인·거절/철회+재신청) / `/admin/verified-performers`(어드민 — 신원 게이트·status 탭 무한스크롤·승인 즉시·거절/철회 인라인 사유·직접지정 grant)
+  * 컴포넌트 5: EvidenceUrlsInput(동적 증빙 링크)/ApplyForm/MyStatusCard/ApplicationReviewItem/GrantForm. BFF 7라우트(회원 2 + 어드민 5, approve 무body). 프로필에 진입 링크 추가
+  * 상태 규칙: 활성 신청(PENDING/APPROVED) 유일 → 종료(REJECTED/REVOKED)만 재신청. 어드민 액션 성공 시 목록 key 리마운트로 재조회
+  * 제약: 응답에 memberId만 있어 어드민 목록은 "회원 #{id}" 표시(닉네임 없음 — BE 표시정보 확장 후속)
+  * 전 계층 TDD, 태스크별 독립 검증. 전체 vitest 175/175·lint(verification 파일 0경고)·next build 통과. 최종 리뷰 반영(refreshKey 불필요 의존성 제거)
+  * 범위 밖: 회원측 PENDING 취소(BE 없음), 어드민 목록 닉네임 표시, evidenceUrl URL 형식 검증
 * [x] (2026-08-02) FE 공연(PERFORMANCE) 화면 구현 (TDD, 서브에이전트 주도 8태스크) — 목록(scope 탭·무한스크롤)/등록(2단계 마법사·자격 게이팅)/상세/수정/포스터. useInfiniteList 오프셋 재사용(toCursorPage), proxyAuthed·AuthorBadge·canEdit/canDelete·신원 재사용. 브랜치 feature/performance-fe.
   * 범위 밖: 관심/북마크, 피드 카드 노출, 곡목 구조화, 좌석/예매, 공개 조회, 태그/장르 필터.
 * [x] (2026-08-02) FE 피드(FEED) 화면 구현 (TDD, 서브에이전트 주도 13태스크) — 무한스크롤 타임라인/인라인 작성/상세·댓글/게시글·댓글 좋아요(낙관적+롤백)/수정·삭제. BE 선행: 신원 엔드포인트 GET /api/members/me. BFF 프록시 헬퍼(status||502) 신설. 브랜치 feature/feed-fe.

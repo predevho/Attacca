@@ -12,6 +12,18 @@
 * [ ] DOMAIN-RECRUITMENT-CONSTITUTION.md / STATUTE.md
 * [ ] DOMAIN-CHAT-CONSTITUTION.md / STATUTE.md
 
+## FE 화면 (남은 도메인)
+
+* [x] ~~FE: 인증 연주자(VERIFIED-PERFORMER) 화면~~ — 2026-08-12 완료(TDD 11태스크, 브랜치 feature/verified-performer-fe). 회원 신청/상태(`/verified-performer`) + 어드민 심사/직접지정(`/admin/verified-performers`). 설계 `docs/superpowers/specs/2026-08-12-verified-performer-fe-design.md`, 계획 `docs/superpowers/plans/2026-08-12-verified-performer-fe.md`. main 병합 대기.
+* [ ] FE: 구인(RECRUITMENT) 화면 — 별도 브랜치 feature/recruitment-fe에서 완료(이 브랜치 기준에는 미반영, 병합 시 합류).
+* [ ] FE: 채팅(CHAT) 화면 — 방 목록/대화창 + WebSocket(STOMP) 실시간 연동.
+
+## 인증 연주자 FE 후속 (2026-08-12 범위 밖으로 남긴 Minor)
+
+* [ ] BE+FE: 어드민 신청 목록에 회원 표시정보(닉네임) 노출 — 현재 응답은 `memberId`만 → FE가 "회원 #{id}"로만 표시. BE에 표시정보 확장(예: `MemberQueryService.findDisplaysByIds` 협력) 후 FE 반영.
+* [ ] FE 인증연주자: 증빙 링크 URL 형식 검증(현재는 개수/공백만 검증, 형식 미검증).
+* [ ] FE 인증연주자: 어드민 목록·회원 상태의 "회원측 PENDING 신청 취소"는 BE 엔드포인트 없어 미구현 — 필요 시 BE 추가 후 FE 반영.
+
 ## 기능
 
 * [ ] MEMBER: 소셜 로그인 provider 확장(구글 등 — `OAuthClient` 어댑터 추가) *(카카오는 2026-07-13 완료)*
