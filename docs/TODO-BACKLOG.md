@@ -14,11 +14,11 @@
 
 ## FE 화면 (남은 도메인)
 
-* [x] ~~FE: 구인(RECRUITMENT) 화면~~ — 2026-08-12 완료(TDD, 서브에이전트 주도 15태스크, 브랜치 feature/recruitment-fe). 공고 CRUD/목록(scope·악기필터)/마감 + 지원 플로우(인라인 펼 토글 지원/지원자 관리/내 지원/수락·거절·철회). 낙관적 지원+409 피드백, InstrumentPicker 공용 추출. 전체 vitest 183/183·build 통과. 설계 `docs/superpowers/specs/2026-08-12-recruitment-fe-design.md`, 계획 `docs/superpowers/plans/2026-08-12-recruitment-fe.md`. **main 병합 대기**.
-* [ ] FE: 인증 연주자(VERIFIED-PERFORMER) 화면 — 신청 폼 + 내 신청 상태 + (어드민) 승인/거절/철회.
+* [x] ~~FE: 구인(RECRUITMENT) 화면~~ — 2026-08-12 완료(TDD 15태스크). 공고 CRUD/목록/마감 + 지원 플로우. main 병합 완료. 설계·계획 `docs/superpowers/{specs,plans}/2026-08-12-recruitment-fe*`.
+* [x] ~~FE: 인증 연주자(VERIFIED-PERFORMER) 화면~~ — 2026-08-12 완료(TDD 11태스크). 회원 신청/상태 + 어드민 심사/직접지정. main 병합 완료. 설계·계획 `docs/superpowers/{specs,plans}/2026-08-12-verified-performer-fe*`.
 * [ ] FE: 채팅(CHAT) 화면 — 방 목록/대화창 + WebSocket(STOMP) 실시간 연동.
 
-## 구인 FE 후속 (2026-08-12 구현 시 범위 밖으로 남긴 Minor)
+## 구인 FE 후속 (2026-08-12 범위 밖으로 남긴 Minor)
 
 * [ ] FE 구인: 상세 페이지 지원자 목록이 첫 페이지(최대 20명)만 로드 — 20명 초과 시 페이지네이션/더보기 필요. 현재는 명시적으로 첫 페이지만.
 * [ ] FE 구인: PostingCard/상세의 악기 표시가 enum명(PIANO 등) 그대로 — profile-options의 label 맵을 넘겨 한글 라벨로 변환. 목록 성능 위해 이번엔 단순화.
@@ -26,6 +26,12 @@
 * [ ] FE 구인 a11y: 목록 PostingCard의 `<article onClick>` 키보드 도달 불가(피드/공연 카드와 동일 갭) — role/tabIndex/onKeyDown. 모바일 이식과 연계.
 * [ ] FE 구인: 상세 지원 실패(409) 에러가 페이지 상단(`<dl>` 위)에 뜨는데 `ApplyPanel`은 하단이라 스크롤해야 보임 — 에러를 액션 지점(패널) 근처에 렌더하거나 토스트로. (최종 리뷰 Minor)
 * [ ] FE 구인: 마감/수락/거절 버튼에 진행 중 비활성화·중복클릭 가드 없음(지원 제출만 submitting으로 막힘) — 연타 시 중복 요청 가능. (최종 리뷰 Minor)
+
+## 인증 연주자 FE 후속 (2026-08-12 범위 밖으로 남긴 Minor)
+
+* [ ] BE+FE: 어드민 신청 목록에 회원 표시정보(닉네임) 노출 — 현재 응답은 `memberId`만 → FE가 "회원 #{id}"로만 표시. BE에 표시정보 확장(예: `MemberQueryService.findDisplaysByIds` 협력) 후 FE 반영.
+* [ ] FE 인증연주자: 증빙 링크 URL 형식 검증(현재는 개수/공백만 검증, 형식 미검증).
+* [ ] FE 인증연주자: 어드민 목록·회원 상태의 "회원측 PENDING 신청 취소"는 BE 엔드포인트 없어 미구현 — 필요 시 BE 추가 후 FE 반영.
 
 ## 기능
 

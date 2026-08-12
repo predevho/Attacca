@@ -4,7 +4,7 @@
 
 ---
 
-* [x] (2026-08-12) FE 구인(RECRUITMENT) 화면 구현 (TDD, 서브에이전트 주도 15태스크) — 브랜치 feature/recruitment-fe. 공고 CRUD/목록/마감 + 지원 플로우 전체.
+* [x] (2026-08-12) FE 구인(RECRUITMENT) 화면 구현 (TDD, 서브에이전트 주도 15태스크) — main 병합 완료. 공고 CRUD/목록/마감 + 지원 플로우 전체.
   * 페이지 5: /recruitments(scope 탭 OPEN/CLOSED/ALL·악기 필터·무한스크롤)/new(등록)/[id](상세·역할별 분기)/[id]/edit(수정)/applications/me(내 지원 현황·철회)
   * 상세 역할별 분기: 작성자→ApplicantList(지원자 첫 페이지·수락/거절)+수정·마감·삭제 / 비작성자·미마감→ApplyPanel(인라인 펼 토글) / 마감→안내. 지원 여부는 낙관적 제출+409 피드백(ALREADY_APPLIED 등 BE 메시지 노출)
   * 컴포넌트 6: InstrumentPicker(공용 프레젠테이셔널·폼+필터 재사용)/PostingForm(등록·수정 공용)/PostingCard/ApplyPanel/ApplicantList/ApplicationCard. AuthorBadge·useInfiniteList·toCursorPage(오프셋→커서)·canEdit/canDelete 재사용
@@ -12,6 +12,13 @@
   * 공연과 차이: 등록 게이팅 없음(로그인 회원 누구나), 포스터 없음, 다중 악기·모집인원·마감일(비우면 상시모집). 내 지원 응답에 공고 제목 없어 postingId 링크로 처리
   * 전 계층 TDD, 태스크별 독립 검증. 전체 vitest 183/183 통과, lint(구인 파일 0경고)·next build 통과
   * 범위 밖: 지원자 목록 20명 초과 페이지네이션, PostingCard 악기 라벨 변환(현재 enum명), 구직, CHAT 연계, 알림
+* [x] (2026-08-12) FE 인증 연주자(VERIFIED-PERFORMER) 화면 구현 (TDD, 서브에이전트 주도 11태스크) — main 병합 완료. 회원 신청/상태 + 어드민 심사/직접지정 전체.
+  * 페이지 2: `/verified-performer`(회원 — 상태별 분기: 신청/재신청 폼·심사중·승인·거절/철회+재신청) / `/admin/verified-performers`(어드민 — 신원 게이트·status 탭 무한스크롤·승인 즉시·거절/철회 인라인 사유·직접지정 grant)
+  * 컴포넌트 5: EvidenceUrlsInput(동적 증빙 링크)/ApplyForm/MyStatusCard/ApplicationReviewItem/GrantForm. BFF 7라우트(회원 2 + 어드민 5, approve 무body). 프로필에 진입 링크 추가
+  * 상태 규칙: 활성 신청(PENDING/APPROVED) 유일 → 종료(REJECTED/REVOKED)만 재신청. 어드민 액션 성공 시 목록 key 리마운트로 재조회
+  * 제약: 응답에 memberId만 있어 어드민 목록은 "회원 #{id}" 표시(닉네임 없음 — BE 표시정보 확장 후속)
+  * 전 계층 TDD, 태스크별 독립 검증. 전체 vitest 175/175·lint(verification 파일 0경고)·next build 통과. 최종 리뷰 반영(refreshKey 불필요 의존성 제거)
+  * 범위 밖: 회원측 PENDING 취소(BE 없음), 어드민 목록 닉네임 표시, evidenceUrl URL 형식 검증
 * [x] (2026-08-02) FE 공연(PERFORMANCE) 화면 구현 (TDD, 서브에이전트 주도 8태스크) — 목록(scope 탭·무한스크롤)/등록(2단계 마법사·자격 게이팅)/상세/수정/포스터. useInfiniteList 오프셋 재사용(toCursorPage), proxyAuthed·AuthorBadge·canEdit/canDelete·신원 재사용. 브랜치 feature/performance-fe.
   * 범위 밖: 관심/북마크, 피드 카드 노출, 곡목 구조화, 좌석/예매, 공개 조회, 태그/장르 필터.
 * [x] (2026-08-02) FE 피드(FEED) 화면 구현 (TDD, 서브에이전트 주도 13태스크) — 무한스크롤 타임라인/인라인 작성/상세·댓글/게시글·댓글 좋아요(낙관적+롤백)/수정·삭제. BE 선행: 신원 엔드포인트 GET /api/members/me. BFF 프록시 헬퍼(status||502) 신설. 브랜치 feature/feed-fe.
