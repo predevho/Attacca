@@ -4,6 +4,14 @@
 
 ---
 
+* [x] (2026-08-12) FE 구인(RECRUITMENT) 화면 구현 (TDD, 서브에이전트 주도 15태스크) — 브랜치 feature/recruitment-fe. 공고 CRUD/목록/마감 + 지원 플로우 전체.
+  * 페이지 5: /recruitments(scope 탭 OPEN/CLOSED/ALL·악기 필터·무한스크롤)/new(등록)/[id](상세·역할별 분기)/[id]/edit(수정)/applications/me(내 지원 현황·철회)
+  * 상세 역할별 분기: 작성자→ApplicantList(지원자 첫 페이지·수락/거절)+수정·마감·삭제 / 비작성자·미마감→ApplyPanel(인라인 펼 토글) / 마감→안내. 지원 여부는 낙관적 제출+409 피드백(ALREADY_APPLIED 등 BE 메시지 노출)
+  * 컴포넌트 6: InstrumentPicker(공용 프레젠테이셔널·폼+필터 재사용)/PostingForm(등록·수정 공용)/PostingCard/ApplyPanel/ApplicantList/ApplicationCard. AuthorBadge·useInfiniteList·toCursorPage(오프셋→커서)·canEdit/canDelete 재사용
+  * BFF 8라우트(proxyAuthed, BE /api/recruitments/** 미러): 공고 목록/등록/상세/수정/삭제/마감 + 지원 POST·지원자목록·내지원(applications/me)·accept/reject/withdraw. 지원 액션 동적 세그먼트는 aid
+  * 공연과 차이: 등록 게이팅 없음(로그인 회원 누구나), 포스터 없음, 다중 악기·모집인원·마감일(비우면 상시모집). 내 지원 응답에 공고 제목 없어 postingId 링크로 처리
+  * 전 계층 TDD, 태스크별 독립 검증. 전체 vitest 183/183 통과, lint(구인 파일 0경고)·next build 통과
+  * 범위 밖: 지원자 목록 20명 초과 페이지네이션, PostingCard 악기 라벨 변환(현재 enum명), 구직, CHAT 연계, 알림
 * [x] (2026-08-02) FE 공연(PERFORMANCE) 화면 구현 (TDD, 서브에이전트 주도 8태스크) — 목록(scope 탭·무한스크롤)/등록(2단계 마법사·자격 게이팅)/상세/수정/포스터. useInfiniteList 오프셋 재사용(toCursorPage), proxyAuthed·AuthorBadge·canEdit/canDelete·신원 재사용. 브랜치 feature/performance-fe.
   * 범위 밖: 관심/북마크, 피드 카드 노출, 곡목 구조화, 좌석/예매, 공개 조회, 태그/장르 필터.
 * [x] (2026-08-02) FE 피드(FEED) 화면 구현 (TDD, 서브에이전트 주도 13태스크) — 무한스크롤 타임라인/인라인 작성/상세·댓글/게시글·댓글 좋아요(낙관적+롤백)/수정·삭제. BE 선행: 신원 엔드포인트 GET /api/members/me. BFF 프록시 헬퍼(status||502) 신설. 브랜치 feature/feed-fe.
