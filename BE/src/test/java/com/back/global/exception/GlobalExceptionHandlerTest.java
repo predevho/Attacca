@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -93,6 +94,24 @@ class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.error.resultCode").value("400-01"));
     }
 
+    // 쿼리 파라미터를 enum으로 변환하지 못하는 경우(예: ?scope=open, 실제 상수는 OPEN).
+    // 클라이언트 입력 오류이므로 500이 아니라 400이어야 한다.
+    @Test
+    void queryParamTypeMismatch_mapsTo400InvalidInput() throws Exception {
+        mockMvc.perform(get("/test/enum-param").param("scope", "open"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.resultCode").value("400-01"))
+                .andExpect(jsonPath("$.error.code").value("INVALID_INPUT_VALUE"));
+    }
+
+    // 필수 쿼리 파라미터 누락도 같은 계열의 클라이언트 입력 오류다.
+    @Test
+    void missingRequiredQueryParam_mapsTo400InvalidInput() throws Exception {
+        mockMvc.perform(get("/test/enum-param"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.resultCode").value("400-01"));
+    }
+
     @RestController
     static class TestController {
 
@@ -119,7 +138,15 @@ class GlobalExceptionHandlerTest {
         public void part(@RequestPart("file") MultipartFile file) {
         }
 
+        @GetMapping("/test/enum-param")
+        public void enumParam(@RequestParam TestScope scope) {
+        }
+
         record ValidBody(@Size(max = 5) String bio) {
+        }
+
+        enum TestScope {
+            OPEN, CLOSED
         }
     }
 }

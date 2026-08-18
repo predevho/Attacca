@@ -6,8 +6,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
@@ -65,6 +67,17 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleMissingServletRequestPart(MissingServletRequestPartException e) {
         ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
         log.warn("MissingServletRequestPartException: part={}", e.getRequestPartName());
+        return ResponseEntity.status(errorCode.getStatus())
+                .body(ApiResponse.error(errorCode));
+    }
+
+    // 쿼리/경로 파라미터 바인딩 실패. 타입 변환 실패(enum 상수에 없는 값, 숫자 자리에 문자 등)와
+    // 필수 파라미터 누락은 모두 클라이언트 입력 오류이므로, catch-all에 걸려 500이 되지 않도록 400으로 명시 처리한다.
+    // 본문 파싱 실패(HttpMessageNotReadableException)의 쿼리 파라미터 판이다.
+    @ExceptionHandler({MethodArgumentTypeMismatchException.class, MissingServletRequestParameterException.class})
+    public ResponseEntity<ApiResponse<Void>> handleRequestParameterBindingFailure(Exception e) {
+        ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
+        log.warn("요청 파라미터 바인딩 실패: {}", e.getMessage());
         return ResponseEntity.status(errorCode.getStatus())
                 .body(ApiResponse.error(errorCode));
     }
