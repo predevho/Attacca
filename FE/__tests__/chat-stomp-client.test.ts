@@ -6,17 +6,33 @@ const deactivate = vi.fn();
 const publish = vi.fn();
 const subscribe = vi.fn(() => ({ unsubscribe: vi.fn() }));
 let lastConfig: Record<string, unknown> = {};
+let lastClient: MockClient | null = null;
+/**
+ * 실제 @stomp/stompjs는 CONNECTED 프레임 전에 subscribe를 호출하면 예외를 던진다.
+ * 목이 이 제약을 흉내내지 않으면 "연결 전 구독" 결함을 테스트가 통과시켜 버린다.
+ */
+function rememberClient(c: MockClient) { lastClient = c; }
 class MockClient {
+  connected = false;
   connectHeaders: Record<string, string> = {};
-  constructor(config: Record<string, unknown>) { lastConfig = config; }
+  constructor(config: Record<string, unknown>) { lastConfig = config; rememberClient(this); }
   activate = activate;
   deactivate = deactivate;
   publish = publish;
-  subscribe = subscribe;
+  subscribe = (destination: string, cb: unknown) => {
+    if (!this.connected) throw new Error('There is no underlying STOMP connection');
+    return subscribe(destination, cb);
+  };
 }
 vi.mock('@stomp/stompjs', () => ({ Client: MockClient }));
 
-beforeEach(() => { vi.clearAllMocks(); lastConfig = {}; });
+/** 서버의 CONNECTED 프레임 도착을 흉내낸다. */
+function simulateConnected() {
+  lastClient!.connected = true;
+  (lastConfig.onConnect as () => void)();
+}
+
+beforeEach(() => { vi.clearAllMocks(); lastConfig = {}; lastClient = null; });
 
 async function load() {
   const mod = await import('@/lib/chat/stompClient');
@@ -41,11 +57,43 @@ describe('stompClient', () => {
     vi.unstubAllGlobals();
   });
 
+  it('연결 전에 subscribeRoom을 호출해도 던지지 않고, 연결되면 그때 구독한다', async () => {
+    const s = await load();
+    s.connect();
+    const onMessage = vi.fn();
+    expect(() => s.subscribeRoom(3, onMessage)).not.toThrow();
+    expect(subscribe).not.toHaveBeenCalled(); // 아직 CONNECTED 전
+    simulateConnected();
+    expect(subscribe).toHaveBeenCalledTimes(1);
+    expect(subscribe.mock.calls[0][0]).toBe('/topic/rooms/3');
+  });
+
+  it('재연결되면 기존 구독을 다시 건다', async () => {
+    const s = await load();
+    s.connect();
+    s.subscribeRoom(3, vi.fn());
+    simulateConnected();
+    expect(subscribe).toHaveBeenCalledTimes(1);
+    simulateConnected(); // 끊겼다가 재연결 → 서버측 구독은 사라졌으므로 다시 걸어야 한다
+    expect(subscribe).toHaveBeenCalledTimes(2);
+  });
+
+  it('구독 해제 후 재연결되면 다시 구독하지 않는다', async () => {
+    const s = await load();
+    s.connect();
+    const unsub = s.subscribeRoom(3, vi.fn());
+    simulateConnected();
+    unsub();
+    simulateConnected();
+    expect(subscribe).toHaveBeenCalledTimes(1);
+  });
+
   it('subscribeRoom은 /topic/rooms/{id} 구독, 콜백은 id 있는 메시지만 전달', async () => {
     const s = await load();
     s.connect();
     const onMessage = vi.fn();
     s.subscribeRoom(3, onMessage);
+    simulateConnected();
     expect(subscribe.mock.calls[0][0]).toBe('/topic/rooms/3');
     const cb = subscribe.mock.calls[0][1] as (m: { body: string }) => void;
     cb({ body: JSON.stringify({ id: 10, roomId: 3, sender: { id: 2, nickname: 'A', verified: false }, content: 'hi', createdAt: '' }) });
