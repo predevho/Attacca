@@ -9,8 +9,8 @@
 * [x] ~~DOMAIN-VERIFIED-PERFORMER-CONSTITUTION.md / STATUTE.md~~ (2026-07-15 작성 완료)
 * [x] ~~DOMAIN-FEED-CONSTITUTION.md / STATUTE.md~~ (2026-07-17 작성 완료)
 * [x] ~~DOMAIN-PERFORMANCE-CONSTITUTION.md / STATUTE.md~~ (2026-07-22 작성 완료)
-* [ ] DOMAIN-RECRUITMENT-CONSTITUTION.md / STATUTE.md
-* [ ] DOMAIN-CHAT-CONSTITUTION.md / STATUTE.md
+* [x] ~~DOMAIN-RECRUITMENT-CONSTITUTION.md / STATUTE.md~~ (작성 완료 — 2026-08-18 문서 상태 점검에서 체크 누락 정정)
+* [x] ~~DOMAIN-CHAT-CONSTITUTION.md / STATUTE.md~~ (작성 완료 — 2026-08-18 문서 상태 점검에서 체크 누락 정정)
 
 ## FE 화면 (도메인별 완료)
 
@@ -100,3 +100,11 @@
 * [ ] 고아 파일 정리(GC) — 메타데이터 없는 물리 파일, 업로드 실패로 남은 파일 정리 배치
 * [ ] CloudFront/R2 등 CDN 전환으로 파일 접근 요금 최적화 (`base-url` 교체만으로 가능하도록 설계됨)
 * [ ] FE: middleware → proxy 마이그레이션 검토 — Next 16.2에서 'middleware' 파일 규약이 deprecated(경고만, 현재 정상 동작). proxy는 edge가 아닌 nodejs 런타임이라 'server-only' import 제약이 사라질 수 있어 쿠키 이름 하드코딩 재검토 대상. (2026-07-15 발견)
+
+## 실환경 스모크 검증에서 새로 확인한 항목 (2026-08-18)
+
+* [ ] FE 전역 내비게이션 부재 — `/dashboard`에 "내 프로필/로그아웃"만 있고 피드·공연·구인·채팅·인증연주자로 가는 링크가 없다. 실제로는 URL을 직접 입력해야 각 화면에 도달한다. 도메인 화면이 다 생긴 지금은 공용 헤더/내비가 필요.
+* [ ] FE 프로필 화면에 닉네임·인증뱃지 미표시 — BE `ProfileResponse`가 `nickname`/`verified`를 주는데 `/profile`은 사진·악기·자기소개만 보여준다. 내 인증 상태를 프로필에서 확인할 수 없음.
+* [ ] 문서 계약 표기 정정 확산 확인 — `scope` 쿼리 파라미터를 소문자(`open|closed|all`, `upcoming|past|all`)로 적어둔 곳이 남아있는지 도메인 STATUTE까지 점검. 실제 계약은 enum 상수 그대로 대문자(`OPEN`/`UPCOMING`). (CONTEXT.md는 정정 완료)
+* [ ] 채팅 대화창 스크롤 — 메시지가 쌓여도 하단 고정이 없어 새 메시지가 화면 밖으로 밀린다. 기존 "이전 메시지 더 보기" 항목과 함께 처리.
+* [ ] 채팅 1:1 시작이 회원 id 입력이라 실사용 불가 수준 — 기존 항목(회원 검색 API)의 우선순위를 올릴지 검토. 스모크에서도 상대 id를 DB로 확인해야 했다.

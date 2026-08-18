@@ -4,6 +4,15 @@
 
 ---
 
+* [x] (2026-08-18) 첫 실환경 통합 스모크 검증 — BE(8081)+MySQL+FE(3001) 동시 기동, 전 도메인 브라우저 실왕복.
+  * 통과: 회원가입→로그인→대시보드(httpOnly 쿠키·미들웨어) / 프로필 조회·수정(악기 한글 라벨 변환·영속) / 피드 작성·좋아요·댓글(작성자 닉네임 배치 조회) / 인증연주자 신청→어드민 승인 / **공연 등록 게이팅 해제**(도메인 간 `isVerified` 파생 실동작) / 공연 등록(주최자 인증뱃지) / 구인 등록·지원·중복 409-08·수락 / 채팅 1:1 방 생성·실시간 송수신·읽음
+  * 기동 환경 이슈 해결: 시스템 기본 JDK 25 → `JAVA_HOME`을 JDK 21로 고정 / 8080·3000을 다른 프로젝트가 점유 → BE 8081·FE 3001로 override(`FE/.env.local`, `.claude/launch.json` 추가)
+  * 미포함: 카카오 실왕복(2026-07-15 검증 완료·앱 키 필요), 프로필 이미지 업로드(2026-07-16 라이브 검증 완료), S3
+* [x] (2026-08-18) **[Critical] FE 채팅 실시간 수신 불가 결함 수정** (TDD) — `connect()` 직후 동기 `subscribeRoom()` 호출로 `@stomp/stompjs`가 예외(`There is no underlying STOMP connection`)를 던져 구독이 아예 걸리지 않던 문제.
+  * 수정: `stompClient`가 구독 요청을 목록으로 보관하고 `onConnect`에서 실제 구독 → 연결 전 호출은 대기, **재연결 시 자동 재구독**(STOMP는 서버측 구독을 복구하지 않음), 해제분은 재구독 제외
+  * 테스트가 못 잡은 이유: 목 `Client.subscribe`가 미연결 예외를 흉내내지 않음 → 목에 제약 추가해 RED 재현 후 수정(테스트 3개 신규)
+  * 재검증: 브라우저에서 자기 전송분 즉시 표시 + 별도 STOMP 클라이언트가 보낸 메시지 실시간 도착. FE `vitest` 285/285 통과
+* [x] (2026-08-18) [BE] 요청 파라미터 바인딩 실패가 500으로 응답되던 결함 수정 (TDD) — `MethodArgumentTypeMismatchException`(enum 변환 실패)·`MissingServletRequestParameterException`(필수 파라미터 누락)에 핸들러가 없어 catch-all로 떨어지던 것을 400-01로 매핑. 2026-07 `NoResourceFoundException` 건과 동일 계열. BE `test` 312/312 통과, 실환경 400 확인.
 * [x] (2026-08-12) FE 구인(RECRUITMENT) 화면 구현 (TDD, 서브에이전트 주도 15태스크) — main 병합 완료. 공고 CRUD/목록/마감 + 지원 플로우 전체.
   * 페이지 5: /recruitments(scope 탭 OPEN/CLOSED/ALL·악기 필터·무한스크롤)/new(등록)/[id](상세·역할별 분기)/[id]/edit(수정)/applications/me(내 지원 현황·철회)
   * 상세 역할별 분기: 작성자→ApplicantList(지원자 첫 페이지·수락/거절)+수정·마감·삭제 / 비작성자·미마감→ApplyPanel(인라인 펼 토글) / 마감→안내. 지원 여부는 낙관적 제출+409 피드백(ALREADY_APPLIED 등 BE 메시지 노출)

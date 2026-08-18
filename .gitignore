@@ -12,3 +12,6 @@
 
 # 로컬 파일 저장소 (storage.type=local)
 BE/uploads/
+
+# Claude Code 로컬 실행 설정(포트 등 PC별 값)
+.claude/launch.json
