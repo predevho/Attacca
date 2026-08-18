@@ -6,11 +6,11 @@ export function PostCard({ post, onLike, onOpen }: { post: Post; onLike: () => v
   return (
     <article
       onClick={onOpen}
-      className="cursor-pointer rounded-lg border p-4"
+      className="cursor-pointer rounded-lg border border-line bg-surface p-4"
     >
-      <div className="mb-2 text-sm text-gray-600"><AuthorBadge author={post.author} /></div>
+      <div className="mb-2 text-sm text-ink-muted"><AuthorBadge author={post.author} /></div>
       <p className="whitespace-pre-wrap text-sm">{post.content}</p>
-      <div className="mt-3 flex items-center gap-4 text-sm text-gray-500">
+      <div className="mt-3 flex items-center gap-4 text-sm text-ink-muted">
         <LikeButton liked={post.likedByMe} count={post.likeCount} onToggle={onLike} />
         <span>댓글 {post.commentCount}</span>
       </div>

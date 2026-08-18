@@ -18,7 +18,10 @@ export function Header() {
   const [me, setMe] = useState<Me | null>(null);
 
   useEffect(() => {
-    if (!visible) { setMe(null); return; }
+    // 인증 화면에서는 신원을 조회하지 않는다. 이전 신원이 남아 있어도
+    // 아래에서 visible로 렌더를 막으므로 굳이 상태를 비우지 않는다
+    // (effect 안의 동기 setState는 연쇄 렌더를 부른다).
+    if (!visible) return;
     let cancelled = false;
     // 네트워크 레벨 reject까지 삼킨다. 헤더 때문에 페이지 전체가 죽으면 안 된다.
     getBff<Me>('/api/bff/me/identity')

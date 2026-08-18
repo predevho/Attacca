@@ -14,13 +14,13 @@ export function ApplyPanel({
   const [error, setError] = useState<string | null>(null);
 
   if (applied) {
-    return <p className="rounded border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-700">지원 완료</p>;
+    return <p className="rounded border border-success bg-surface-muted px-3 py-2 text-sm text-success">지원 완료</p>;
   }
 
   if (!open) {
     return (
       <button type="button" onClick={() => setOpen(true)}
-        className="rounded bg-black px-4 py-2 text-sm text-white">지원하기</button>
+        className="rounded bg-brand px-4 py-2 text-sm text-on-brand">지원하기</button>
     );
   }
 
@@ -32,18 +32,18 @@ export function ApplyPanel({
   }
 
   return (
-    <div className="flex flex-col gap-2 rounded border p-3">
+    <div className="flex flex-col gap-2 rounded border border-line p-3">
       <textarea aria-label="지원 메시지" value={message} maxLength={1000}
         onChange={(e) => setMessage(e.target.value)} placeholder="지원 메시지를 입력하세요"
-        className="h-24 rounded border px-3 py-2 text-sm" />
-      {error && <p className="text-sm text-red-600">{error}</p>}
+        className="h-24 rounded border border-line px-3 py-2 text-sm" />
+      {error && <p className="text-sm text-danger">{error}</p>}
       <div className="flex gap-2">
         <button type="button" onClick={submit} disabled={submitting}
-          className="rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-40">
+          className="rounded bg-brand px-4 py-2 text-sm text-on-brand disabled:opacity-40">
           {submitting ? '처리 중...' : '제출'}
         </button>
         <button type="button" onClick={() => { setOpen(false); setError(null); }}
-          className="rounded border px-4 py-2 text-sm">취소</button>
+          className="rounded border border-line px-4 py-2 text-sm">취소</button>
       </div>
     </div>
   );

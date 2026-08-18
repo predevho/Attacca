@@ -27,17 +27,17 @@ export function ApplyForm({
   return (
     <div className="flex flex-col gap-4">
       <label className="flex flex-col gap-1 text-sm">
-        <span className="text-gray-500">지원 사유</span>
+        <span className="text-ink-muted">지원 사유</span>
         <textarea aria-label="지원 사유" value={statement} maxLength={1000}
-          onChange={(e) => setStatement(e.target.value)} className="h-32 rounded border px-3 py-2" />
+          onChange={(e) => setStatement(e.target.value)} className="h-32 rounded border border-line px-3 py-2" />
       </label>
       <div className="flex flex-col gap-1 text-sm">
-        <span className="text-gray-500">증빙 링크 (최대 10개)</span>
+        <span className="text-ink-muted">증빙 링크 (최대 10개)</span>
         <EvidenceUrlsInput urls={evidenceUrls} onChange={setEvidenceUrls} />
       </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
       <button type="button" onClick={submit} disabled={submitting}
-        className="self-start rounded bg-black px-4 py-2 text-white disabled:opacity-40">
+        className="self-start rounded bg-brand px-4 py-2 text-on-brand disabled:opacity-40">
         {submitting ? '처리 중...' : submitLabel}
       </button>
     </div>

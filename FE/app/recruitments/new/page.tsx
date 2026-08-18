@@ -30,12 +30,12 @@ export default function NewRecruitmentPage() {
     else setError(r.message ?? '등록에 실패했습니다.');
   }
 
-  if (!ready) return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-gray-400">불러오는 중...</main>;
+  if (!ready) return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-ink-faint">불러오는 중...</main>;
 
   return (
     <main className="mx-auto mt-8 max-w-xl px-4">
       <h1 className="mb-4 text-2xl font-bold">공고 등록</h1>
-      {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
+      {error && <p className="mb-3 text-sm text-danger">{error}</p>}
       <PostingForm options={options} submitting={submitting} submitLabel="등록" onSubmit={submit} />
     </main>
   );

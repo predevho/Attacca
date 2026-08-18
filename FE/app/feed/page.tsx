@@ -44,11 +44,11 @@ export default function FeedPage() {
   return (
     <main className="mx-auto mt-8 max-w-xl px-4">
       <h1 className="mb-4 text-2xl font-bold">피드</h1>
-      <div className="mb-6 rounded-lg border p-4">
+      <div className="mb-6 rounded-lg border border-line p-4">
         <ComposeForm placeholder="무슨 생각을 하고 있나요?" maxLength={2000} buttonLabel="게시" onSubmit={createPost} />
       </div>
 
-      {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
+      {error && <p className="mb-4 text-sm text-danger">{error}</p>}
 
       <div className="flex flex-col gap-4">
         {items.map((p) => (
@@ -56,10 +56,10 @@ export default function FeedPage() {
         ))}
       </div>
 
-      {isLoading && <p className="py-4 text-center text-sm text-gray-400">불러오는 중...</p>}
+      {isLoading && <p className="py-4 text-center text-sm text-ink-faint">불러오는 중...</p>}
       {hasMore && <div ref={sentinelRef} className="h-8" />}
       {!hasMore && items.length === 0 && !isLoading && (
-        <p className="py-8 text-center text-sm text-gray-400">아직 게시글이 없습니다.</p>
+        <p className="py-8 text-center text-sm text-ink-faint">아직 게시글이 없습니다.</p>
       )}
     </main>
   );

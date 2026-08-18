@@ -77,7 +77,7 @@ export default function ChatRoomPage() {
   }
 
   if (notFound) {
-    return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-gray-500">없거나 접근할 수 없는 방입니다.</main>;
+    return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-ink-muted">없거나 접근할 수 없는 방입니다.</main>;
   }
 
   // DIRECT 방은 title이 없으므로 본인을 제외한 참여자 닉네임으로 헤더를 만든다.
@@ -88,10 +88,10 @@ export default function ChatRoomPage() {
   return (
     <main className="mx-auto flex h-[calc(100vh-2rem)] max-w-xl flex-col px-4 pt-4">
       <div className="mb-2 flex items-center gap-2">
-        <button type="button" onClick={() => router.push('/chat')} className="text-sm text-gray-500">← 채팅</button>
+        <button type="button" onClick={() => router.push('/chat')} className="text-sm text-ink-muted">← 채팅</button>
         <h1 className="font-semibold">{headerName}</h1>
       </div>
-      {connError && <p className="mb-2 rounded bg-amber-50 px-3 py-1 text-xs text-amber-700">실시간 연결이 끊겼습니다. 재연결 중…</p>}
+      {connError && <p className="mb-2 rounded bg-surface-muted px-3 py-1 text-xs text-warn">실시간 연결이 끊겼습니다. 재연결 중…</p>}
 
       <div className="flex-1 overflow-y-auto">
         <div className="flex flex-col gap-3 py-2">

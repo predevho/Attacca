@@ -66,18 +66,18 @@ export default function EditPerformancePage() {
     else setError(r.message ?? '포스터 업로드에 실패했습니다.');
   }
 
-  if (!performance || !me) return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-gray-400">불러오는 중...</main>;
+  if (!performance || !me) return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-ink-faint">불러오는 중...</main>;
 
   return (
     <main className="mx-auto mt-8 max-w-xl px-4">
       <h1 className="mb-4 text-2xl font-bold">공연 수정</h1>
-      {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
+      {error && <p className="mb-4 text-sm text-danger">{error}</p>}
 
       <div className="mb-4 flex items-center gap-4">
         {performance.posterImageUrl
           ? <img src={performance.posterImageUrl} alt="" className="h-24 w-16 rounded object-cover" />
-          : <div className="flex h-24 w-16 items-center justify-center rounded bg-gray-200 text-[10px] text-gray-500">포스터 없음</div>}
-        <label className="cursor-pointer rounded border px-3 py-1.5 text-sm">
+          : <div className="flex h-24 w-16 items-center justify-center rounded bg-surface-muted text-[10px] text-ink-muted">포스터 없음</div>}
+        <label className="cursor-pointer rounded border border-line px-3 py-1.5 text-sm">
           {uploading ? '업로드 중...' : '포스터 변경'}
           <input type="file" accept="image/*" className="hidden" onChange={onPoster} disabled={uploading} />
         </label>

@@ -27,16 +27,16 @@ function ScopeList({ scope }: { scope: PerformanceScope }) {
 
   return (
     <>
-      {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
+      {error && <p className="mb-4 text-sm text-danger">{error}</p>}
       <div className="flex flex-col gap-4">
         {items.map((p) => (
           <PerformanceCard key={p.id} performance={p} onOpen={() => router.push(`/performances/${p.id}`)} />
         ))}
       </div>
-      {isLoading && <p className="py-4 text-center text-sm text-gray-400">불러오는 중...</p>}
+      {isLoading && <p className="py-4 text-center text-sm text-ink-faint">불러오는 중...</p>}
       {hasMore && <div ref={sentinelRef} className="h-8" />}
       {!hasMore && items.length === 0 && !isLoading && (
-        <p className="py-8 text-center text-sm text-gray-400">등록된 공연이 없습니다.</p>
+        <p className="py-8 text-center text-sm text-ink-faint">등록된 공연이 없습니다.</p>
       )}
     </>
   );
@@ -62,14 +62,14 @@ export default function PerformancesPage() {
         <h1 className="text-2xl font-bold">공연</h1>
         {canRegister && (
           <button type="button" onClick={() => router.push('/performances/new')}
-            className="rounded bg-black px-3 py-1.5 text-sm text-white">공연 등록</button>
+            className="rounded bg-brand px-3 py-1.5 text-sm text-on-brand">공연 등록</button>
         )}
       </div>
 
       <div className="mb-4 flex gap-2">
         {TABS.map((t) => (
           <button key={t.key} type="button" onClick={() => setScope(t.key)}
-            className={`rounded-full px-3 py-1 text-sm ${scope === t.key ? 'bg-black text-white' : 'bg-gray-100 text-gray-700'}`}>
+            className={`rounded-full px-3 py-1 text-sm ${scope === t.key ? 'bg-brand text-on-brand' : 'bg-surface-muted text-ink-muted'}`}>
             {t.label}
           </button>
         ))}

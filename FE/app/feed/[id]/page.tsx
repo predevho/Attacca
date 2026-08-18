@@ -90,23 +90,23 @@ export default function FeedDetailPage() {
   }
 
   if (notFound) {
-    return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-gray-500">삭제되었거나 없는 게시글입니다.</main>;
+    return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-ink-muted">삭제되었거나 없는 게시글입니다.</main>;
   }
-  if (!post) return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-gray-400">불러오는 중...</main>;
+  if (!post) return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-ink-faint">불러오는 중...</main>;
 
   return (
     <main className="mx-auto mt-8 max-w-xl px-4">
-      <button type="button" onClick={() => router.push('/feed')} className="mb-4 text-sm text-gray-500">← 피드</button>
+      <button type="button" onClick={() => router.push('/feed')} className="mb-4 text-sm text-ink-muted">← 피드</button>
 
-      <article className="rounded-lg border p-4">
-        <div className="mb-2 flex items-center justify-between text-sm text-gray-600">
+      <article className="rounded-lg border border-line bg-surface p-4">
+        <div className="mb-2 flex items-center justify-between text-sm text-ink-muted">
           <AuthorBadge author={post.author} />
           <div className="flex gap-2">
             {canEdit(me, post.author.id) && !editing && (
-              <button type="button" onClick={() => { setDraft(post.content); setEditing(true); }} className="text-xs text-gray-400">수정</button>
+              <button type="button" onClick={() => { setDraft(post.content); setEditing(true); }} className="text-xs text-ink-faint">수정</button>
             )}
             {canDelete(me, post.author.id) && (
-              <button type="button" onClick={deletePost} className="text-xs text-gray-400">삭제</button>
+              <button type="button" onClick={deletePost} className="text-xs text-ink-faint">삭제</button>
             )}
           </div>
         </div>
@@ -114,10 +114,10 @@ export default function FeedDetailPage() {
         {editing ? (
           <div className="flex flex-col gap-2">
             <textarea value={draft} maxLength={2000} onChange={(e) => setDraft(e.target.value)}
-              className="min-h-24 w-full rounded border px-3 py-2 text-sm" />
+              className="min-h-24 w-full rounded border border-line px-3 py-2 text-sm" />
             <div className="flex gap-2">
-              <button type="button" onClick={saveEdit} className="rounded bg-black px-4 py-2 text-sm text-white">저장</button>
-              <button type="button" onClick={() => { setEditing(false); setError(null); }} className="rounded border px-4 py-2 text-sm">취소</button>
+              <button type="button" onClick={saveEdit} className="rounded bg-brand px-4 py-2 text-sm text-on-brand">저장</button>
+              <button type="button" onClick={() => { setEditing(false); setError(null); }} className="rounded border border-line px-4 py-2 text-sm">취소</button>
             </div>
           </div>
         ) : (
@@ -127,11 +127,11 @@ export default function FeedDetailPage() {
         <div className="mt-3"><LikeButton liked={post.likedByMe} count={post.likeCount} onToggle={likePost} /></div>
       </article>
 
-      {error && <p className="my-3 text-sm text-red-600">{error}</p>}
+      {error && <p className="my-3 text-sm text-danger">{error}</p>}
 
       <section className="mt-6">
-        <h2 className="mb-2 text-sm font-medium text-gray-500">댓글</h2>
-        <div className="mb-4 rounded-lg border p-3">
+        <h2 className="mb-2 text-sm font-medium text-ink-muted">댓글</h2>
+        <div className="mb-4 rounded-lg border border-line p-3">
           <ComposeForm placeholder="댓글을 입력하세요" maxLength={500} buttonLabel="댓글 작성" onSubmit={addComment} />
         </div>
         <div className="flex flex-col">
@@ -139,10 +139,10 @@ export default function FeedDetailPage() {
             <CommentItem key={c.id} comment={c} me={me} onLike={() => likeComment(c)} onDelete={() => deleteComment(c)} />
           ))}
         </div>
-        {isLoading && <p className="py-3 text-center text-sm text-gray-400">불러오는 중...</p>}
+        {isLoading && <p className="py-3 text-center text-sm text-ink-faint">불러오는 중...</p>}
         {hasMore && <div ref={sentinelRef} className="h-8" />}
         {!hasMore && comments.length === 0 && !isLoading && (
-          <p className="py-4 text-center text-sm text-gray-400">첫 댓글을 남겨보세요.</p>
+          <p className="py-4 text-center text-sm text-ink-faint">첫 댓글을 남겨보세요.</p>
         )}
       </section>
     </main>

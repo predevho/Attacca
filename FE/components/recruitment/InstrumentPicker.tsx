@@ -13,7 +13,7 @@ export function InstrumentPicker({
         const on = selected.includes(o.code);
         return (
           <button key={o.code} type="button" aria-pressed={on} onClick={() => onToggle(o.code)}
-            className={`rounded-full px-3 py-1 text-sm ${on ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700'}`}>
+            className={`rounded-full px-3 py-1 text-sm ${on ? 'bg-brand text-on-brand' : 'bg-surface-muted text-ink-muted'}`}>
             {o.label}
           </button>
         );
