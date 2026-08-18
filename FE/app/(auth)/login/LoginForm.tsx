@@ -17,7 +17,7 @@ export function LoginForm({ initialError }: { initialError: string | null }) {
     setError(null);
     const res = await postBff('/api/bff/login', { loginId, password });
     setPending(false);
-    if (res.ok) router.push('/dashboard');
+    if (res.ok) router.push('/feed');
     else setError(res.message ?? '로그인에 실패했습니다.');
   }
 

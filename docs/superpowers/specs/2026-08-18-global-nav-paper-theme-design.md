@@ -44,7 +44,7 @@
 |---|---|---|---|---|
 | `paper` | `#F5F0E6` | `#1A1917` | body 배경 | 기존 `--background` |
 | `surface` | `#FAF7F0` | `#232120` | 카드 면 | **신규 적용** (아래 주의) |
-| `surface-2` | `#EDE6D8` | `#2C2A28` | 미선택 칩·은은한 면 | `bg-gray-100/200` (11) |
+| `surface-muted` | `#EDE6D8` | `#2C2A28` | 미선택 칩·은은한 면 | `bg-gray-100/200` (11) |
 | `ink` | `#171717` | `#EDE7DA` | 본문 | 기존 `--foreground`, `text-black`, `text-gray-800` |
 | `ink-muted` | `#5C574E` | `#A8A296` | 보조 텍스트 | `text-gray-500/600/700` (83) |
 | `ink-faint` | `#8A8378` | `#75706A` | 흐린 텍스트 | `text-gray-400` (36) |

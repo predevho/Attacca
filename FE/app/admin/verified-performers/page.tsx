@@ -63,7 +63,7 @@ export default function AdminVerifiedPerformersPage() {
     getBff('/api/bff/me/identity').then((r) => {
       if (!r.ok) { router.push('/login'); return; }
       const me = r.data as Me;
-      if (me.role !== 'ADMIN') { router.push('/dashboard'); return; }
+      if (me.role !== 'ADMIN') { router.push('/feed'); return; }
       setReady(true);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps

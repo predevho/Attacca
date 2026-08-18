@@ -1,8 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getBff, putBff, putBffForm } from '@/lib/api';
+import { AuthorBadge } from '@/components/feed/AuthorBadge';
+import type { Me } from '@/lib/feed/types';
 
 type Option = { code: string; label: string };
 type Profile = { instruments: string[]; bio: string | null; profileImageUrl: string | null };
@@ -12,6 +15,7 @@ const MAX_INSTRUMENTS = 10;
 export default function ProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [me, setMe] = useState<Me | null>(null);
   const [options, setOptions] = useState<Option[]>([]);
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,10 +25,15 @@ export default function ProfilePage() {
   const [draftBio, setDraftBio] = useState('');
 
   useEffect(() => {
-    Promise.all([getBff('/api/bff/me'), getBff('/api/bff/profile-options')]).then(([me, opt]) => {
-      if (!me.ok) { router.push('/login'); return; }
-      setProfile(me.data as Profile);
-      if (opt.ok) setOptions((opt.data as { instruments: Option[] }).instruments);
+    Promise.all([
+      getBff('/api/bff/me'),
+      getBff('/api/bff/profile-options'),
+      getBff('/api/bff/me/identity'),
+    ]).then(([profileRes, optionRes, identityRes]) => {
+      if (!profileRes.ok) { router.push('/login'); return; }
+      setProfile(profileRes.data as Profile);
+      if (optionRes.ok) setOptions((optionRes.data as { instruments: Option[] }).instruments);
+      if (identityRes.ok) setMe(identityRes.data as Me);
     });
   }, [router]);
 
@@ -75,7 +84,12 @@ export default function ProfilePage() {
 
   return (
     <main className="mx-auto mt-16 max-w-md px-4">
-      <h1 className="mb-6 text-2xl font-bold">내 프로필</h1>
+      <h1 className="mb-2 text-2xl font-bold">내 프로필</h1>
+      {me && (
+        <p className="mb-6 text-sm">
+          <AuthorBadge author={{ id: me.id, nickname: me.nickname, verified: me.verified }} />
+        </p>
+      )}
 
       <div className="mb-6 flex items-center gap-4">
         {profile.profileImageUrl
@@ -102,9 +116,9 @@ export default function ProfilePage() {
             <h2 className="mb-2 text-sm font-medium text-gray-500">자기소개</h2>
             <p className="whitespace-pre-wrap text-sm">{profile.bio || <span className="text-gray-400">자기소개가 없습니다.</span>}</p>
           </div>
-          <div className="mt-2 flex gap-2">
+          <div className="mt-2 flex flex-wrap gap-2">
             <button onClick={startEdit} className="rounded bg-black px-4 py-2 text-white">수정</button>
-            <a href="/dashboard" className="rounded border px-4 py-2 text-center">대시보드</a>
+            <Link href="/recruitments/applications/me" className="rounded border px-4 py-2 text-center">내 지원 현황</Link>
             <button onClick={() => router.push('/verified-performer')} className="rounded border px-4 py-2 text-center">인증 연주자</button>
           </div>
         </section>
