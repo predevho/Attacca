@@ -93,12 +93,34 @@
 * [ ] Swagger/OpenAPI 문서화 — `resultCode`의 문서화 용도가 COMMON-STATUTE §1에 명시돼 있으나 도입은 미착수
 * [ ] refresh 토큰 로테이션·철회 — Redis 도입 시(COMMON-STATUTE §4에 예정 명시). CHAT의 Redis 도입과 시기 조율 가능
 
-## 인프라 (추후)
+## 배포 (AWS 전환) — 2026-08-18 정리
 
-* [ ] 배포 시 Nginx 리버스 프록시 + HTTPS + WebSocket 프록시 결정
+배포 목표: BE(EC2/ECS) + FE(EC2 또는 Vercel) + DB(RDS)를 각각 분리 운영. **레포는 단일 유지**(빌드 산출물이 `BE/build/libs/*.jar` / `FE/.next`로 이미 독립, 연결점은 런타임 env 주소뿐).
+
+### A. 배포 전 반드시 결정해야 하는 것 (블로커)
+
+* [ ] **`ddl-auto` 정책 확정** — 현재 `${DDL_AUTO:update}`. 운영 DB에서 Hibernate가 스키마를 자기 판단으로 바꾸고, 컬럼 삭제·타입 변경은 반영조차 안 해 코드/스키마가 조용히 어긋난다. RDS 전환 시 `validate`로 내리고 **Flyway 도입**(현재 마이그레이션 도구 없음 — 2026-08-18 확인). 초기 스키마는 현재 `update`로 생성된 DDL을 베이스라인으로 추출.
+* [ ] **단일 인스턴스 운영 여부 확정** — 지금 채팅은 **다중 서버에서 동작하지 않는다**. STOMP가 인메모리 Simple Broker라 A서버 사용자와 B서버 사용자 간 메시지가 오가지 않고, `PresenceRegistry`도 인메모리라 단일 서버에서만 정확. 스케일아웃이나 무중단(블루-그린) 배포를 할 거면 **그 전에 Redis 선행**(`enableStompBrokerRelay` 교체 + Redis 기반 `PresenceRegistry`, 도메인 코드는 불변). 1대 운영이면 현행 유지 가능.
+* [ ] **WS origin 좁히기** — `WebSocketConfig.setAllowedOriginPatterns("*")`(BE/src/main/java/com/back/global/websocket/WebSocketConfig.java:24)를 실제 FE origin으로 제한. 프로덕션 노출 전 필수.
+
+### B. 인프라 구성
+
+* [ ] **RDS 전환** — 데이터소스가 이미 env(`DB_URL`/`DB_USERNAME`/`DB_PASSWORD`)라 값 교체만으로 전환 가능. 함께 처리: RDS 퍼블릭 접근 차단(보안그룹으로 앱 서버만 허용), 파라미터 그룹 `utf8mb4`/타임존, HikariCP 풀 크기 vs 인스턴스 `max_connections`, 자격증명은 Secrets Manager 또는 env(커밋 금지 규칙 기존대로).
+* [ ] **Nginx 리버스 프록시 + HTTPS + WebSocket 프록시** — `/ws` 업그레이드 헤더 통과 설정 포함. (기존 항목)
+* [ ] **CI/CD 구성** — 모노레포 경로 필터로 BE/FE 파이프라인 분리. ⚠️ 워크플로 **파일**을 나누면 두 쪽이 같이 바뀐 커밋에서 배포 순서가 보장되지 않아 계약 변경 배포 때 깨진 창이 생긴다. 한 워크플로 안에서 job 레벨 변경 감지(`dorny/paths-filter`) + `needs`로 **BE → FE 순서 강제**.
+* [ ] **헬스체크 엔드포인트** — 현재 Spring Actuator 미도입(2026-08-18 확인). ALB/ECS 헬스체크·무중단 배포에 필요하므로 `actuator` 추가 후 `/actuator/health`만 노출(나머지 엔드포인트는 차단).
+* [ ] **프로덕션 환경변수 목록 정리** — `DB_*`, `JWT_SECRET`, `KAKAO_CLIENT_ID`/`SECRET`, `STORAGE_TYPE`/`S3_*`, `DDL_AUTO`, FE의 `BE_BASE_URL`/`NEXT_PUBLIC_BE_WS_URL`(wss)/`KAKAO_REDIRECT_URI`. 한 곳에 표로 정리(어디에 주입하는지 포함). 카카오 `redirect_uri`는 개발자 콘솔에도 운영 주소 등록 필요.
+* [ ] **`NEXT_PUBLIC_BE_WS_URL`을 wss로** — (기존 채팅 후속 항목과 동일 건)
+
+### C. 배포 후 / 최적화
+
 * [ ] 실제 S3 연동 검증 — AWS 자격증명 발급 후 `STORAGE_TYPE=s3`로 업로드/삭제/조회 수동 확인 (자동 테스트 범위 밖)
 * [ ] 고아 파일 정리(GC) — 메타데이터 없는 물리 파일, 업로드 실패로 남은 파일 정리 배치
 * [ ] CloudFront/R2 등 CDN 전환으로 파일 접근 요금 최적화 (`base-url` 교체만으로 가능하도록 설계됨)
+* [ ] 로그/모니터링 방침 — 현재 예외는 `GlobalExceptionHandler`가 `log.warn`/`log.error`로 남긴다. 운영에서 어디로 모을지(CloudWatch 등) 결정.
+
+## 기타 (추후)
+
 * [ ] FE: middleware → proxy 마이그레이션 검토 — Next 16.2에서 'middleware' 파일 규약이 deprecated(경고만, 현재 정상 동작). proxy는 edge가 아닌 nodejs 런타임이라 'server-only' import 제약이 사라질 수 있어 쿠키 이름 하드코딩 재검토 대상. (2026-07-15 발견)
 
 ## 실환경 스모크 검증에서 새로 확인한 항목 (2026-08-18)
