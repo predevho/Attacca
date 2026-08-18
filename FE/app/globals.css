@@ -1,26 +1,75 @@
 @import "tailwindcss";
 
+/*
+ * 악보지 팔레트 — 헨레 악보의 종이(배경) · 음표(글자) · 표지(브랜드)에서 따왔다.
+ * 컴포넌트는 이 변수를 직접 쓰지 않고 @theme이 만든 유틸리티(bg-paper, text-ink ...)로만 쓴다.
+ * 다크는 아래 미디어쿼리에서 값만 교체하므로 컴포넌트는 다크를 알지 못한다.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --paper: #f5f0e6;
+  --surface: #faf7f0;
+  --surface-2: #ede6d8;
+  --ink: #171717;
+  --ink-muted: #5c574e;
+  --ink-faint: #8a8378;
+  --line: #ded5c4;
+  --brand: #4e6e8e;
+  --brand-strong: #3d5a80;
+  --on-brand: #f5f0e6;
+  --header: #3d5a80;
+  --on-header: #f5f0e6;
+  --danger: #dc2626;
+  --warn: #b45309;
+  --success: #15803d;
+}
+
+/*
+ * 밤의 무대(다크). 헤더만 명암이 반전된다 — 라이트에서는 짙은 표지,
+ * 다크에서는 밝은 표지가 어둠 위로 떠오른다.
+ * 헤더 바를 그대로 두고 글자만 검정으로 바꾸면 대비 2.5:1로 기준(4.5) 미달이라 쓸 수 없다.
+ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #1a1917;
+    --surface: #232120;
+    --surface-2: #2c2a28;
+    --ink: #ede7da;
+    --ink-muted: #a8a296;
+    --ink-faint: #75706a;
+    --line: #34312e;
+    --brand: #8fb0ce;
+    --brand-strong: #a9c6de;
+    --on-brand: #16211c;
+    --header: #8fb0ce;
+    --on-header: #16211c;
+    --danger: #f87171;
+    --warn: #fbbf24;
+    --success: #4ade80;
+  }
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-line: var(--line);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-on-brand: var(--on-brand);
+  --color-header: var(--header);
+  --color-on-header: var(--on-header);
+  --color-danger: var(--danger);
+  --color-warn: var(--warn);
+  --color-success: var(--success);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--paper);
+  color: var(--ink);
   font-family: Arial, Helvetica, sans-serif;
 }
