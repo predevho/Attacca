@@ -36,16 +36,16 @@ function ReviewList({
 
   return (
     <>
-      {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
+      {error && <p className="mb-4 text-sm text-danger">{error}</p>}
       <ul className="flex flex-col gap-3">
         {items.map((a) => (
           <ApplicationReviewItem key={a.id} application={a} onApprove={onApprove} onReject={onReject} onRevoke={onRevoke} />
         ))}
       </ul>
-      {isLoading && <p className="py-4 text-center text-sm text-gray-400">불러오는 중...</p>}
+      {isLoading && <p className="py-4 text-center text-sm text-ink-faint">불러오는 중...</p>}
       {hasMore && <div ref={sentinelRef} className="h-8" />}
       {!hasMore && items.length === 0 && !isLoading && (
-        <p className="py-8 text-center text-sm text-gray-400">해당 상태의 신청이 없습니다.</p>
+        <p className="py-8 text-center text-sm text-ink-faint">해당 상태의 신청이 없습니다.</p>
       )}
     </>
   );
@@ -63,7 +63,7 @@ export default function AdminVerifiedPerformersPage() {
     getBff('/api/bff/me/identity').then((r) => {
       if (!r.ok) { router.push('/login'); return; }
       const me = r.data as Me;
-      if (me.role !== 'ADMIN') { router.push('/dashboard'); return; }
+      if (me.role !== 'ADMIN') { router.push('/feed'); return; }
       setReady(true);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -87,7 +87,7 @@ export default function AdminVerifiedPerformersPage() {
     else setMessage(r.message ?? '직접지정에 실패했습니다.');
   }
 
-  if (!ready) return <main className="mx-auto mt-16 max-w-3xl px-4 text-sm text-gray-400">불러오는 중...</main>;
+  if (!ready) return <main className="mx-auto mt-16 max-w-3xl px-4 text-sm text-ink-faint">불러오는 중...</main>;
 
   return (
     <main className="mx-auto mt-8 max-w-3xl px-4">
@@ -95,12 +95,12 @@ export default function AdminVerifiedPerformersPage() {
 
       <div className="mb-4"><GrantForm submitting={grantSubmitting} onGrant={onGrant} /></div>
 
-      {message && <p className="mb-3 text-sm text-gray-700">{message}</p>}
+      {message && <p className="mb-3 text-sm text-ink-muted">{message}</p>}
 
       <div className="mb-4 flex gap-2">
         {TABS.map((t) => (
           <button key={t.key} type="button" onClick={() => setStatus(t.key)}
-            className={`rounded-full px-3 py-1 text-sm ${status === t.key ? 'bg-black text-white' : 'bg-gray-100 text-gray-700'}`}>
+            className={`rounded-full px-3 py-1 text-sm ${status === t.key ? 'bg-brand text-on-brand' : 'bg-surface-muted text-ink-muted'}`}>
             {t.label}
           </button>
         ))}

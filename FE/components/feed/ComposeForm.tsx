@@ -29,15 +29,15 @@ export function ComposeForm({
         maxLength={maxLength}
         placeholder={placeholder}
         onChange={(e) => setContent(e.target.value)}
-        className="min-h-20 w-full rounded border px-3 py-2 text-sm"
+        className="min-h-20 w-full rounded border border-line px-3 py-2 text-sm"
       />
       <div className="flex items-center justify-between">
-        <span className="text-xs text-gray-400">{content.length}/{maxLength}</span>
+        <span className="text-xs text-ink-faint">{content.length}/{maxLength}</span>
         <button
           type="button"
           onClick={submit}
           disabled={submitting || content.trim().length === 0}
-          className="rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-40"
+          className="rounded bg-brand px-4 py-2 text-sm text-on-brand disabled:opacity-40"
         >
           {submitting ? '전송 중...' : buttonLabel}
         </button>

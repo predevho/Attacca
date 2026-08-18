@@ -38,8 +38,8 @@ export JAVA_HOME=/Users/predevho/Library/Java/JavaVirtualMachines/graalvm-jdk-21
 | `text-gray-700` | `text-ink-muted` | 보조 텍스트 |
 | `text-gray-800` | `text-ink` | 본문 |
 | `text-black` | `text-ink` | 본문 |
-| `bg-gray-100` | `bg-surface-2` | 은은한 면 |
-| `bg-gray-200` | `bg-surface-2` | 은은한 면 |
+| `bg-gray-100` | `bg-surface-muted` | 은은한 면 |
+| `bg-gray-200` | `bg-surface-muted` | 은은한 면 |
 | `bg-black` | `bg-brand` | 주요 버튼·활성 칩 |
 | `text-white` | `text-on-brand` | 브랜드 면 위 글자 |
 | `bg-indigo-600` | `bg-brand` | 주요 버튼 |
@@ -48,10 +48,10 @@ export JAVA_HOME=/Users/predevho/Library/Java/JavaVirtualMachines/graalvm-jdk-21
 | `text-indigo-700` | `text-on-brand` | 인증 뱃지 글자 (배경이 `bg-brand`가 되므로) |
 | `text-indigo-800` | `text-on-brand` | 인증 뱃지 계열 칩 글자 |
 | `text-red-600` | `text-danger` | 에러 |
-| `bg-amber-50` | `bg-surface-2` | 경고 배너 배경 |
+| `bg-amber-50` | `bg-surface-muted` | 경고 배너 배경 |
 | `text-amber-700` | `text-warn` | 경고 글자 |
 | `border-amber-300` | `border-warn` | 경고 테두리 |
-| `bg-green-50` | `bg-surface-2` | 성공 배너 배경 |
+| `bg-green-50` | `bg-surface-muted` | 성공 배너 배경 |
 | `text-green-700` | `text-success` | 성공 글자 |
 | `border-green-300` | `border-success` | 성공 테두리 |
 | 색 없는 `border` | `border border-line` | 테두리 (v4 기본값이 `currentColor`라 명시 필요) |
@@ -99,7 +99,7 @@ export JAVA_HOME=/Users/predevho/Library/Java/JavaVirtualMachines/graalvm-jdk-21
 :root {
   --paper: #f5f0e6;
   --surface: #faf7f0;
-  --surface-2: #ede6d8;
+  --surface-muted: #ede6d8;
   --ink: #171717;
   --ink-muted: #5c574e;
   --ink-faint: #8a8378;
@@ -123,7 +123,7 @@ export JAVA_HOME=/Users/predevho/Library/Java/JavaVirtualMachines/graalvm-jdk-21
   :root {
     --paper: #1a1917;
     --surface: #232120;
-    --surface-2: #2c2a28;
+    --surface-muted: #2c2a28;
     --ink: #ede7da;
     --ink-muted: #a8a296;
     --ink-faint: #75706a;
@@ -142,7 +142,7 @@ export JAVA_HOME=/Users/predevho/Library/Java/JavaVirtualMachines/graalvm-jdk-21
 @theme inline {
   --color-paper: var(--paper);
   --color-surface: var(--surface);
-  --color-surface-2: var(--surface-2);
+  --color-surface-muted: var(--surface-muted);
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
   --color-ink-faint: var(--ink-faint);
@@ -1066,14 +1066,14 @@ git commit -m "style: 피드 화면 색 토큰 치환"
 
 - [ ] **Step 1: 치환 규칙 적용**
 
-목록의 scope 탭은 선택 `bg-black text-white` → `bg-brand text-on-brand`, 미선택 `bg-gray-100 text-gray-700` → `bg-surface-2 text-ink-muted`가 된다.
+목록의 scope 탭은 선택 `bg-black text-white` → `bg-brand text-on-brand`, 미선택 `bg-gray-100 text-gray-700` → `bg-surface-muted text-ink-muted`가 된다.
 
 `PerformanceCard.tsx`의 카드 컨테이너에 `bg-surface`를 추가한다.
 
 `app/performances/[id]/page.tsx:52`의 포스터 업로드 실패 배너는 다음이 된다.
 
 ```tsx
-        <p className="mb-4 rounded border border-warn bg-surface-2 px-3 py-2 text-sm text-warn">
+        <p className="mb-4 rounded border border-warn bg-surface-muted px-3 py-2 text-sm text-warn">
 ```
 
 - [ ] **Step 2: 전환 검사**
@@ -1118,14 +1118,14 @@ git commit -m "style: 공연 화면 색 토큰 치환"
 
 - [ ] **Step 1: 치환 규칙 적용**
 
-`InstrumentPicker.tsx`의 선택 칩은 `bg-brand text-on-brand`, 미선택 칩은 `bg-surface-2 text-ink-muted`가 된다. 프로필 화면의 악기 칩과 같은 규칙이다.
+`InstrumentPicker.tsx`의 선택 칩은 `bg-brand text-on-brand`, 미선택 칩은 `bg-surface-muted text-ink-muted`가 된다. 프로필 화면의 악기 칩과 같은 규칙이다.
 
 `PostingCard.tsx`·`ApplicationCard.tsx`의 카드 컨테이너에 `bg-surface`를 추가한다.
 
 `ApplyPanel.tsx:17`의 "지원 완료" 표시는 다음이 된다. 프로젝트에서 `success` 토큰을 쓰는 유일한 자리다.
 
 ```tsx
-    return <p className="rounded border border-success bg-surface-2 px-3 py-2 text-sm text-success">지원 완료</p>;
+    return <p className="rounded border border-success bg-surface-muted px-3 py-2 text-sm text-success">지원 완료</p>;
 ```
 
 - [ ] **Step 2: 전환 검사**
@@ -1206,12 +1206,12 @@ git commit -m "style: 인증 연주자 화면 색 토큰 치환"
 
 - [ ] **Step 1: 치환 규칙 적용**
 
-`MessageBubble.tsx`가 핵심이다. 내 말풍선은 `bg-brand text-on-brand`, 상대 말풍선은 `bg-surface-2 text-ink`가 된다. 두 말풍선이 같은 색이 되지 않도록 확인한다.
+`MessageBubble.tsx`가 핵심이다. 내 말풍선은 `bg-brand text-on-brand`, 상대 말풍선은 `bg-surface-muted text-ink`가 된다. 두 말풍선이 같은 색이 되지 않도록 확인한다.
 
 `app/chat/[id]/page.tsx:94`의 연결 끊김 배너는 다음이 된다.
 
 ```tsx
-      {connError && <p className="mb-2 rounded bg-surface-2 px-3 py-1 text-xs text-warn">실시간 연결이 끊겼습니다. 재연결 중…</p>}
+      {connError && <p className="mb-2 rounded bg-surface-muted px-3 py-1 text-xs text-warn">실시간 연결이 끊겼습니다. 재연결 중…</p>}
 ```
 
 `RoomListItem.tsx`의 안읽은 배지는 `bg-brand text-on-brand`가 된다.

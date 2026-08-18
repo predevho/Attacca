@@ -20,14 +20,14 @@ function RoomList() {
   const { items, isLoading, error, hasMore, sentinelRef } = useInfiniteList<RoomSummary>(fetchPage);
   return (
     <>
-      {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
+      {error && <p className="mb-4 text-sm text-danger">{error}</p>}
       <div className="flex flex-col gap-3">
         {items.map((r) => <RoomListItem key={r.id} room={r} onOpen={() => router.push(`/chat/${r.id}`)} />)}
       </div>
-      {isLoading && <p className="py-4 text-center text-sm text-gray-400">불러오는 중...</p>}
+      {isLoading && <p className="py-4 text-center text-sm text-ink-faint">불러오는 중...</p>}
       {hasMore && <div ref={sentinelRef} className="h-8" />}
       {!hasMore && items.length === 0 && !isLoading && (
-        <p className="py-8 text-center text-sm text-gray-400">대화가 없습니다. 새 대화를 시작해 보세요.</p>
+        <p className="py-8 text-center text-sm text-ink-faint">대화가 없습니다. 새 대화를 시작해 보세요.</p>
       )}
     </>
   );
@@ -53,13 +53,13 @@ export default function ChatListPage() {
     else setError(r.message ?? '대화를 시작하지 못했습니다.');
   }
 
-  if (!ready) return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-gray-400">불러오는 중...</main>;
+  if (!ready) return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-ink-faint">불러오는 중...</main>;
 
   return (
     <main className="mx-auto mt-8 max-w-xl px-4">
       <h1 className="mb-4 text-2xl font-bold">채팅</h1>
       <div className="mb-4"><NewChatForm submitting={submitting} onStart={startChat} /></div>
-      {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
+      {error && <p className="mb-3 text-sm text-danger">{error}</p>}
       <RoomList />
     </main>
   );

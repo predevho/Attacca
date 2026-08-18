@@ -29,9 +29,9 @@ export default function MyApplicationsPage() {
 
   return (
     <main className="mx-auto mt-8 max-w-xl px-4">
-      <button type="button" onClick={() => router.push('/recruitments')} className="mb-4 text-sm text-gray-500">← 구인</button>
+      <button type="button" onClick={() => router.push('/recruitments')} className="mb-4 text-sm text-ink-muted">← 구인</button>
       <h1 className="mb-4 text-2xl font-bold">내 지원 현황</h1>
-      {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
+      {error && <p className="mb-3 text-sm text-danger">{error}</p>}
       <div className="flex flex-col gap-4">
         {applications.map((a) => (
           <ApplicationCard key={a.id} application={a}
@@ -39,7 +39,7 @@ export default function MyApplicationsPage() {
         ))}
       </div>
       {loaded && applications.length === 0 && (
-        <p className="py-8 text-center text-sm text-gray-400">지원한 공고가 없습니다.</p>
+        <p className="py-8 text-center text-sm text-ink-faint">지원한 공고가 없습니다.</p>
       )}
     </main>
   );

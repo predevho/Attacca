@@ -21,6 +21,7 @@ beforeEach(() => {
   getBff.mockImplementation(async (path: string) => {
     if (path === '/api/bff/me') return { ok: true, data: { instruments: ['VIOLIN'], bio: '첼로 좋아요', profileImageUrl: null }, message: null };
     if (path === '/api/bff/profile-options') return { ok: true, data: { instruments: [{ code: 'VIOLIN', label: '바이올린' }, { code: 'CELLO', label: '첼로' }] }, message: null };
+    if (path === '/api/bff/me/identity') return { ok: true, data: { id: 1, nickname: '스모크1', role: 'USER', verified: true }, message: null };
     return { ok: false, message: 'x' };
   });
 });
@@ -79,5 +80,29 @@ describe('ProfilePage', () => {
     });
     render(<ProfilePage />);
     await waitFor(() => expect(push).toHaveBeenCalledWith('/login'));
+  });
+
+  it('닉네임과 인증 뱃지를 보여준다', async () => {
+    render(<ProfilePage />);
+    expect(await screen.findByText('스모크1')).toBeInTheDocument();
+    expect(screen.getByText('인증')).toBeInTheDocument();
+  });
+
+  it('인증되지 않은 회원에게는 뱃지를 보여주지 않는다', async () => {
+    getBff.mockImplementation(async (path: string) => {
+      if (path === '/api/bff/me') return { ok: true, data: { instruments: [], bio: null, profileImageUrl: null }, message: null };
+      if (path === '/api/bff/profile-options') return { ok: true, data: { instruments: [] }, message: null };
+      if (path === '/api/bff/me/identity') return { ok: true, data: { id: 1, nickname: '스모크2', role: 'USER', verified: false }, message: null };
+      return { ok: false, message: 'x' };
+    });
+    render(<ProfilePage />);
+    await screen.findByText('스모크2');
+    expect(screen.queryByText('인증')).not.toBeInTheDocument();
+  });
+
+  it('내 지원 현황으로 가는 링크가 있다', async () => {
+    render(<ProfilePage />);
+    const link = await screen.findByRole('link', { name: '내 지원 현황' });
+    expect(link).toHaveAttribute('href', '/recruitments/applications/me');
   });
 });

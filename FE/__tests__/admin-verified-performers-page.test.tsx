@@ -25,7 +25,7 @@ describe('AdminVerifiedPerformersPage', () => {
   it('비어드민이면 대시보드로 리다이렉트', async () => {
     mockAdmin('USER');
     render(<AdminVerifiedPerformersPage />);
-    await waitFor(() => expect(push).toHaveBeenCalledWith('/dashboard'));
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/feed'));
   });
 
   it('어드민이면 목록 렌더', async () => {

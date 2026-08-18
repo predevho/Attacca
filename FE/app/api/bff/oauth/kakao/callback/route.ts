@@ -26,5 +26,5 @@ export async function GET(request: Request) {
 
   const { accessToken, refreshToken } = res.data as { accessToken: string; refreshToken: string };
   setAuthCookies(store, accessToken, refreshToken);
-  return redirect('/dashboard');
+  return redirect('/feed');
 }

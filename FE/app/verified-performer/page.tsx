@@ -41,14 +41,14 @@ export default function VerifiedPerformerPage() {
     else setError(r.message ?? '신청에 실패했습니다.');
   }
 
-  if (!loaded) return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-gray-400">불러오는 중...</main>;
+  if (!loaded) return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-ink-faint">불러오는 중...</main>;
 
   const showForm = application === null || canReapply(application.status);
 
   return (
     <main className="mx-auto mt-8 max-w-xl px-4">
       <h1 className="mb-4 text-2xl font-bold">인증 연주자</h1>
-      {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
+      {error && <p className="mb-3 text-sm text-danger">{error}</p>}
       {application && <div className="mb-4"><MyStatusCard application={application} /></div>}
       {showForm && (
         <ApplyForm submitting={submitting} submitLabel={application ? '재신청' : '신청'} onSubmit={submit} />

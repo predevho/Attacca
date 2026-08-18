@@ -23,7 +23,7 @@ function beJson(body: unknown, status: number) {
 function locationOf(res: Response) { return new URL(res.headers.get('location')!).pathname + new URL(res.headers.get('location')!).search; }
 
 describe('GET /api/bff/oauth/kakao/callback', () => {
-  it('state 통과 + BE 성공 → 인증 쿠키 설정 후 /dashboard', async () => {
+  it('state 통과 + BE 성공 → 인증 쿠키 설정 후 /feed', async () => {
     jar['oauth_state'] = 'S';
     vi.stubGlobal('fetch', vi.fn(async () => beJson(
       { success: true, data: { accessToken: 'A', refreshToken: 'R' }, error: null }, 200)));
@@ -31,7 +31,7 @@ describe('GET /api/bff/oauth/kakao/callback', () => {
 
     const res = await GET(new Request('http://localhost:3000/api/bff/oauth/kakao/callback?code=c&state=S'));
 
-    expect(locationOf(res)).toBe('/dashboard');
+    expect(locationOf(res)).toBe('/feed');
     expect(jar['access_token']).toBe('A');
     expect(jar['refresh_token']).toBe('R');
     expect(jar['oauth_state']).toBeUndefined(); // 단일 사용

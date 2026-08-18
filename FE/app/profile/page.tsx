@@ -1,8 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getBff, putBff, putBffForm } from '@/lib/api';
+import { AuthorBadge } from '@/components/feed/AuthorBadge';
+import type { Me } from '@/lib/feed/types';
 
 type Option = { code: string; label: string };
 type Profile = { instruments: string[]; bio: string | null; profileImageUrl: string | null };
@@ -12,6 +15,7 @@ const MAX_INSTRUMENTS = 10;
 export default function ProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [me, setMe] = useState<Me | null>(null);
   const [options, setOptions] = useState<Option[]>([]);
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,10 +25,15 @@ export default function ProfilePage() {
   const [draftBio, setDraftBio] = useState('');
 
   useEffect(() => {
-    Promise.all([getBff('/api/bff/me'), getBff('/api/bff/profile-options')]).then(([me, opt]) => {
-      if (!me.ok) { router.push('/login'); return; }
-      setProfile(me.data as Profile);
-      if (opt.ok) setOptions((opt.data as { instruments: Option[] }).instruments);
+    Promise.all([
+      getBff('/api/bff/me'),
+      getBff('/api/bff/profile-options'),
+      getBff('/api/bff/me/identity'),
+    ]).then(([profileRes, optionRes, identityRes]) => {
+      if (!profileRes.ok) { router.push('/login'); return; }
+      setProfile(profileRes.data as Profile);
+      if (optionRes.ok) setOptions((optionRes.data as { instruments: Option[] }).instruments);
+      if (identityRes.ok) setMe(identityRes.data as Me);
     });
   }, [router]);
 
@@ -75,49 +84,54 @@ export default function ProfilePage() {
 
   return (
     <main className="mx-auto mt-16 max-w-md px-4">
-      <h1 className="mb-6 text-2xl font-bold">내 프로필</h1>
+      <h1 className="mb-2 text-2xl font-bold">내 프로필</h1>
+      {me && (
+        <p className="mb-6 text-sm">
+          <AuthorBadge author={{ id: me.id, nickname: me.nickname, verified: me.verified }} />
+        </p>
+      )}
 
       <div className="mb-6 flex items-center gap-4">
         {profile.profileImageUrl
           ? <img src={profile.profileImageUrl} alt="프로필" className="h-20 w-20 rounded-full object-cover" />
-          : <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gray-200 text-xs text-gray-500">사진 없음</div>}
-        <label className="cursor-pointer rounded border px-3 py-1.5 text-sm">
+          : <div className="flex h-20 w-20 items-center justify-center rounded-full bg-surface-muted text-xs text-ink-muted">사진 없음</div>}
+        <label className="cursor-pointer rounded border border-line px-3 py-1.5 text-sm">
           {uploading ? '업로드 중...' : '이미지 변경'}
           <input type="file" accept="image/*" className="hidden" onChange={onImageChange} disabled={uploading} />
         </label>
       </div>
 
-      {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
+      {error && <p className="mb-4 text-sm text-danger">{error}</p>}
 
       {!editing ? (
         <section className="flex flex-col gap-4">
           <div>
-            <h2 className="mb-2 text-sm font-medium text-gray-500">악기</h2>
+            <h2 className="mb-2 text-sm font-medium text-ink-muted">악기</h2>
             {profile.instruments.length > 0
               ? <div className="flex flex-wrap gap-2">{profile.instruments.map((c) => (
-                  <span key={c} className="rounded-full bg-indigo-100 px-3 py-1 text-sm text-indigo-800">{labelOf(c)}</span>))}</div>
-              : <p className="text-sm text-gray-400">등록된 악기가 없습니다.</p>}
+                  <span key={c} className="rounded-full bg-brand px-3 py-1 text-sm text-on-brand">{labelOf(c)}</span>))}</div>
+              : <p className="text-sm text-ink-faint">등록된 악기가 없습니다.</p>}
           </div>
           <div>
-            <h2 className="mb-2 text-sm font-medium text-gray-500">자기소개</h2>
-            <p className="whitespace-pre-wrap text-sm">{profile.bio || <span className="text-gray-400">자기소개가 없습니다.</span>}</p>
+            <h2 className="mb-2 text-sm font-medium text-ink-muted">자기소개</h2>
+            <p className="whitespace-pre-wrap text-sm">{profile.bio || <span className="text-ink-faint">자기소개가 없습니다.</span>}</p>
           </div>
-          <div className="mt-2 flex gap-2">
-            <button onClick={startEdit} className="rounded bg-black px-4 py-2 text-white">수정</button>
-            <a href="/dashboard" className="rounded border px-4 py-2 text-center">대시보드</a>
-            <button onClick={() => router.push('/verified-performer')} className="rounded border px-4 py-2 text-center">인증 연주자</button>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button onClick={startEdit} className="rounded bg-brand px-4 py-2 text-on-brand">수정</button>
+            <Link href="/recruitments/applications/me" className="rounded border border-line px-4 py-2 text-center">내 지원 현황</Link>
+            <button onClick={() => router.push('/verified-performer')} className="rounded border border-line px-4 py-2 text-center">인증 연주자</button>
           </div>
         </section>
       ) : (
         <section className="flex flex-col gap-4">
           <div>
-            <h2 className="mb-2 text-sm font-medium text-gray-500">악기 (최대 {MAX_INSTRUMENTS}개)</h2>
+            <h2 className="mb-2 text-sm font-medium text-ink-muted">악기 (최대 {MAX_INSTRUMENTS}개)</h2>
             <div className="flex flex-wrap gap-2">
               {options.map((o) => {
                 const on = draftInstruments.includes(o.code);
                 return (
                   <button key={o.code} type="button" onClick={() => toggleInstrument(o.code)}
-                    className={`rounded-full px-3 py-1 text-sm ${on ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700'}`}>
+                    className={`rounded-full px-3 py-1 text-sm ${on ? 'bg-brand text-on-brand' : 'bg-surface-muted text-ink-muted'}`}>
                     {o.label}
                   </button>
                 );
@@ -125,13 +139,13 @@ export default function ProfilePage() {
             </div>
           </div>
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-500">자기소개 ({draftBio.length}/500)</label>
+            <label className="mb-2 block text-sm font-medium text-ink-muted">자기소개 ({draftBio.length}/500)</label>
             <textarea value={draftBio} maxLength={500} onChange={(e) => setDraftBio(e.target.value)}
-              className="h-32 w-full rounded border px-3 py-2 text-sm" />
+              className="h-32 w-full rounded border border-line px-3 py-2 text-sm" />
           </div>
           <div className="mt-2 flex gap-2">
-            <button onClick={save} className="rounded bg-black px-4 py-2 text-white">저장</button>
-            <button onClick={() => { setEditing(false); setError(null); }} className="rounded border px-4 py-2">취소</button>
+            <button onClick={save} className="rounded bg-brand px-4 py-2 text-on-brand">저장</button>
+            <button onClick={() => { setEditing(false); setError(null); }} className="rounded border border-line px-4 py-2">취소</button>
           </div>
         </section>
       )}

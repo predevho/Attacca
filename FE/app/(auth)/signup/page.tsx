@@ -29,20 +29,20 @@ export default function SignupPage() {
       <h1 className="mb-6 text-2xl font-bold">회원가입</h1>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <label className="flex flex-col gap-1 text-sm">아이디
-          <input className="rounded border px-3 py-2" value={form.loginId} onChange={update('loginId')} required />
+          <input className="rounded border border-line px-3 py-2" value={form.loginId} onChange={update('loginId')} required />
         </label>
         <label className="flex flex-col gap-1 text-sm">비밀번호
-          <input type="password" className="rounded border px-3 py-2" value={form.password} onChange={update('password')} required />
+          <input type="password" className="rounded border border-line px-3 py-2" value={form.password} onChange={update('password')} required />
         </label>
         <label className="flex flex-col gap-1 text-sm">이메일
-          <input type="email" className="rounded border px-3 py-2" value={form.email} onChange={update('email')} required />
+          <input type="email" className="rounded border border-line px-3 py-2" value={form.email} onChange={update('email')} required />
         </label>
         <label className="flex flex-col gap-1 text-sm">닉네임
-          <input className="rounded border px-3 py-2" value={form.nickname} onChange={update('nickname')} required />
+          <input className="rounded border border-line px-3 py-2" value={form.nickname} onChange={update('nickname')} required />
         </label>
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
         <button type="submit" disabled={pending}
-          className="rounded bg-black py-2 text-white disabled:opacity-50">회원가입</button>
+          className="rounded bg-brand py-2 text-on-brand disabled:opacity-50">회원가입</button>
       </form>
       <p className="mt-4 text-sm">
         이미 계정이 있으신가요? <a href="/login" className="underline">로그인</a>

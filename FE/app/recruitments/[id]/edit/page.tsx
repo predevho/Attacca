@@ -45,12 +45,12 @@ export default function EditRecruitmentPage() {
     else setError(r.message ?? '수정에 실패했습니다.');
   }
 
-  if (!posting) return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-gray-400">불러오는 중...</main>;
+  if (!posting) return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-ink-faint">불러오는 중...</main>;
 
   return (
     <main className="mx-auto mt-8 max-w-xl px-4">
       <h1 className="mb-4 text-2xl font-bold">공고 수정</h1>
-      {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
+      {error && <p className="mb-3 text-sm text-danger">{error}</p>}
       <PostingForm options={options} initial={toFormValues(posting)} submitting={submitting} submitLabel="저장" onSubmit={submit} />
     </main>
   );

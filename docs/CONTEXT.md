@@ -6,6 +6,8 @@
 
 ## 현재 상태
 
+* **디자인 시스템(2026-08-18)**: 헨레 악보 모티프. `globals.css`에 시맨틱 색 토큰 15종(`paper`/`surface`/`surface-muted`/`ink`/`ink-muted`/`ink-faint`/`line`/`brand`/`brand-strong`/`on-brand`/`header`/`on-header`/`danger`/`warn`/`success`)을 Tailwind v4 `@theme inline`으로 정의. **컴포넌트는 의미로만 색을 쓰고 다크를 모른다** — 다크는 `prefers-color-scheme`에서 값만 교체. 헤더만 명암이 반전된다(라이트=짙은 표지 #3d5a80, 다크=밝은 표지 #8fb0ce). 새 색이 필요하면 하드코딩하지 말고 토큰을 추가할 것. `npm run check:colors`가 하드코딩 색·테두리 색 미지정을 잡는다. 라이트/다크 토큰 집합 일치는 `__tests__/color-tokens.test.ts`가 지킨다. 예외 1건: 카카오 버튼(`bg-[#FEE500]` + `text-black`)은 외부 브랜드 식별색이라 치환 대상 아님.
+* **전역 헤더(2026-08-18)**: `components/layout/Header.tsx`. 루트 레이아웃에 있고 인증 화면(`/login`·`/signup`)에서는 스스로 렌더를 건너뛴다(신원 요청도 안 보냄). 판정 로직은 `lib/layout/header.ts`(`NAV_ITEMS`/`isActive`/`shouldShowHeader`). 활성 경로는 접두 일치. 신원 조회 실패·fetch reject 시 렌더하지 않는다. **홈은 `/feed`이고 `/dashboard`는 제거됐다.**
 * 단계: BE 6개 도메인 + **FE 전 도메인 화면 완료, 전부 main 병합 완료**(피드·공연 FE도 main에 있음 — 2026-08-18 확인, 과거 "병합 대기" 기술은 오기였음). **2026-08-18 첫 실환경 통합 스모크 검증 완료**(BE+MySQL+FE 동시 기동, 전 도메인 브라우저 실왕복 통과, WS 실왕복 포함). 검증에서 결함 2건 발견·수정(채팅 실시간 수신 불가 / BE 파라미터 바인딩 500). **남은 건 배포·인프라와 BACKLOG의 정리 항목**.
 * FE 공연(PERFORMANCE): `/performances`(scope 탭·무한스크롤)/`/performances/new`(2단계 마법사·등록 자격 게이팅)/`/performances/[id]`(상세)/`/performances/[id]/edit`(수정)/포스터. BFF `/api/bff/performances/**`, BE 오프셋 페이징을 `useInfiniteList`+`toCursorPage`로 커서 인터페이스처럼 재사용. (2026-08-02, 8태스크 TDD, main 병합 완료.)
 * 확정된 기술 스택
@@ -43,7 +45,7 @@
 * S3 키(`S3_BUCKET`/`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`)는 env 주입·커밋 금지. **실제 S3 연동은 아직 미검증**(자격증명 미발급, 자동 테스트는 S3Client 목).
 * 일반 에러코드에 `RESOURCE_NOT_FOUND`(404-02) 추가: 매칭되는 핸들러가 없는 모든 URL(앱 전역, `NoResourceFoundException`)이 이전에는 catch-all(`Exception.class`)에 걸려 500으로 잘못 응답되던 버그를 수정. `FILE_NOT_FOUND`(404-01)와는 별개(파일 저장소 전용이 아님).
 * `LocalFileServingConfig`는 `WebMvcConfigurer`를 구현해 `@WebMvcTest`가 자동으로 끌어온다. 신규 `@WebMvcTest` 슬라이스 작성 시 `StorageProperties` 빈이 없으면 컨텍스트 로딩이 실패하므로 목/설정 빈을 함께 준비할 것.
-* FE 인증: BFF 3계층(`lib/server/*`→`app/api/bff/**`→UI). 토큰은 httpOnly 쿠키, UI는 토큰 안 만짐. 통신은 네이티브 fetch(라이브러리 미도입). BE 주소는 서버 env `BE_BASE_URL`. `/dashboard`는 미들웨어가 쿠키 존재로 보호, reissue는 `lib/server/session.ts`가 401 시 1회 재시도. 실연동은 BE 기동 후 수동 검증.
+* FE 인증: BFF 3계층(`lib/server/*`→`app/api/bff/**`→UI). 토큰은 httpOnly 쿠키, UI는 토큰 안 만짐. 통신은 네이티브 fetch(라이브러리 미도입). BE 주소는 서버 env `BE_BASE_URL`. 미들웨어가 쿠키 존재로 보호(보호 경로 7종, `__tests__/middleware.test.ts`가 커버리지 단언 — 2026-08-18 `/recruitments` 누락 복구), reissue는 `lib/server/session.ts`가 401 시 1회 재시도. 실연동은 BE 기동 후 수동 검증.
 * FE 카카오 로그인: `/login` 버튼→`/api/bff/oauth/kakao/start`(CSRF state httpOnly 쿠키+카카오 302)→카카오→`/api/bff/oauth/kakao/callback`(state 대조→BE `/api/auth/oauth/kakao` 교환→인증쿠키→/dashboard). 에러는 `/login?error=`. `KAKAO_CLIENT_ID`/`KAKAO_REDIRECT_URI` 서버 env. **실제 카카오 왕복은 앱 키 미확보로 미검증**(배선만 목/로컬 확인).
 * FE 프로필: `/profile`(인증 필요, 미들웨어 보호). 조회 기본 + 수정 모드(악기 칩 최대10·자기소개 500자, `PUT /api/bff/me/profile`). 이미지는 파일 선택 즉시 업로드(`PUT /api/bff/me/profile/image`, 멀티파트). 악기 코드↔label은 `/api/bff/profile-options`로 변환. `beFetch`는 FormData면 content-type 미설정(멀티파트).
 * FE 피드: `/feed`(무한스크롤 타임라인+인라인 작성)·`/feed/[id]`(상세+댓글, 인증 필요·미들웨어 보호). BFF `/api/bff/feed/**`(게시글/댓글 CRUD+좋아요) + `/api/bff/me/identity`(위 MEMBER `GET /api/members/me` 프록시, 작성자 판정용). 인증 프록시는 신설 `proxyAuthed` 헬퍼(`res.status || 502`, 기존 BFF `status||200` 폴백 버그를 신규 라우트에서 선제 회피)로 통일. 좋아요는 낙관적 업데이트+실패 롤백, 커서 페이지는 `mergeCursorPage`로 중복 없이 병합.
