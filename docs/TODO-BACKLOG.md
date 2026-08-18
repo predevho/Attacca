@@ -137,3 +137,8 @@
 * [ ] 폼/패널 컨테이너의 `bg-surface` 여부 일관성 재검토 — 치환 작업에서 목록 항목·상세 패널에는 `bg-surface`를 넣고, 입력 폼을 감싼 래퍼(`ComposeForm`·`NewChatForm`·`ApplyPanel`의 폼 패널, `ApplicationReviewItem`의 사유 입력 패널)에는 넣지 않는 판단을 했다. 여러 담당이 독립적으로 같은 결론을 냈고 실화면상 문제는 없으나, 디자인 의도상 폼도 카드로 보여야 한다면 한 번에 정리할 것.
 * [ ] `body`의 `font-family: Arial, Helvetica, sans-serif`가 Geist 변수 폰트를 덮어쓰고 있다 — 프로젝트 초기부터 있던 것으로 이번 범위 밖이었으나, 폰트를 의도대로 쓰려면 정리 필요.
 * [ ] 테스트 플레이크: `__tests__/chat-room-page.test.tsx`의 "DIRECT 헤더는 본인을 제외한 참여자만 표시"가 전체 병렬 실행에서 드물게 실패하고 단독·재실행에서는 통과한다(2026-08-18 관측 1회). 원인 규명 필요 — 목 `useRouter` 참조 변화로 인한 기존 flakiness와 같은 계열일 가능성.
+
+## 포트폴리오 정비 (2026-08-18 식별)
+
+* [ ] **README 부재** — 루트·FE·BE 어디에도 README가 없다. 포트폴리오에서는 사실상 첫인상이므로 우선순위가 높다. 담을 것: 서비스 소개, 스택, 아키텍처(BFF·도메인 6개·JWT/OAuth·STOMP), 실행법(docker compose + bootRun + npm run dev, JDK 21 주의), 화면 스크린샷(라이트/다크), 그리고 LLM 에이전트 기반 개발 방식과 `docs/` 문서 체계 소개.
+* [ ] 화면 스크린샷 확보 — 전역 헤더·악보지 테마가 적용된 상태로 라이트/다크 각각. README와 포트폴리오에 함께 쓴다.
