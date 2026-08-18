@@ -8,7 +8,7 @@
 :root {
   --paper: #f5f0e6;
   --surface: #faf7f0;
-  --surface-2: #ede6d8;
+  --surface-muted: #ede6d8;
   --ink: #171717;
   --ink-muted: #5c574e;
   --ink-faint: #8a8378;
@@ -26,13 +26,14 @@
 /*
  * 밤의 무대(다크). 헤더만 명암이 반전된다 — 라이트에서는 짙은 표지,
  * 다크에서는 밝은 표지가 어둠 위로 떠오른다.
- * 헤더 바를 그대로 두고 글자만 검정으로 바꾸면 대비 2.5:1로 기준(4.5) 미달이라 쓸 수 없다.
+ * 헤더 바(#3d5a80)를 그대로 두고 글자만 본문 검정(#171717)으로 바꾸면
+ * 대비가 2.5:1까지 떨어져 기준(4.5)에 못 미친다. 그래서 바 색 자체를 반전시킨다.
  */
 @media (prefers-color-scheme: dark) {
   :root {
     --paper: #1a1917;
     --surface: #232120;
-    --surface-2: #2c2a28;
+    --surface-muted: #2c2a28;
     --ink: #ede7da;
     --ink-muted: #a8a296;
     --ink-faint: #75706a;
@@ -51,7 +52,7 @@
 @theme inline {
   --color-paper: var(--paper);
   --color-surface: var(--surface);
-  --color-surface-2: var(--surface-2);
+  --color-surface-muted: var(--surface-muted);
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
   --color-ink-faint: var(--ink-faint);
