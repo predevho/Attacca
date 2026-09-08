@@ -41,6 +41,10 @@
   * role 조회는 `global.security.MemberRoleProvider` 포트 ↔ `domain.member` 구현. `global`이 `domain`을 참조하지 않기 위함.
   * FE: `session.ts`가 쿠키 **두 개**를 갱신하고, `/api/bff/logout`이 BE 철회를 먼저 호출한다.
 * Redis는 로컬·운영 모두 compose 컨테이너(`attacca-redis`). ElastiCache 미사용(단일 인스턴스 전제, 프리티어 없음).
+* **HTTPS 전환 완료(2026-09-08)**: **https://attacca.site** (가비아, Elastic IP `3.39.184.71`). `www`는 301로 apex에 모은다 — 두 오리진이면 쿠키·세션이 갈라지고 WS 허용 오리진도 둘이 된다.
+  * **이걸로 로그인이 처음 동작했다.** `NODE_ENV=production`이라 쿠키에 `Secure`가 붙는데 HTTP에서는 브라우저가 저장을 거부해, 그전까지 브라우저 로그인이 아예 불가능했다.
+  * 인증서는 Let's Encrypt(attacca.site + www, ~2026-12-07). `attacca-renew.timer`가 하루 2회 확인하고 nginx를 reload한다. 갱신 리허설(`--dry-run`) 통과 확인.
+  * ⚠️ `NEXT_PUBLIC_BE_WS_URL`은 번들에 박힌다. 주소가 바뀌면 저장소 Variables를 고치고 **이미지를 다시 구워야** 한다(Actions의 `workflow_dispatch`).
 * **자동 배포(2026-09-08)**: main 푸시 → Actions가 이미지를 구워 GHCR에 `:latest`/`:<sha>` → EC2의 systemd 타이머(2분)가 받아서 교체. 사람이 서버에 들어갈 일이 없다. 절차·근거는 `docs/DEPLOY.md`의 "자동 배포(CD)".
   * **미는 게 아니라 당겨온다** — 인바운드 포트를 하나도 열지 않고 GitHub에 서버 자격증명도 두지 않기 위해. 대가는 최대 2분 지연.
   * 서버에서는 **굽지 않는다**. t3.micro(1GB)에서 빌드하면 스왑을 긁고 캐시가 5GB까지 불었다(정리 후 디스크 35%→20%).

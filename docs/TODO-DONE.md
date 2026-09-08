@@ -4,6 +4,16 @@
 
 ---
 
+* [x] (2026-09-08) HTTPS 전환 — **https://attacca.site**. 절차는 `docs/DEPLOY.md` 2단계.
+  * **이 작업으로 로그인이 처음 동작하게 됐다.** `NODE_ENV=production`이라 쿠키에 `Secure`가 붙는데 HTTP에서는 브라우저가 저장을 거부한다. 즉 그전까지 브라우저 로그인은 **아예 불가능**했고, HTTPS는 편의가 아니라 동작 조건이었다.
+  * 도메인 attacca.site(가비아) + Elastic IP `3.39.184.71`. A 레코드 apex/www, 보안 그룹 443.
+  * Let's Encrypt 인증서(apex + www). 스테이징으로 먼저 연습한 뒤 진짜 발급. `attacca-renew.timer`가 하루 2회 확인 → nginx reload. `--dry-run`으로 갱신 전 과정 검증.
+  * **www는 apex로 301.** 취향이 아니라 필요다 — 두 오리진이면 쿠키가 갈라져 www에서 로그인하면 apex는 로그아웃 상태가 되고, WS 허용 오리진도 둘 다 열어야 한다.
+  * **함께 잡은 치명적 버그**: nginx에 `location /api/bff/`가 없어 브라우저가 부른 `/api/bff/*`가 전부 BE로 가 401이었다. 로그인·피드 등 클라이언트 동작이 통째로 죽어 있었는데, 홈이 서버 렌더라 멀쩡해 보여 가려져 있었다.
+  * **nginx 설정이 왜 안 먹었는지도 잡았다**: 설정을 파일 하나로 bind mount 하면 그 inode에 고정된다. `git pull`이 파일을 갈아끼우면 컨테이너는 영영 옛 파일을 본다(호스트 inode 298981 / 컨테이너 320796). reload가 아니라 재생성해야 한다.
+  * **CI에 `workflow_dispatch` 추가**: 코드는 그대로인데 빌드 시점 변수(`NEXT_PUBLIC_BE_WS_URL`)만 바뀌면 이미지를 다시 구울 방법이 없었다. 이번 전환에서 실제로 막혔다.
+  * **검증**: 로그인→쿠키 2개 저장(Secure)→인증 요청 200→로그아웃→쿠키 0개·401, 철회된 refresh는 401-09. wss 핸드셰이크 101. http/www 모두 apex https로 301. TLS 1.3.
+
 * [x] (2026-09-08) 자동 배포(CD) 구축 — main 푸시 한 번으로 끝난다. 절차는 `docs/DEPLOY.md`.
   * **구성**: Actions가 테스트 → 이미지 빌드 → GHCR(`:latest`/`:<sha>`) 푸시. EC2의 systemd 타이머가 2분마다 받아 교체하고, 참조를 잃은 옛 이미지를 지운다.
   * **미는 대신 당겨오기로 했다.** GitHub이 밀어넣으려면 22번을 전체 개방하거나 SSM/OIDC를 붙여야 한다. 서버가 스스로 확인하면 **인바운드 포트를 하나도 열지 않고** GitHub에 서버 자격증명도 두지 않는다. 대가는 최대 2분 지연과 배포 로그가 GitHub에 안 남는 것(서버 `journalctl`에는 남는다).

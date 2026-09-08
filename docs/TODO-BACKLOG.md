@@ -87,6 +87,9 @@
 * [ ] FEED/PERFORMANCE: `clamp(size)`·`isAdmin(Authentication)`가 여러 컨트롤러에 중복 — 공용 헬퍼로 추출. (2026-07-17/07-22 리뷰 식별)
 * [ ] FEED: `VerificationApplicationRepository.findApprovedMemberIds`의 JPQL이 enum을 FQN 리터럴로 사용 → `@Param`으로 파라미터 바인딩 정리(리네임 취약). 해당 테스트의 인라인 `java.util.Set`도 import로. (2026-07-17)
 
+* [ ] HSTS 적용 검토 — 지금은 헤더가 없다. 넣으면 브라우저가 이후 https만 쓰지만, HTTPS가 깨졌을 때 되돌리기 어려워진다(max-age 동안 http 접속 불가). 짧은 max-age로 시작해 늘리는 방식 검토. `includeSubDomains`/`preload`는 신중히.
+* [ ] 접속 로그·모니터링 — 지금은 컨테이너 로그가 전부. 배포 자동화까지 됐으니 실패를 알아챌 수단이 필요하다.
+
 ## BE 공통 (도메인 확장 전후로 필요)
 
 * [x] ~~CORS 설정~~ — BFF 채택으로 브라우저 경로는 same-origin이라 불필요. 모바일 앱 등 BE 직접 호출 소비처가 생기면 재도입 검토. (2026-07-15 결정)
