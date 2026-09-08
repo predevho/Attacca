@@ -115,7 +115,9 @@
 
 ### C. 배포 후 / 최적화
 
-* [ ] 실제 S3 연동 검증 — AWS 자격증명 발급 후 `STORAGE_TYPE=s3`로 업로드/삭제/조회 수동 확인 (자동 테스트 범위 밖)
+* [ ] **[결함] `STORAGE_TYPE=s3`는 지금 기동조차 안 된다** — `S3FileStorage`가 생성자로 `S3Client`를 받는데 **코드베이스에 `S3Client` 빈을 만드는 곳이 없다**(2026-09-08 확인. `S3Client.builder` grep 결과 0건). 켜면 `No qualifying bean of type S3Client`로 컨텍스트 로딩이 실패한다. 테스트가 `S3Client`를 목으로 주입해 와서 여태 드러나지 않았다 — "미검증"이 아니라 "동작 불가"다.
+  * 고칠 때 함께 정할 것: 자격증명을 **액세스 키가 아니라 EC2 인스턴스 역할(IAM Role)**로 받는다. `S3Client.builder().region(...).build()`가 기본으로 쓰는 `DefaultCredentialsProvider`가 인스턴스 메타데이터를 읽으므로, 서버에 키 파일을 두지 않아도 된다(유출·로테이션 부담 없음). `storage.s3.access-key`/`secret-key` 설정은 로컬 테스트용으로만 남기거나 제거.
+  * 그 뒤에야 실연동 검증(업로드/삭제/조회)이 의미가 있다. 1단계 배포는 `STORAGE_TYPE=local`이라 영향 없음.
 * [ ] 고아 파일 정리(GC) — 메타데이터 없는 물리 파일, 업로드 실패로 남은 파일 정리 배치
 * [ ] CloudFront/R2 등 CDN 전환으로 파일 접근 요금 최적화 (`base-url` 교체만으로 가능하도록 설계됨)
 * [ ] 로그/모니터링 방침 — 현재 예외는 `GlobalExceptionHandler`가 `log.warn`/`log.error`로 남긴다. 운영에서 어디로 모을지(CloudWatch 등) 결정.

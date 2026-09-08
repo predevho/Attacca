@@ -2,6 +2,30 @@
 
 > 2026-09-08. **AWS EC2 1대 + RDS**. 1단계는 도메인 없이 IP + HTTP로 띄우고, 2단계에서 도메인·HTTPS를 붙인다.
 
+## AWS 계정 준비
+
+**루트 계정으로는 아래 네 가지만 하고 그 뒤로는 쓰지 않는다.**
+
+1. 루트에 **MFA** 설정
+2. **IAM 사용자** 1개 생성(콘솔 접근 + MFA). 이후 모든 작업은 이 계정으로 한다
+3. **결제 정보 IAM 액세스 활성화** — 계정 설정 → "IAM 사용자/역할의 결제 정보 액세스".
+   **루트에서만 켤 수 있다.** 안 켜면 IAM 사용자로는 비용 화면이 보이지 않아 프리티어 초과를
+   모르고 지나간다
+4. **Budgets 알림**(예: 월 $5 초과 시 메일)
+
+IAM 사용자 권한은 1인 프로젝트 기준 `AdministratorAccess` + MFA가 현실적이다. 좁히려면
+`AmazonEC2FullAccess` + `AmazonRDSFullAccess` + `IAMReadOnlyAccess`로도 이 문서의 작업은 된다.
+
+**액세스 키(프로그래매틱 액세스)는 만들지 않는다.** 콘솔로만 작업하므로 필요 없고,
+키 유출이 가장 흔한 사고다. 앱도 1단계에서는 AWS 자격증명이 필요 없다
+(`STORAGE_TYPE=local`). `.env.prod`의 `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`는 비워 둔다.
+
+> S3로 전환할 때도 서버에 키를 두지 말고 **EC2 인스턴스 역할(IAM Role)**을 붙인다.
+> 단, **현재 코드는 `STORAGE_TYPE=s3`로 기동되지 않는다**(`S3Client` 빈이 없음 —
+> TODO-BACKLOG 참고). 전환은 그 결함을 고친 뒤에 한다.
+
+---
+
 ## 전제와 그 이유
 
 **BE 컨테이너는 1벌이다.** 채팅의 STOMP 브로커가 인메모리 Simple Broker이고 `PresenceRegistry`도
