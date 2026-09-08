@@ -16,18 +16,36 @@ cd "$(dirname "$0")/.."
 
 DC=./deploy/dc.sh
 
-# 지금 떠 있는 이미지의 다이제스트. pull 뒤와 비교해 실제 변경만 배포한다.
-current_digests() {
-  $DC config --images 2>/dev/null | sort -u | while read -r img; do
-    docker image inspect --format '{{.Id}}' "$img" 2>/dev/null || echo "없음:$img"
+$DC pull --quiet 2>&1 | grep -v '^$' || true
+
+# 배포가 필요한가? "태그가 바뀌었나"가 아니라 **지금 돌고 있는 컨테이너가
+# 제 이미지를 쓰고 있나**를 본다.
+#
+# 태그 변화만 보면 직전 실행이 중간에 실패했을 때(BE가 healthy가 안 돼 exit 1)
+# 다음 실행에서 태그는 이미 새것이라 아무것도 안 하고 반쯤 적용된 상태로 방치된다.
+#
+# 이 비교는 `IMAGE_TAG=<sha>`로 되돌려 둔 상태도 지켜 준다 — 그 컨테이너는
+# `:<sha>`로 만들어졌고 그 태그는 움직이지 않으므로 드리프트로 잡히지 않는다.
+# (그래도 다음 푸시 때 굴러가는 걸 막으려면 타이머를 멈춰야 한다. docs/DEPLOY.md)
+needs_deploy() {
+  for svc in $($DC config --services); do
+    cid=$($DC ps -q "$svc" 2>/dev/null || true)
+    if [ -z "$cid" ]; then
+      echo "  $svc: 컨테이너가 없다"
+      return 0
+    fi
+    running=$(docker inspect -f '{{.Image}}' "$cid")
+    ref=$(docker inspect -f '{{.Config.Image}}' "$cid")
+    wanted=$(docker image inspect -f '{{.Id}}' "$ref" 2>/dev/null || echo "")
+    if [ -n "$wanted" ] && [ "$running" != "$wanted" ]; then
+      echo "  $svc: $ref 가 새 이미지를 가리킨다"
+      return 0
+    fi
   done
+  return 1
 }
 
-before=$(current_digests)
-$DC pull --quiet 2>&1 | grep -v '^$' || true
-after=$(current_digests)
-
-if [ "$before" = "$after" ]; then
+if ! needs_deploy; then
   exit 0
 fi
 

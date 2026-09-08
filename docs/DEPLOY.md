@@ -288,15 +288,15 @@ git push main
    `NEXT_PUBLIC_BE_WS_URL` = `ws://<Elastic IP>/ws` (2단계 이후 `wss://<도메인>/ws`).
    `NEXT_PUBLIC_*`은 번들에 박히므로 **이 값을 바꾸면 이미지를 다시 구워야** 한다.
 2. **main에 푸시** → Actions의 `images` job이 GHCR에 올린다.
-3. **패키지를 공개로** — GitHub 프로필 → Packages → `attacca-be` / `attacca-fe` →
-   Package settings → Change visibility → Public. GHCR 패키지는 저장소가 공개여도
-   기본이 비공개라, 안 바꾸면 서버가 `denied`로 못 받는다.
-   (비공개로 두려면 서버에서 `read:packages` PAT로 `docker login ghcr.io` 해야 한다.)
-4. **서버에 타이머 설치** — EC2에서 한 번만:
+3. **서버에 타이머 설치** — EC2에서 한 번만:
 
    ```bash
    cd ~/attacca && git pull && sudo ./deploy/install-updater.sh
    ```
+
+   저장소가 공개면 GHCR 패키지도 공개로 만들어지므로 서버는 로그인 없이 받는다
+   (2026-09-08 익명 pull로 확인). 저장소를 비공개로 돌리면 서버에서
+   `read:packages` PAT로 `docker login ghcr.io`가 필요하다.
 
 ### 확인
 
@@ -314,9 +314,13 @@ sudo systemctl disable --now attacca-update.timer   # 자동 배포 중단
 * **배포 중 짧은 끊김이 있다.** 컨테이너 1벌 구성이라 무중단이 아니다 —
   BE 재기동 동안(약 30초) 502가 난다. 블루-그린은 채팅의 인메모리 브로커 때문에
   Redis 릴레이가 선행돼야 한다.
-* **롤백은 수동이다.** `update.sh`는 헬스체크가 healthy가 되지 않으면 경고만 남기고
-  종료한다. 자동 롤백은 넣지 않았다 — 마이그레이션이 이미 돌았을 수 있어서
-  이미지만 되돌리는 것이 오히려 위험하다.
+* **롤백할 때는 타이머를 멈춰라.** `IMAGE_TAG=<sha>`로 되돌린 컨테이너 자체는
+  타이머가 건드리지 않지만(그 태그는 움직이지 않는다), **다음 푸시가 오면
+  그대로 굴러간다.** 원인을 잡을 때까지는 `sudo systemctl stop attacca-update.timer`.
+* **자동 롤백은 없다.** `update.sh`는 헬스체크가 healthy가 되지 않으면 경고만 남기고
+  종료한다. 마이그레이션이 이미 돌았을 수 있어서 이미지만 되돌리는 것이 오히려
+  위험하기 때문이다. 다만 **반쯤 적용된 상태는 방치하지 않는다** — 다음 실행이
+  "돌고 있는 컨테이너가 제 이미지를 쓰는가"를 보고 다시 시도한다.
 
 ---
 
