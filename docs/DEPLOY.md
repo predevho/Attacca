@@ -216,16 +216,35 @@ FE의 `BE_BASE_URL`은 컨테이너 네트워크 이름(`http://be:8080`)이라 
 
 ## 운영 중 자주 하는 것
 
+`deploy/dc.sh`가 `-f docker-compose.prod.yml --env-file .env.prod`를 붙여 준다.
+
 ```bash
 # 재배포 (코드 갱신)
-git pull && docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+git pull && ./deploy/dc.sh up -d --build
 
-# 로그
-docker compose -f docker-compose.prod.yml logs -f be
-docker compose -f docker-compose.prod.yml logs -f fe
+# 상태 / 로그
+./deploy/dc.sh ps
+./deploy/dc.sh logs -f be
+./deploy/dc.sh logs -f fe
+
+# 특정 서비스만 재시작 (.env.prod 만 고쳤을 때)
+./deploy/dc.sh up -d be
 
 # 디스크 정리 (빌드 캐시가 30GB를 금방 먹는다)
 docker system prune -af --volumes=false
+```
+
+**`--env-file`을 빠뜨리면 위험하다.** `ps`·`logs`는 값을 표시만 못 하고 지나가지만,
+**`up`을 `--env-file` 없이 돌리면 환경변수가 전부 빈 값인 채로 컨테이너가 재생성되어**
+앱이 DB에 못 붙고 죽는다. 경고만 뜨고 그대로 진행되기 때문에 알아채기 어렵다.
+`dc.sh`는 `.env.prod`가 없으면 아예 실행을 멈춘다.
+
+직접 치고 싶으면 환경변수로 대신할 수도 있다(compose v2.24+).
+
+```bash
+export COMPOSE_FILE=docker-compose.prod.yml
+export COMPOSE_ENV_FILES=.env.prod
+docker compose ps          # 이제 옵션 없이 동작
 ```
 
 **스키마를 바꿀 때**는 엔티티만 고치면 안 된다.
