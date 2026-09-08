@@ -41,6 +41,12 @@
   * role 조회는 `global.security.MemberRoleProvider` 포트 ↔ `domain.member` 구현. `global`이 `domain`을 참조하지 않기 위함.
   * FE: `session.ts`가 쿠키 **두 개**를 갱신하고, `/api/bff/logout`이 BE 철회를 먼저 호출한다.
 * Redis는 로컬·운영 모두 compose 컨테이너(`attacca-redis`). ElastiCache 미사용(단일 인스턴스 전제, 프리티어 없음).
+* **회원 입력 검증·동의·탈퇴(2026-09-09)**: 규칙은 `docs/DOMAIN-MEMBER-STATUTE.md` §3.3~3.5.
+  * **검증이 하나도 없었다.** 운영에서 비밀번호 `1` / 이메일 `not-an-email` / 닉네임 공백 한 칸으로 가입·로그인이 됐다. 다른 도메인 DTO에는 있었는데 가장 바깥 입구인 MEMBER만 빠져 있었다. 이제 `@Valid` + DTO 제약. 닉네임은 저장 전 trim(MySQL이 후행 공백을 무시해 유니크 제약이 어긋난다).
+  * **동의는 기록이다.** `member_consent`에 누가·언제·어느 버전에(현재 `2026-09-09`) 동의했는지 남긴다. 이력 전부를 남기고 탈퇴해도 지우지 않는다. 없으면 `CONSENT_REQUIRED`(400-04).
+  * 카카오는 최초 사용 시 곧바로 가입되므로 **버튼 누르기 전에** 동의를 받아 httpOnly 쿠키로 콜백까지 나른다. BE는 신규 생성 경로에서만 요구한다.
+  * **탈퇴**(`DELETE /api/members/me`)는 사람을 지우고 글은 남긴다. refresh 전부 철회. access는 만료(30분)까지 살아 있다(로그아웃과 같은 절충).
+  * ⚠️ 약관·개인정보처리방침 문안(`FE/lib/legal/policy.ts`)은 **초안이고 법적 검토를 받지 않았다.**
 * **HTTPS 전환 완료(2026-09-08)**: **https://attacca.site** (가비아, Elastic IP `3.39.184.71`). `www`는 301로 apex에 모은다 — 두 오리진이면 쿠키·세션이 갈라지고 WS 허용 오리진도 둘이 된다.
   * **이걸로 로그인이 처음 동작했다.** `NODE_ENV=production`이라 쿠키에 `Secure`가 붙는데 HTTP에서는 브라우저가 저장을 거부해, 그전까지 브라우저 로그인이 아예 불가능했다.
   * 인증서는 Let's Encrypt(attacca.site + www, ~2026-12-07). `attacca-renew.timer`가 하루 2회 확인하고 nginx를 reload한다. 갱신 리허설(`--dry-run`) 통과 확인.
