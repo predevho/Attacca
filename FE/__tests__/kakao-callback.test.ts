@@ -20,7 +20,16 @@ afterEach(() => { process.env = { ...OLD_ENV }; vi.unstubAllGlobals(); });
 function beJson(body: unknown, status: number) {
   return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 }
-function locationOf(res: Response) { return new URL(res.headers.get('location')!).pathname + new URL(res.headers.get('location')!).search; }
+/**
+ * Location 헤더를 **있는 그대로** 돌려준다.
+ *
+ * 예전에는 pathname+search 만 뽑아 비교해서, 호스트가 틀려도 통과했다.
+ * 그 탓에 운영에서 `https://0.0.0.0:3000/feed` 로 리다이렉트하던 것을 놓쳤다
+ * (2026-09-08 발견). 콜백은 전부 사이트 내부로 가므로 상대 경로여야 한다.
+ */
+function locationOf(res: Response) {
+  return res.headers.get('location')!;
+}
 
 describe('GET /api/bff/oauth/kakao/callback', () => {
   it('state 통과 + BE 성공 → 인증 쿠키 설정 후 /feed', async () => {

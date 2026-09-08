@@ -17,9 +17,16 @@ beforeEach(() => {
 });
 afterEach(() => { process.env = { ...OLD_ENV }; });
 
+/**
+ * Location 헤더를 **있는 그대로** 돌려준다.
+ *
+ * 예전에는 여기서 `new URL(...)` 로 파싱해 pathname+search 만 비교했다.
+ * 그래서 호스트가 틀려도 테스트가 통과했고, 운영에서 라우트 핸들러가
+ * `https://0.0.0.0:3000/login...` 으로 리다이렉트하는 것을 놓쳤다
+ * (2026-09-08 발견). 호스트를 버리지 않는다.
+ */
 function locationOf(res: Response) {
-  const u = new URL(res.headers.get('location')!);
-  return u;
+  return res.headers.get('location')!;
 }
 
 describe('GET /api/bff/oauth/kakao/start', () => {
@@ -29,8 +36,9 @@ describe('GET /api/bff/oauth/kakao/start', () => {
 
     const res = await GET(new Request('http://localhost:3000/api/bff/oauth/kakao/start'));
 
-    const u = locationOf(res);
-    expect(u.pathname + u.search).toBe('/login?error=oauth_config');
+    // 상대 경로여야 한다 — 호스트가 붙으면 컨테이너 주소로 새거나,
+    // Host 헤더를 믿게 되어 오픈 리다이렉트가 된다.
+    expect(locationOf(res)).toBe('/login?error=oauth_config');
     expect(jar['oauth_state']).toBeUndefined();
   });
 
@@ -40,7 +48,8 @@ describe('GET /api/bff/oauth/kakao/start', () => {
 
     const res = await GET(new Request('http://localhost:3000/api/bff/oauth/kakao/start'));
 
-    const u = locationOf(res);
+    // 카카오로 나가는 것은 외부 절대 주소가 맞다.
+    const u = new URL(locationOf(res));
     expect(u.origin + u.pathname).toBe('https://kauth.kakao.com/oauth/authorize');
     expect(u.searchParams.get('client_id')).toBe('rest-key');
     expect(u.searchParams.get('redirect_uri')).toBe('http://localhost:3000/api/bff/oauth/kakao/callback');
