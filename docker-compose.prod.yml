@@ -2,6 +2,8 @@
 #
 #   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
 #
+# 현재는 1단계(IP + HTTP) 구성이다. 도메인·HTTPS는 docs/DEPLOY.md 2단계 참고.
+#
 # ⚠️ 이 구성은 컨테이너가 1벌이라는 전제 위에 있다. 채팅의 STOMP 브로커와 presence가
 #    인메모리라 BE를 2벌 이상 띄우면 A서버 사용자와 B서버 사용자 사이에 메시지가 오가지 않는다.
 #    스케일아웃하려면 Redis(enableStompBrokerRelay) 도입이 선행돼야 한다.
@@ -15,8 +17,8 @@ services:
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
-      KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
-      KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET}
+      KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID:-}
+      KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET:-}
       WS_ALLOWED_ORIGINS: ${PUBLIC_ORIGIN}
       STORAGE_TYPE: ${STORAGE_TYPE:-local}
       STORAGE_LOCAL_BASE_URL: ${PUBLIC_ORIGIN}/files
@@ -32,19 +34,20 @@ services:
       interval: 15s
       timeout: 3s
       retries: 10
-      start_period: 60s
+      start_period: 90s
 
   fe:
     build:
       context: ./FE
       args:
         # NEXT_PUBLIC_*은 빌드 시점에 번들에 박힌다. 런타임 env로는 못 바꾼다.
+        # 주소가 바뀌면 --build 로 다시 빌드해야 한다.
         NEXT_PUBLIC_BE_WS_URL: ${NEXT_PUBLIC_BE_WS_URL}
     restart: unless-stopped
     environment:
       # 브라우저가 아니라 FE 서버(BFF)가 부르는 주소라 컨테이너 네트워크 이름을 쓴다.
       BE_BASE_URL: http://be:8080
-      KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
+      KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID:-}
       KAKAO_REDIRECT_URI: ${PUBLIC_ORIGIN}/api/bff/oauth/kakao/callback
     depends_on:
       be:
@@ -55,13 +58,17 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
-      - "443:443"
-    environment:
-      SERVER_NAME: ${SERVER_NAME}
+      # 2단계(HTTPS)에서 열 것
+      # - "443:443"
     volumes:
-      - ./deploy/nginx.conf:/etc/nginx/templates/default.conf.template:ro
-      - ./deploy/certbot/conf:/etc/letsencrypt:ro
-      - ./deploy/certbot/www:/var/www/certbot:ro
+      # 1단계: IP + HTTP. 치환할 변수가 없어 conf.d로 바로 마운트한다.
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # 2단계: 아래로 교체(${SERVER_NAME} 치환이 필요해 templates/ 로 간다)
+      # - ./deploy/nginx.https.conf:/etc/nginx/templates/default.conf.template:ro
+      # - ./deploy/certbot/conf:/etc/letsencrypt:ro
+      # - ./deploy/certbot/www:/var/www/certbot:ro
+    # environment:
+    #   SERVER_NAME: ${SERVER_NAME}
     depends_on:
       - fe
       - be

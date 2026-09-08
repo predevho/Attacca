@@ -106,11 +106,12 @@
 ### B. 인프라 구성
 
 * [ ] **RDS 전환** — 데이터소스가 이미 env(`DB_URL`/`DB_USERNAME`/`DB_PASSWORD`)라 값 교체만으로 전환 가능. 함께 처리: RDS 퍼블릭 접근 차단(보안그룹으로 앱 서버만 허용), 파라미터 그룹 `utf8mb4`/타임존, HikariCP 풀 크기 vs 인스턴스 `max_connections`, 자격증명은 Secrets Manager 또는 env(커밋 금지 규칙 기존대로).
-* [x] ~~**Nginx 리버스 프록시 + HTTPS + WebSocket 프록시**~~ — 2026-09-08 `deploy/nginx.conf` 작성(WS Upgrade 헤더·1시간 타임아웃, 업로드 상한을 BE multipart 10MB와 일치, actuator는 내부망만). **실제 인증서 발급·기동은 미검증**. 원문: — `/ws` 업그레이드 헤더 통과 설정 포함. (기존 항목)
+* [x] ~~**Nginx 리버스 프록시 + WebSocket 프록시**~~ — 2026-09-08 완료. 도메인이 없어 **2단계로 나눴다**: `deploy/nginx.conf`(1단계, IP+HTTP)와 `deploy/nginx.https.conf`(2단계, 도메인+TLS). 둘 다 문법 검증 통과(2단계는 인증서 파일만 없음). WS Upgrade 헤더·1시간 타임아웃, 업로드 상한을 BE multipart 10MB와 일치, actuator는 외부 차단. 원문: — `/ws` 업그레이드 헤더 통과 설정 포함. (기존 항목)
 * [x] ~~**CI/CD 구성**~~ — 2026-09-08 `.github/workflows/ci.yml` 작성. 한 워크플로 안에서 `dorny/paths-filter` + `needs`로 BE→FE 순서 강제. **배포 job은 아직 없다**(EC2 접속 방식 미정). 원문: — 모노레포 경로 필터로 BE/FE 파이프라인 분리. ⚠️ 워크플로 **파일**을 나누면 두 쪽이 같이 바뀐 커밋에서 배포 순서가 보장되지 않아 계약 변경 배포 때 깨진 창이 생긴다. 한 워크플로 안에서 job 레벨 변경 감지(`dorny/paths-filter`) + `needs`로 **BE → FE 순서 강제**.
 * [x] ~~**헬스체크 엔드포인트**~~ — 2026-09-08 완료. Actuator 추가, `health`만 노출하고 SecurityConfig에서 `/actuator/health`만 permitAll. `/actuator/env`·`/beans`가 401인 것까지 확인. 원문: — 현재 Spring Actuator 미도입(2026-08-18 확인). ALB/ECS 헬스체크·무중단 배포에 필요하므로 `actuator` 추가 후 `/actuator/health`만 노출(나머지 엔드포인트는 차단).
 * [x] ~~**프로덕션 환경변수 목록 정리**~~ — 2026-09-08 완료. `docs/DEPLOY.md`에 주입 시점까지 포함한 표, `.env.prod.example` 추가. `NEXT_PUBLIC_BE_WS_URL`이 **빌드 시점**에 박힌다는 점을 명시. 원문: — `DB_*`, `JWT_SECRET`, `KAKAO_CLIENT_ID`/`SECRET`, `STORAGE_TYPE`/`S3_*`, `DDL_AUTO`, FE의 `BE_BASE_URL`/`NEXT_PUBLIC_BE_WS_URL`(wss)/`KAKAO_REDIRECT_URI`. 한 곳에 표로 정리(어디에 주입하는지 포함). 카카오 `redirect_uri`는 개발자 콘솔에도 운영 주소 등록 필요.
-* [ ] **`NEXT_PUBLIC_BE_WS_URL`을 wss로** — (기존 채팅 후속 항목과 동일 건)
+* [ ] **도메인 확보 후 HTTPS 전환(2단계)** — A 레코드 → 443 개방 → compose의 nginx 블록을 `nginx.https.conf`로 교체 → certbot 발급 → `PUBLIC_ORIGIN`/`NEXT_PUBLIC_BE_WS_URL`을 https·wss로 → **FE 이미지 재빌드**(NEXT_PUBLIC_*은 빌드에 박힌다) → 카카오 Redirect URI 갱신. 절차는 `docs/DEPLOY.md` 2단계.
+* [ ] CI 배포 job — EC2 접속 방식(SSH 키/SSM/ECR)이 정해지면 `.github/workflows/ci.yml`에 붙인다. 지금은 서버에서 `git pull` + `up -d --build`가 배포다.
 
 ### C. 배포 후 / 최적화
 
