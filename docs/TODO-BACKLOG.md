@@ -97,19 +97,19 @@
 
 배포 목표: BE(EC2/ECS) + FE(EC2 또는 Vercel) + DB(RDS)를 각각 분리 운영. **레포는 단일 유지**(빌드 산출물이 `BE/build/libs/*.jar` / `FE/.next`로 이미 독립, 연결점은 런타임 env 주소뿐).
 
-### A. 배포 전 반드시 결정해야 하는 것 (블로커)
+### A. 배포 전 반드시 결정해야 하는 것 (블로커) — 2026-09-08 전부 해소
 
-* [ ] **`ddl-auto` 정책 확정** — 현재 `${DDL_AUTO:update}`. 운영 DB에서 Hibernate가 스키마를 자기 판단으로 바꾸고, 컬럼 삭제·타입 변경은 반영조차 안 해 코드/스키마가 조용히 어긋난다. RDS 전환 시 `validate`로 내리고 **Flyway 도입**(현재 마이그레이션 도구 없음 — 2026-08-18 확인). 초기 스키마는 현재 `update`로 생성된 DDL을 베이스라인으로 추출.
-* [ ] **단일 인스턴스 운영 여부 확정** — 지금 채팅은 **다중 서버에서 동작하지 않는다**. STOMP가 인메모리 Simple Broker라 A서버 사용자와 B서버 사용자 간 메시지가 오가지 않고, `PresenceRegistry`도 인메모리라 단일 서버에서만 정확. 스케일아웃이나 무중단(블루-그린) 배포를 할 거면 **그 전에 Redis 선행**(`enableStompBrokerRelay` 교체 + Redis 기반 `PresenceRegistry`, 도메인 코드는 불변). 1대 운영이면 현행 유지 가능.
-* [ ] **WS origin 좁히기** — `WebSocketConfig.setAllowedOriginPatterns("*")`(BE/src/main/java/com/back/global/websocket/WebSocketConfig.java:24)를 실제 FE origin으로 제한. 프로덕션 노출 전 필수.
+* [x] ~~**`ddl-auto` 정책 확정**~~ — 2026-09-08 완료. `validate`로 내리고 **Flyway 도입**(`V1__baseline_schema.sql`, 기존 `update` 스키마 19테이블 추출). 기존 DB는 `baseline-on-migrate`로 흡수, 빈 DB에서는 실제로 마이그레이션이 돌아 앱이 뜨는 것까지 확인(컨테이너 포함). 테스트는 `src/test/resources/application.properties`에서 Flyway를 끄고 `create-drop`을 쓴다. 원문: — 현재 `${DDL_AUTO:update}`. 운영 DB에서 Hibernate가 스키마를 자기 판단으로 바꾸고, 컬럼 삭제·타입 변경은 반영조차 안 해 코드/스키마가 조용히 어긋난다. RDS 전환 시 `validate`로 내리고 **Flyway 도입**(현재 마이그레이션 도구 없음 — 2026-08-18 확인). 초기 스키마는 현재 `update`로 생성된 DDL을 베이스라인으로 추출.
+* [x] ~~**단일 인스턴스 운영 여부 확정**~~ — **1대로 확정(2026-09-08)**. 채팅이 그대로 동작하는 것이 결정적이었다. 스케일아웃·블루그린은 의도적으로 포기하고, 필요해지면 Redis를 먼저 넣는다. `docker-compose.prod.yml`과 `docs/DEPLOY.md` 첫머리에 이 전제를 못박아 뒀다. 원문: — 지금 채팅은 **다중 서버에서 동작하지 않는다**. STOMP가 인메모리 Simple Broker라 A서버 사용자와 B서버 사용자 간 메시지가 오가지 않고, `PresenceRegistry`도 인메모리라 단일 서버에서만 정확. 스케일아웃이나 무중단(블루-그린) 배포를 할 거면 **그 전에 Redis 선행**(`enableStompBrokerRelay` 교체 + Redis 기반 `PresenceRegistry`, 도메인 코드는 불변). 1대 운영이면 현행 유지 가능.
+* [x] ~~**WS origin 좁히기**~~ — 2026-09-08 완료. `app.ws.allowed-origins`(`WS_ALLOWED_ORIGINS`)로 환경변수화. 기본값은 로컬 주소뿐이고 운영에서는 FE origin으로 좁힌다. 원문: — `WebSocketConfig.setAllowedOriginPatterns("*")`(BE/src/main/java/com/back/global/websocket/WebSocketConfig.java:24)를 실제 FE origin으로 제한. 프로덕션 노출 전 필수.
 
 ### B. 인프라 구성
 
 * [ ] **RDS 전환** — 데이터소스가 이미 env(`DB_URL`/`DB_USERNAME`/`DB_PASSWORD`)라 값 교체만으로 전환 가능. 함께 처리: RDS 퍼블릭 접근 차단(보안그룹으로 앱 서버만 허용), 파라미터 그룹 `utf8mb4`/타임존, HikariCP 풀 크기 vs 인스턴스 `max_connections`, 자격증명은 Secrets Manager 또는 env(커밋 금지 규칙 기존대로).
-* [ ] **Nginx 리버스 프록시 + HTTPS + WebSocket 프록시** — `/ws` 업그레이드 헤더 통과 설정 포함. (기존 항목)
-* [ ] **CI/CD 구성** — 모노레포 경로 필터로 BE/FE 파이프라인 분리. ⚠️ 워크플로 **파일**을 나누면 두 쪽이 같이 바뀐 커밋에서 배포 순서가 보장되지 않아 계약 변경 배포 때 깨진 창이 생긴다. 한 워크플로 안에서 job 레벨 변경 감지(`dorny/paths-filter`) + `needs`로 **BE → FE 순서 강제**.
-* [ ] **헬스체크 엔드포인트** — 현재 Spring Actuator 미도입(2026-08-18 확인). ALB/ECS 헬스체크·무중단 배포에 필요하므로 `actuator` 추가 후 `/actuator/health`만 노출(나머지 엔드포인트는 차단).
-* [ ] **프로덕션 환경변수 목록 정리** — `DB_*`, `JWT_SECRET`, `KAKAO_CLIENT_ID`/`SECRET`, `STORAGE_TYPE`/`S3_*`, `DDL_AUTO`, FE의 `BE_BASE_URL`/`NEXT_PUBLIC_BE_WS_URL`(wss)/`KAKAO_REDIRECT_URI`. 한 곳에 표로 정리(어디에 주입하는지 포함). 카카오 `redirect_uri`는 개발자 콘솔에도 운영 주소 등록 필요.
+* [x] ~~**Nginx 리버스 프록시 + HTTPS + WebSocket 프록시**~~ — 2026-09-08 `deploy/nginx.conf` 작성(WS Upgrade 헤더·1시간 타임아웃, 업로드 상한을 BE multipart 10MB와 일치, actuator는 내부망만). **실제 인증서 발급·기동은 미검증**. 원문: — `/ws` 업그레이드 헤더 통과 설정 포함. (기존 항목)
+* [x] ~~**CI/CD 구성**~~ — 2026-09-08 `.github/workflows/ci.yml` 작성. 한 워크플로 안에서 `dorny/paths-filter` + `needs`로 BE→FE 순서 강제. **배포 job은 아직 없다**(EC2 접속 방식 미정). 원문: — 모노레포 경로 필터로 BE/FE 파이프라인 분리. ⚠️ 워크플로 **파일**을 나누면 두 쪽이 같이 바뀐 커밋에서 배포 순서가 보장되지 않아 계약 변경 배포 때 깨진 창이 생긴다. 한 워크플로 안에서 job 레벨 변경 감지(`dorny/paths-filter`) + `needs`로 **BE → FE 순서 강제**.
+* [x] ~~**헬스체크 엔드포인트**~~ — 2026-09-08 완료. Actuator 추가, `health`만 노출하고 SecurityConfig에서 `/actuator/health`만 permitAll. `/actuator/env`·`/beans`가 401인 것까지 확인. 원문: — 현재 Spring Actuator 미도입(2026-08-18 확인). ALB/ECS 헬스체크·무중단 배포에 필요하므로 `actuator` 추가 후 `/actuator/health`만 노출(나머지 엔드포인트는 차단).
+* [x] ~~**프로덕션 환경변수 목록 정리**~~ — 2026-09-08 완료. `docs/DEPLOY.md`에 주입 시점까지 포함한 표, `.env.prod.example` 추가. `NEXT_PUBLIC_BE_WS_URL`이 **빌드 시점**에 박힌다는 점을 명시. 원문: — `DB_*`, `JWT_SECRET`, `KAKAO_CLIENT_ID`/`SECRET`, `STORAGE_TYPE`/`S3_*`, `DDL_AUTO`, FE의 `BE_BASE_URL`/`NEXT_PUBLIC_BE_WS_URL`(wss)/`KAKAO_REDIRECT_URI`. 한 곳에 표로 정리(어디에 주입하는지 포함). 카카오 `redirect_uri`는 개발자 콘솔에도 운영 주소 등록 필요.
 * [ ] **`NEXT_PUBLIC_BE_WS_URL`을 wss로** — (기존 채팅 후속 항목과 동일 건)
 
 ### C. 배포 후 / 최적화

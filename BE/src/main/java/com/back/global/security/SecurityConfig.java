@@ -36,6 +36,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/files/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
+                        // 로드밸런서·컨테이너 헬스체크용. health 하나만 연다
+                        // (application.yaml의 management.endpoints...include도 health뿐이지만,
+                        //  경로도 여기서 명시적으로 좁혀 둔다 — 나중에 노출을 늘려도 뚫리지 않게).
+                        .requestMatchers("/actuator/health").permitAll()
                         // 비인증 읽기 전용 경로. 이 아래에는 쓰기 엔드포인트를 두지 않는다
                         // (DOMAIN-NOTICE-STATUTE §6 — 공개 조회 규칙).
                         .requestMatchers("/api/public/**").permitAll()

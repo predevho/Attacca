@@ -1,0 +1,11 @@
+# 빌드 컨텍스트에서 제외. node_modules는 deps 스테이지가 다시 설치하고,
+# .next를 그대로 들고 가면 이전 빌드 산출물이 섞인다.
+node_modules
+.next
+out
+coverage
+.env*
+Dockerfile
+.dockerignore
+README.md
+__tests__
