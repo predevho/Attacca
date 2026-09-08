@@ -109,28 +109,22 @@ RDS 보안 그룹 → 인바운드 규칙 → **MySQL/Aurora(3306)**, 소스에 
 ssh -i <키>.pem ubuntu@<Elastic IP>
 ```
 
-```bash
-# Docker
-sudo apt-get update && sudo apt-get install -y ca-certificates curl git
-sudo install -m 0755 -d /etc/apt/keyrings
-sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-sudo chmod a+r /etc/apt/keyrings/docker.asc
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" \
-  | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-sudo apt-get update
-sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-sudo usermod -aG docker $USER && newgrp docker
-```
-
-**스왑 2GB를 반드시 추가한다.** t3.micro는 메모리가 1GB뿐이라 Gradle 빌드가 그냥 죽는다
-(에러가 `Killed` 한 줄만 나와 원인을 찾기 어렵다).
+Docker 설치와 스왑 잡기는 `deploy/bootstrap.sh`가 한다(여러 번 실행해도 안전).
 
 ```bash
-sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile
-sudo mkswap /swapfile && sudo swapon /swapfile
-echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
-free -h   # Swap 2.0Gi 확인
+sudo apt-get update && sudo apt-get install -y git
+git clone <레포 주소> attacca && cd attacca
+bash deploy/bootstrap.sh
 ```
+
+끝나면 **SSH를 끊고 다시 접속한다**(docker 그룹 적용).
+
+스크립트가 하는 일:
+
+- Docker CE + compose 플러그인 설치
+- **스왑 2GB** — 인스턴스 메모리가 1GB뿐이라 Gradle 빌드가 OOM으로 죽는다.
+  에러가 `Killed` 한 줄만 남아 원인을 찾기 어려우므로 미리 잡는다
+- 현재 사용자를 `docker` 그룹에 추가
 
 ### 1-5. 배포
 
