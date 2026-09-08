@@ -31,12 +31,14 @@ class JwtProviderTest {
 
     @Test
     void refreshToken_roundTrip_carriesTypeRefresh() {
-        String token = jwtProvider.createRefreshToken(1L, Role.USER);
+        String token = jwtProvider.createRefreshToken(1L, Role.USER, "jti-1");
 
         Claims claims = jwtProvider.parse(token);
 
         assertThat(claims.getSubject()).isEqualTo("1");
         assertThat(claims.get("type", String.class)).isEqualTo("refresh");
+        // jti는 서버 화이트리스트의 키다. 없으면 개별 철회가 불가능하다.
+        assertThat(jwtProvider.getJti(claims)).isEqualTo("jti-1");
     }
 
     @Test

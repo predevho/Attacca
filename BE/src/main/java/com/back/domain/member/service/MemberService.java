@@ -8,7 +8,7 @@ import com.back.domain.member.entity.Member;
 import com.back.domain.member.repository.MemberRepository;
 import com.back.global.exception.BusinessException;
 import com.back.global.exception.ErrorCode;
-import com.back.global.security.jwt.JwtProvider;
+import com.back.global.security.token.TokenIssuer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -23,7 +23,7 @@ public class MemberService {
 
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JwtProvider jwtProvider;
+    private final TokenIssuer tokenIssuer;
 
     @Transactional
     public SignupResponse signup(SignupRequest request) {
@@ -56,8 +56,8 @@ public class MemberService {
             throw new BusinessException(ErrorCode.LOGIN_FAILED);
         }
 
-        String access = jwtProvider.createAccessToken(member.getId(), member.getRole());
-        String refresh = jwtProvider.createRefreshToken(member.getId(), member.getRole());
-        return new TokenPairResponse(access, refresh);
+        // 발급과 화이트리스트 등록을 TokenIssuer가 한 번에 한다(DOMAIN-COMMON-STATUTE §4.1).
+        TokenIssuer.IssuedTokens tokens = tokenIssuer.issue(member.getId(), member.getRole());
+        return new TokenPairResponse(tokens.accessToken(), tokens.refreshToken());
     }
 }

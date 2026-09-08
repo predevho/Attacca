@@ -30,11 +30,15 @@ class MemberServiceTest {
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final JwtProvider jwtProvider = new JwtProvider(new JwtProperties(
             "test-secret-key-that-is-long-enough-for-hs256-0123456789", 1800000L, 1209600000L));
+    private final com.back.global.security.token.InMemoryRefreshTokenStore tokenStore =
+            new com.back.global.security.token.InMemoryRefreshTokenStore();
+    private final com.back.global.security.token.TokenIssuer tokenIssuer =
+            new com.back.global.security.token.TokenIssuer(jwtProvider, tokenStore);
     private MemberService memberService;
 
     @BeforeEach
     void setUp() {
-        memberService = new MemberService(memberRepository, passwordEncoder, jwtProvider);
+        memberService = new MemberService(memberRepository, passwordEncoder, tokenIssuer);
     }
 
     @Test

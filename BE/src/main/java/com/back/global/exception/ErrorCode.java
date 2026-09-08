@@ -27,7 +27,11 @@ public enum ErrorCode {
     UNSUPPORTED_TOKEN("401-05", HttpStatus.UNAUTHORIZED, "지원하지 않는 토큰입니다."),
     INVALID_TOKEN_TYPE("401-06", HttpStatus.UNAUTHORIZED, "토큰 종류가 올바르지 않습니다."),
     LOGIN_FAILED("401-07", HttpStatus.UNAUTHORIZED, "아이디 또는 비밀번호가 올바르지 않습니다."),
+    // 철회됐거나 이미 쓰인 refresh. 재사용이 감지되면 그 회원의 전 기기가 함께 무효화된다.
+    REVOKED_TOKEN("401-09", HttpStatus.UNAUTHORIZED, "다시 로그인해 주세요."),
     FORBIDDEN("403-01", HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
+    // 토큰 저장소(Redis) 장애. fail-closed — 통과시키지 않는다(DOMAIN-COMMON-STATUTE §4.1).
+    TOKEN_STORE_UNAVAILABLE("503-01", HttpStatus.SERVICE_UNAVAILABLE, "일시적으로 인증을 처리할 수 없습니다."),
 
     // --- MEMBER ---
     EMAIL_ALREADY_EXISTS("409-01", HttpStatus.CONFLICT, "이미 사용 중인 이메일입니다."),

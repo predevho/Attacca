@@ -25,6 +25,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-websocket")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
+    // refresh 토큰 화이트리스트(로테이션·철회). DOMAIN-COMMON-STATUTE §4.1
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
     // 스키마 관리는 Hibernate가 아니라 Flyway가 한다(ddl-auto는 validate).
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-mysql")

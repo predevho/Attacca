@@ -10,7 +10,7 @@ import com.back.domain.member.repository.MemberRepository;
 import com.back.domain.member.repository.SocialAccountRepository;
 import com.back.global.exception.BusinessException;
 import com.back.global.exception.ErrorCode;
-import com.back.global.security.jwt.JwtProvider;
+import com.back.global.security.token.TokenIssuer;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -25,16 +25,16 @@ public class MemberOAuthService {
 
     private final MemberRepository memberRepository;
     private final SocialAccountRepository socialAccountRepository;
-    private final JwtProvider jwtProvider;
+    private final TokenIssuer tokenIssuer;
     private final List<OAuthClient> oauthClients;
 
     public MemberOAuthService(MemberRepository memberRepository,
                               SocialAccountRepository socialAccountRepository,
-                              JwtProvider jwtProvider,
+                              TokenIssuer tokenIssuer,
                               List<OAuthClient> oauthClients) {
         this.memberRepository = memberRepository;
         this.socialAccountRepository = socialAccountRepository;
-        this.jwtProvider = jwtProvider;
+        this.tokenIssuer = tokenIssuer;
         this.oauthClients = oauthClients;
     }
 
@@ -47,9 +47,8 @@ public class MemberOAuthService {
                 .map(SocialAccount::getMember)
                 .orElseGet(() -> linkOrCreate(provider, info));
 
-        String access = jwtProvider.createAccessToken(member.getId(), member.getRole());
-        String refresh = jwtProvider.createRefreshToken(member.getId(), member.getRole());
-        return new TokenPairResponse(access, refresh);
+        TokenIssuer.IssuedTokens tokens = tokenIssuer.issue(member.getId(), member.getRole());
+        return new TokenPairResponse(tokens.accessToken(), tokens.refreshToken());
     }
 
     private OAuthClient resolveClient(OAuthProvider provider) {

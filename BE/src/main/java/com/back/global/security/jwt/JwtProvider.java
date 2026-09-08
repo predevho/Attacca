@@ -7,6 +7,7 @@ import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 import javax.crypto.SecretKey;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -31,23 +32,39 @@ public class JwtProvider {
     }
 
     public String createAccessToken(Long userId, Role role) {
-        return createToken(userId, role, "access", accessTokenExpiry);
+        return createToken(userId, role, "access", accessTokenExpiry, null);
     }
 
-    public String createRefreshToken(Long userId, Role role) {
-        return createToken(userId, role, "refresh", refreshTokenExpiry);
+    /**
+     * refresh 발급. {@code jti}는 이 토큰의 고유 식별자이며 서버 화이트리스트의 키가 된다
+     * (DOMAIN-COMMON-STATUTE §4.1). 호출자가 만들어 넘기고, 같은 값을 저장소에 넣어야 한다.
+     */
+    public String createRefreshToken(Long userId, Role role, String jti) {
+        return createToken(userId, role, "refresh", refreshTokenExpiry, jti);
     }
 
-    private String createToken(Long userId, Role role, String type, long expiryMillis) {
+    /** 새 jti를 만든다. 발급과 저장이 같은 값을 쓰도록 여기서 한 곳에 모아 둔다. */
+    public String newJti() {
+        return UUID.randomUUID().toString();
+    }
+
+    /** refresh의 jti. 없으면 null(로테이션 도입 전에 발급된 옛 토큰). */
+    public String getJti(Claims claims) {
+        return claims.getId();
+    }
+
+    private String createToken(Long userId, Role role, String type, long expiryMillis, String jti) {
         Date now = new Date();
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .subject(String.valueOf(userId))
                 .claim("role", role.authority())
                 .claim("type", type)
                 .issuedAt(now)
-                .expiration(new Date(now.getTime() + expiryMillis))
-                .signWith(key)
-                .compact();
+                .expiration(new Date(now.getTime() + expiryMillis));
+        if (jti != null) {
+            builder.id(jti);
+        }
+        return builder.signWith(key).compact();
     }
 
     public Claims parse(String token) {

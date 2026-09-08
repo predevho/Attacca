@@ -32,11 +32,15 @@ class MemberOAuthServiceTest {
     private final JwtProvider jwtProvider = new JwtProvider(new JwtProperties(
             "test-secret-key-that-is-long-enough-for-hs256-0123456789", 1800000L, 1209600000L));
     private final FakeOAuthClient fakeClient = new FakeOAuthClient();
+    private final com.back.global.security.token.InMemoryRefreshTokenStore tokenStore =
+            new com.back.global.security.token.InMemoryRefreshTokenStore();
+    private final com.back.global.security.token.TokenIssuer tokenIssuer =
+            new com.back.global.security.token.TokenIssuer(jwtProvider, tokenStore);
     private MemberOAuthService service;
 
     @BeforeEach
     void setUp() {
-        service = new MemberOAuthService(memberRepository, socialAccountRepository, jwtProvider,
+        service = new MemberOAuthService(memberRepository, socialAccountRepository, tokenIssuer,
                 List.of(fakeClient));
     }
 
