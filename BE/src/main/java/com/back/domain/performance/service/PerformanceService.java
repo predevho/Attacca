@@ -1,13 +1,17 @@
 package com.back.domain.performance.service;
 
 import com.back.domain.member.dto.MemberDisplay;
+import com.back.domain.member.dto.PublicMemberDisplay;
 import com.back.domain.member.service.MemberQueryService;
 import com.back.domain.performance.dto.PerformanceRequest;
 import com.back.domain.performance.dto.PerformanceResponse;
 import com.back.domain.performance.dto.PerformanceScope;
+import com.back.domain.performance.dto.PublicPerformanceResponse;
+import com.back.domain.performance.dto.PublicPerformanceScope;
 import com.back.domain.performance.entity.Performance;
 import com.back.domain.performance.repository.PerformanceRepository;
 import com.back.domain.verifiedperformer.service.VerifiedPerformerService;
+import com.back.global.common.PageResponse;
 import com.back.global.exception.BusinessException;
 import com.back.global.exception.ErrorCode;
 import com.back.global.storage.FileService;
@@ -70,6 +74,44 @@ public class PerformanceService {
         return page.map(p -> toResponse(p, organizers.get(p.getOrganizerId())));
     }
 
+    // --- 공개 조회 (비인증). 인증 응답과 DTO를 분리한다 — DOMAIN-NOTICE-STATUTE §6 ---
+
+    @Transactional(readOnly = true)
+    public PublicPerformanceResponse getPublicPerformance(Long id) {
+        Performance performance = findActive(id);
+        MemberDisplay organizer = memberQueryService
+                .findDisplaysByIds(Set.of(performance.getOrganizerId()))
+                .get(performance.getOrganizerId());
+        return toPublicResponse(performance, organizer);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<PublicPerformanceResponse> getPublicPerformances(
+            PublicPerformanceScope scope, LocalDateTime from, LocalDateTime to, Pageable pageable) {
+        LocalDateTime now = LocalDateTime.now();
+        Page<Performance> page = switch (scope) {
+            case UPCOMING -> performanceRepository
+                    .findByDeletedAtIsNullAndPerformedAtGreaterThanEqualOrderByPerformedAtAsc(now, pageable);
+            case PAST -> performanceRepository
+                    .findByDeletedAtIsNullAndPerformedAtLessThanOrderByPerformedAtDesc(now, pageable);
+            case ALL -> performanceRepository.findByDeletedAtIsNullOrderByPerformedAtDesc(pageable);
+            case SCHEDULED -> {
+                if (from == null || to == null) {
+                    throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE,
+                            "달력 조회에는 from과 to가 모두 필요합니다.");
+                }
+                yield performanceRepository
+                        .findByDeletedAtIsNullAndPerformedAtGreaterThanEqualAndPerformedAtLessThanOrderByPerformedAtAsc(
+                                from, to, pageable);
+            }
+        };
+        Set<Long> organizerIds = page.getContent().stream()
+                .map(Performance::getOrganizerId).collect(Collectors.toSet());
+        Map<Long, MemberDisplay> organizers = memberQueryService.findDisplaysByIds(organizerIds);
+        return PageResponse.from(
+                page.map(p -> toPublicResponse(p, organizers.get(p.getOrganizerId()))));
+    }
+
     @Transactional
     public PerformanceResponse editPerformance(Long editorId, Long id, PerformanceRequest request) {
         Performance performance = findActive(id);
@@ -128,11 +170,18 @@ public class PerformanceService {
     }
 
     private PerformanceResponse toResponse(Performance p, MemberDisplay organizer) {
-        String posterUrl = p.getPosterImageKey() == null
-                ? null
-                : fileService.getUrl(p.getPosterImageKey());
         return new PerformanceResponse(p.getId(), organizer, p.getTitle(), p.getDescription(),
                 p.getPerformedAt(), p.getVenue(), p.getProgram(), p.getTicketInfo(),
-                p.getTicketUrl(), posterUrl, p.getCreatedAt(), p.getUpdatedAt());
+                p.getTicketUrl(), posterUrl(p), p.getCreatedAt(), p.getUpdatedAt());
+    }
+
+    private PublicPerformanceResponse toPublicResponse(Performance p, MemberDisplay organizer) {
+        return new PublicPerformanceResponse(p.getId(), PublicMemberDisplay.from(organizer),
+                p.getTitle(), p.getDescription(), p.getPerformedAt(), p.getVenue(), p.getProgram(),
+                p.getTicketInfo(), p.getTicketUrl(), posterUrl(p), p.getCreatedAt());
+    }
+
+    private String posterUrl(Performance p) {
+        return p.getPosterImageKey() == null ? null : fileService.getUrl(p.getPosterImageKey());
     }
 }
