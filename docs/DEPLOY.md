@@ -219,8 +219,9 @@ FE의 `BE_BASE_URL`은 컨테이너 네트워크 이름(`http://be:8080`)이라 
 `deploy/dc.sh`가 `-f docker-compose.prod.yml --env-file .env.prod`를 붙여 준다.
 
 ```bash
-# 재배포 (코드 갱신)
-git pull && ./deploy/dc.sh up -d --build
+# 재배포 — 할 게 없다. main에 푸시하면 2분 안에 반영된다(아래 "자동 배포").
+#   배포 로그: journalctl -u attacca-update -n 50
+#   즉시 확인: sudo systemctl start attacca-update
 
 # 상태 / 로그
 ./deploy/dc.sh ps
@@ -230,7 +231,10 @@ git pull && ./deploy/dc.sh up -d --build
 # 특정 서비스만 재시작 (.env.prod 만 고쳤을 때)
 ./deploy/dc.sh up -d be
 
-# 디스크 정리 (빌드 캐시가 30GB를 금방 먹는다)
+# 롤백 — 되돌릴 커밋 sha로 태그를 고정한다
+IMAGE_TAG=<sha> ./deploy/dc.sh up -d --no-build
+
+# 디스크 정리 (평소엔 update.sh가 알아서 지운다. 서버에서 직접 구웠을 때만 필요)
 docker system prune -af --volumes=false
 ```
 
@@ -253,12 +257,74 @@ docker compose ps          # 이제 옵션 없이 동작
 
 ---
 
+## 자동 배포 (CD)
+
+**main에 푸시하면 끝이다.** 사람이 서버에 들어갈 일이 없다.
+
+```
+git push main
+   → GitHub Actions: 테스트 → 이미지 빌드 → GHCR에 :latest / :<sha> 푸시
+   → EC2의 systemd 타이머(2분 주기)가 새 이미지를 발견 → pull → 컨테이너 교체
+```
+
+### 왜 이 모양인가
+
+* **서버에서 굽지 않는다.** t3.micro(1GB)에서 Gradle과 Next를 빌드하면 스왑을 긁으며
+  오래 걸리고, 빌드 캐시가 **5GB**까지 불어나 디스크를 먹었다. 이제 서버가 하는 일은
+  pull과 컨테이너 교체뿐이다.
+* **미는 게 아니라 당겨온다.** GitHub이 서버로 밀어넣으려면 22번을 전체 개방하거나
+  AWS SSM/OIDC를 붙여야 한다. 서버가 스스로 확인하면 **인바운드 포트를 하나도 열지
+  않고**, GitHub에 서버 자격증명을 두지 않아도 된다. SSH는 지금처럼 관리자 IP에만
+  열어 둔다. 대가는 **최대 2분의 배포 지연**과 GitHub에 배포 로그가 안 남는 것이다
+  (로그는 서버의 `journalctl -u attacca-update`).
+* **한쪽만 바뀌어도 둘 다 굽는다.** `latest` 두 개가 늘 같은 커밋을 가리켜야
+  API 계약이 바뀐 배포에서 "BE 신버전 + FE 구버전" 조합이 생기지 않는다.
+* **이미지는 배포 때마다 정리한다.** `update.sh`가 교체 후 `docker image prune -f`로
+  참조를 잃은 옛 이미지를 지운다. 안 지우면 배포마다 한 벌(약 1GB)씩 쌓인다.
+
+### 최초 1회 설정
+
+1. **저장소 Variable 등록** — Settings → Secrets and variables → Actions → Variables
+   `NEXT_PUBLIC_BE_WS_URL` = `ws://<Elastic IP>/ws` (2단계 이후 `wss://<도메인>/ws`).
+   `NEXT_PUBLIC_*`은 번들에 박히므로 **이 값을 바꾸면 이미지를 다시 구워야** 한다.
+2. **main에 푸시** → Actions의 `images` job이 GHCR에 올린다.
+3. **패키지를 공개로** — GitHub 프로필 → Packages → `attacca-be` / `attacca-fe` →
+   Package settings → Change visibility → Public. GHCR 패키지는 저장소가 공개여도
+   기본이 비공개라, 안 바꾸면 서버가 `denied`로 못 받는다.
+   (비공개로 두려면 서버에서 `read:packages` PAT로 `docker login ghcr.io` 해야 한다.)
+4. **서버에 타이머 설치** — EC2에서 한 번만:
+
+   ```bash
+   cd ~/attacca && git pull && sudo ./deploy/install-updater.sh
+   ```
+
+### 확인
+
+```bash
+systemctl list-timers attacca-update.timer   # 다음 실행 시각
+journalctl -u attacca-update -n 50           # 배포 이력
+sudo systemctl start attacca-update          # 기다리지 않고 즉시 실행
+sudo systemctl disable --now attacca-update.timer   # 자동 배포 중단
+```
+
+### 알아 둘 것
+
+* **DB 마이그레이션은 자동 배포와 함께 돈다.** 파괴적인 마이그레이션(컬럼 삭제 등)은
+  푸시하는 순간 적용된다. 그런 변경은 타이머를 잠시 끄고 손으로 하는 편이 안전하다.
+* **배포 중 짧은 끊김이 있다.** 컨테이너 1벌 구성이라 무중단이 아니다 —
+  BE 재기동 동안(약 30초) 502가 난다. 블루-그린은 채팅의 인메모리 브로커 때문에
+  Redis 릴레이가 선행돼야 한다.
+* **롤백은 수동이다.** `update.sh`는 헬스체크가 healthy가 되지 않으면 경고만 남기고
+  종료한다. 자동 롤백은 넣지 않았다 — 마이그레이션이 이미 돌았을 수 있어서
+  이미지만 되돌리는 것이 오히려 위험하다.
+
+---
+
 ## 아직 안 한 것
 
-- **CI 배포 job** — `.github/workflows/ci.yml`은 테스트까지만 돈다. EC2 접속 방식(SSH 키/SSM/ECR)이
-  정해지면 붙인다. 지금은 서버에서 `git pull` + `up -d --build`가 배포다
 - **HTTPS** — 도메인 확보 후 2단계
 - **S3 실연동** — 코드는 있으나 실자격증명으로 확인한 적이 없다
 - **로그·모니터링** — 지금은 컨테이너 로그가 전부. CloudWatch 등으로 모을지 결정 필요
 - **DB 백업 정책** — RDS 자동 백업 보존 기간 확인
-- **refresh 토큰 로테이션·철회** — Redis 도입과 함께
+- **무중단 배포** — 컨테이너 1벌이라 배포 중 약 30초 끊긴다. 블루-그린은 채팅의 Redis 릴레이 선행
+- **자동 롤백** — 지금은 헬스체크 실패 시 경고만. 마이그레이션이 이미 돌았을 수 있어 판단이 필요하다
