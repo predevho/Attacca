@@ -1,0 +1,70 @@
+# 단일 인스턴스 배포용. DB는 여기 없다 — RDS를 쓰고 DB_URL로 가리킨다.
+#
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+#
+# ⚠️ 이 구성은 컨테이너가 1벌이라는 전제 위에 있다. 채팅의 STOMP 브로커와 presence가
+#    인메모리라 BE를 2벌 이상 띄우면 A서버 사용자와 B서버 사용자 사이에 메시지가 오가지 않는다.
+#    스케일아웃하려면 Redis(enableStompBrokerRelay) 도입이 선행돼야 한다.
+
+services:
+  be:
+    build: ./BE
+    restart: unless-stopped
+    environment:
+      DB_URL: ${DB_URL}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
+      KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET}
+      WS_ALLOWED_ORIGINS: ${PUBLIC_ORIGIN}
+      STORAGE_TYPE: ${STORAGE_TYPE:-local}
+      STORAGE_LOCAL_BASE_URL: ${PUBLIC_ORIGIN}/files
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_REGION: ${S3_REGION:-ap-northeast-2}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+    volumes:
+      # storage.type=local일 때 업로드 보존. s3로 전환하면 필요 없다.
+      - be-uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 15s
+      timeout: 3s
+      retries: 10
+      start_period: 60s
+
+  fe:
+    build:
+      context: ./FE
+      args:
+        # NEXT_PUBLIC_*은 빌드 시점에 번들에 박힌다. 런타임 env로는 못 바꾼다.
+        NEXT_PUBLIC_BE_WS_URL: ${NEXT_PUBLIC_BE_WS_URL}
+    restart: unless-stopped
+    environment:
+      # 브라우저가 아니라 FE 서버(BFF)가 부르는 주소라 컨테이너 네트워크 이름을 쓴다.
+      BE_BASE_URL: http://be:8080
+      KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
+      KAKAO_REDIRECT_URI: ${PUBLIC_ORIGIN}/api/bff/oauth/kakao/callback
+    depends_on:
+      be:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SERVER_NAME: ${SERVER_NAME}
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/templates/default.conf.template:ro
+      - ./deploy/certbot/conf:/etc/letsencrypt:ro
+      - ./deploy/certbot/www:/var/www/certbot:ro
+    depends_on:
+      - fe
+      - be
+
+volumes:
+  be-uploads:

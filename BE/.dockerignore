@@ -1,0 +1,9 @@
+# 빌드 컨텍스트에서 제외.
+build
+.gradle
+# PC별 JDK 경로. 이미지 안에서는 gradle:8.11.1-jdk21 의 JDK를 쓴다.
+gradle.properties
+uploads
+Dockerfile
+.dockerignore
+README.md

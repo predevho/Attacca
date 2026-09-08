@@ -15,3 +15,12 @@ BE/uploads/
 
 # Claude Code 로컬 실행 설정(포트 등 PC별 값)
 .claude/launch.json
+
+# 운영 환경변수(비밀값). .env.prod.example만 커밋한다.
+.env.prod
+
+# PC별 JDK 경로 (org.gradle.java.home)
+BE/gradle.properties
+
+# certbot 인증서·챌린지
+deploy/certbot/
