@@ -23,10 +23,18 @@ export function toggleLike<T extends Likeable>(item: T): T {
   return { ...item, likedByMe: !item.likedByMe, likeCount: item.likeCount + (item.likedByMe ? -1 : 1) };
 }
 
-export function canEdit(me: Me | null, authorId: number): boolean {
-  return me != null && me.id === authorId;
+/**
+ * `authorId` 가 undefined 일 수 있는 이유: 공개 응답에는 회원 id가 없다
+ * (PublicMemberDisplay). 그 경우 누구도 수정할 수 없는 것이 맞다 —
+ * 비로그인 화면에서 수정 버튼이 뜨지 않게 하는 것도 같은 규칙으로 처리된다.
+ */
+export function canEdit(me: Me | null, authorId: number | undefined): boolean {
+  return me != null && authorId != null && me.id === authorId;
 }
 
-export function canDelete(me: Me | null, authorId: number): boolean {
-  return me != null && (me.id === authorId || me.role === 'ADMIN');
+export function canDelete(me: Me | null, authorId: number | undefined): boolean {
+  if (me == null) return false;
+  // 어드민은 남의 글도 지울 수 있지만, 대상이 누구인지 모르면(공개 응답) 판단할 수 없다.
+  if (authorId == null) return false;
+  return me.id === authorId || me.role === 'ADMIN';
 }

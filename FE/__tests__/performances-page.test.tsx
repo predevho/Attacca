@@ -22,7 +22,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   getBff.mockImplementation(async (path: string) => {
     if (path.startsWith('/api/bff/me/identity')) return { ok: true, data: { id: 5, nickname: '나', role: 'USER', verified: true }, message: null };
-    if (path.startsWith('/api/bff/performances')) return page([perf(1, '공연A'), perf(2, '공연B')]);
+    if (path.startsWith('/api/bff/public/performances')) return page([perf(1, '공연A'), perf(2, '공연B')]);
     return { ok: false, message: 'x' };
   });
 });
@@ -42,7 +42,7 @@ describe('PerformancesPage', () => {
   it('비자격이면 공연 등록 버튼이 없다', async () => {
     getBff.mockImplementation(async (path: string) => {
       if (path.startsWith('/api/bff/me/identity')) return { ok: true, data: { id: 5, nickname: '나', role: 'USER', verified: false }, message: null };
-      if (path.startsWith('/api/bff/performances')) return page([perf(1, '공연A')]);
+      if (path.startsWith('/api/bff/public/performances')) return page([perf(1, '공연A')]);
       return { ok: false, message: 'x' };
     });
     render(<PerformancesPage />);
@@ -54,6 +54,17 @@ describe('PerformancesPage', () => {
     render(<PerformancesPage />);
     fireEvent.click(await screen.findByText('공연A'));
     expect(push).toHaveBeenCalledWith('/performances/1');
+  });
+
+  it('공개 경로로 읽는다 — 로그인하지 않아도 목록이 보여야 한다', async () => {
+    // 예전에는 인증 경로로 읽고, 신원 조회가 실패하면 로그인으로 튕겼다.
+    // 공개 API가 있는데도 링크를 받은 사람이 공연을 하나도 볼 수 없었다(2026-09-09).
+    render(<PerformancesPage />);
+    await screen.findByText('공연A');
+
+    const called = getBff.mock.calls.map((c) => String(c[0]));
+    expect(called.some((u) => u.startsWith('/api/bff/public/performances'))).toBe(true);
+    expect(called.some((u) => /^\/api\/bff\/performances/.test(u))).toBe(false);
   });
 
   it('scope 탭을 바꾸면 해당 scope로 다시 조회', async () => {

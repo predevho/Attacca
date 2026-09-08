@@ -16,21 +16,28 @@ export default function PerformanceDetailPage() {
   const id = params.id;
   const posterFailed = search.get('posterFailed') === '1';
 
-  const [me, setMe] = useState<Me | null>(null);
+  // undefined = 아직 모름, null = 비로그인. 어느 경로로 상세를 읽을지 정하는 데 쓴다.
+  const [me, setMe] = useState<Me | null | undefined>(undefined);
   const [performance, setPerformance] = useState<Performance | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // 실패해도 로그인으로 보내지 않는다. 이 화면은 비로그인도 볼 수 있어야 한다.
   useEffect(() => {
-    getBff('/api/bff/me/identity').then((r) => { if (r.ok) setMe(r.data as Me); else router.push('/login'); });
-  }, [router]);
+    getBff('/api/bff/me/identity').then((r) => setMe(r.ok ? (r.data as Me) : null));
+  }, []);
 
+  // 로그인했으면 인증 경로로 읽는다 — 공개 응답에는 주최자의 회원 id가 없어서
+  // 본인이어도 수정·삭제 버튼을 띄울 수 없기 때문이다(PublicMemberDisplay).
+  // 비로그인이면 공개 경로로 읽는다.
   useEffect(() => {
-    getBff<Performance>(`/api/bff/performances/${id}`).then((r) => {
+    if (me === undefined) return;
+    const path = me ? `/api/bff/performances/${id}` : `/api/bff/public/performances/${id}`;
+    getBff<Performance>(path).then((r) => {
       if (r.ok) setPerformance(r.data as Performance);
       else setNotFound(true);
     });
-  }, [id]);
+  }, [id, me]);
 
   async function remove() {
     if (!performance) return;
@@ -61,10 +68,10 @@ export default function PerformanceDetailPage() {
       <div className="mb-3 flex items-start justify-between">
         <h1 className="text-2xl font-bold">{performance.title}</h1>
         <div className="flex gap-2">
-          {canEdit(me, performance.organizer.id) && (
+          {canEdit(me ?? null, performance.organizer.id) && (
             <button type="button" onClick={() => router.push(`/performances/${performance.id}/edit`)} className="text-xs text-ink-faint">수정</button>
           )}
-          {canDelete(me, performance.organizer.id) && (
+          {canDelete(me ?? null, performance.organizer.id) && (
             <button type="button" onClick={remove} className="text-xs text-ink-faint">삭제</button>
           )}
         </div>

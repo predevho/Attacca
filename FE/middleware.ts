@@ -27,7 +27,11 @@ export function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    '/profile/:path*', '/feed/:path*', '/performances/:path*', '/recruitments/:path*',
+    '/profile/:path*', '/feed/:path*', '/recruitments/:path*',
     '/verified-performer/:path*', '/admin/:path*', '/chat/:path*',
+    // 공연은 **보기는 공개, 쓰기는 로그인**이다. 공개 API가 이미 있는데 화면이
+    // 통째로 막혀 있어서 링크를 받은 사람이 공연을 하나도 볼 수 없었다(2026-09-09).
+    // 목록(/performances)과 상세(/performances/12)는 열고 등록·수정만 막는다.
+    '/performances/new', '/performances/:id/edit',
   ],
 };

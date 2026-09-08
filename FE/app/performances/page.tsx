@@ -19,7 +19,10 @@ function ScopeList({ scope }: { scope: PerformanceScope }) {
   const router = useRouter();
   const fetchPage = useCallback(async (cursor: number | null): Promise<CursorPage<Performance> | null> => {
     const pageNum = cursor ?? 0;
-    const r = await getBff<SpringPage<Performance>>(`/api/bff/performances?scope=${scope}&page=${pageNum}`);
+    // 공개 경로로 읽는다 — 로그인하지 않아도 목록이 보여야 한다.
+    // 쓰기(등록·수정·삭제)만 인증 경로를 쓴다.
+    const r = await getBff<SpringPage<Performance>>(
+      `/api/bff/public/performances?scope=${scope}&page=${pageNum}`);
     return r.ok ? toCursorPage(r.data as SpringPage<Performance>) : null;
   }, [scope]);
 
@@ -47,14 +50,16 @@ export default function PerformancesPage() {
   const [scope, setScope] = useState<PerformanceScope>('UPCOMING');
   const [canRegister, setCanRegister] = useState(false);
 
+  // 신원 조회는 '등록' 버튼을 보일지만 정한다. 실패해도 로그인으로 보내지 않는다 —
+  // 이 화면은 비로그인도 볼 수 있어야 하고, 예전에는 여기서 튕겨 나가
+  // 공개 API가 있는데도 아무도 공연을 볼 수 없었다(2026-09-09).
   useEffect(() => {
     getBff('/api/bff/me/identity').then((r) => {
-      if (r.ok) {
-        const me = r.data as Me;
-        setCanRegister(me.verified || me.role === 'ADMIN');
-      } else router.push('/login');
+      if (!r.ok) return;
+      const me = r.data as Me;
+      setCanRegister(me.verified || me.role === 'ADMIN');
     });
-  }, [router]);
+  }, []);
 
   return (
     <main className="mx-auto mt-8 max-w-xl px-4">
