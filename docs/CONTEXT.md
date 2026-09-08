@@ -41,6 +41,12 @@
   * role 조회는 `global.security.MemberRoleProvider` 포트 ↔ `domain.member` 구현. `global`이 `domain`을 참조하지 않기 위함.
   * FE: `session.ts`가 쿠키 **두 개**를 갱신하고, `/api/bff/logout`이 BE 철회를 먼저 호출한다.
 * Redis는 로컬·운영 모두 compose 컨테이너(`attacca-redis`). ElastiCache 미사용(단일 인스턴스 전제, 프리티어 없음).
+* **자동 배포(2026-09-08)**: main 푸시 → Actions가 이미지를 구워 GHCR에 `:latest`/`:<sha>` → EC2의 systemd 타이머(2분)가 받아서 교체. 사람이 서버에 들어갈 일이 없다. 절차·근거는 `docs/DEPLOY.md`의 "자동 배포(CD)".
+  * **미는 게 아니라 당겨온다** — 인바운드 포트를 하나도 열지 않고 GitHub에 서버 자격증명도 두지 않기 위해. 대가는 최대 2분 지연.
+  * 서버에서는 **굽지 않는다**. t3.micro(1GB)에서 빌드하면 스왑을 긁고 캐시가 5GB까지 불었다(정리 후 디스크 35%→20%).
+  * `update.sh`는 저장소도 fast-forward로 따라가므로 compose·nginx 변경도 자동 반영된다.
+  * ⚠️ prod compose에 `build:`를 넣으면 안 된다 — `--no-build`와 만나면 이미지 변경 검사를 건너뛰어 배포가 헛돈다.
+  * 배포 중 약 30초 끊긴다(컨테이너 1벌). 롤백은 수동이고 타이머를 먼저 멈춰야 한다.
 * WS origin은 `WS_ALLOWED_ORIGINS`(기본 로컬 주소). 채팅은 브라우저가 BE에 직접 붙어 BFF를 안 거치므로 이 값이 실제 접근 통제다.
 * 배포 산출물: `BE/Dockerfile`·`FE/Dockerfile`(standalone)·`docker-compose.prod.yml`·`deploy/nginx.conf`·`.github/workflows/ci.yml`·`.env.prod.example`. 절차와 환경변수 표는 `docs/DEPLOY.md`. **단일 인스턴스 전제**(채팅 인메모리 브로커).
   * ⚠️ 이 개발 PC엔 시스템 환경변수 `DB_PASSWORD=1234`가 설정돼 있어 compose 기본값(`attacca-local`)을 덮어써 `bootRun`이 `Access denied`로 실패한다. 해결: `gradlew bootRun --args=--spring.datasource.password=attacca-local`로 override(명령행이 env보다 우선)하거나 `DB_PASSWORD`를 unset. compose 볼륨이 낡으면 `docker compose down -v` 후 재기동.
