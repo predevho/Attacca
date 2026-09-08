@@ -29,8 +29,13 @@ main() {
   #
   # fast-forward만 받는다. 서버에서 급히 손본 게 있으면 조용히 덮지 않고 넘어간다 —
   # 그걸 날리는 게 제일 나쁘다.
-  if [ -n "$(git status --porcelain)" ]; then
-    echo "경고: 작업 트리가 깨끗하지 않다. git pull을 건너뛴다."
+  # --untracked-files=no: 추적되지 않는 파일(백업, 로그 따위)은 fast-forward에
+  # 지장이 없다. 이걸 따지면 서버에 파일 하나만 굴러다녀도 자동 배포가 조용히
+  # 멈춘다(2026-09-08에 .env.prod 백업 하나로 실제로 멈췄다).
+  # 막아야 하는 건 **손으로 고친 추적 파일**뿐이다.
+  if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+    echo "경고: 추적 중인 파일이 서버에서 수정됐다. 덮지 않기 위해 git pull을 건너뛴다."
+    git status --short --untracked-files=no | sed 's/^/    /'
   else
     local before_head after_head
     before_head=$(git rev-parse HEAD)
