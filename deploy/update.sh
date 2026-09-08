@@ -77,8 +77,14 @@ main() {
   fi
 
   if [ "$nginx_changed" -eq 1 ]; then
-    echo "nginx 설정이 바뀌었다 — reload."
-    $DC exec -T nginx nginx -t && $DC exec -T nginx nginx -s reload
+    # ⚠️ reload로는 안 된다. 설정을 **파일 하나**로 bind mount 했는데, 이런 마운트는
+    # 그 inode에 고정된다. git이 파일을 새로 써서 갈아끼우면 inode가 바뀌므로
+    # 컨테이너는 영영 옛 파일을 본다 — reload해 봐야 옛 설정을 다시 읽을 뿐이다
+    # (2026-09-08에 겪음: 호스트 inode 298981 / 컨테이너 320796).
+    # 컨테이너를 새로 만들어야 새 파일이 물린다.
+    echo "nginx 설정이 바뀌었다 — 컨테이너 재생성."
+    $DC up -d --no-build --force-recreate nginx
+    $DC exec -T nginx nginx -t
   fi
 
   # --- 4. 실제로 떴는지 -----------------------------------------------------

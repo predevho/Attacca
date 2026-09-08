@@ -319,6 +319,10 @@ sudo systemctl disable --now attacca-update.timer   # 자동 배포 중단
   건너뛴다.** 새 이미지를 받아 놓고도 컨테이너를 교체하지 않아 타이머가 2분마다
   "새 이미지가 있다"만 반복하며 영영 배포되지 않았다(2026-09-08에 겪음).
   지금은 `update.sh`가 바뀐 서비스를 `--force-recreate`로 명시 교체해 이중으로 막는다.
+* **nginx 설정은 reload로 반영되지 않는다.** 설정을 파일 하나로 bind mount 했는데
+  그런 마운트는 inode에 고정된다. `git pull`이 파일을 갈아끼우면 inode가 바뀌어
+  컨테이너는 영영 옛 파일을 본다. `update.sh`가 컨테이너를 재생성하는 이유다.
+  손으로 고칠 때도 `./deploy/dc.sh up -d --force-recreate nginx`를 쓸 것.
 * **롤백할 때는 타이머를 멈춰라.** `IMAGE_TAG=<sha>`로 되돌린 컨테이너 자체는
   타이머가 건드리지 않지만(그 태그는 움직이지 않는다), **다음 푸시가 오면
   그대로 굴러간다.** 원인을 잡을 때까지는 `sudo systemctl stop attacca-update.timer`.
