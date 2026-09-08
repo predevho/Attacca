@@ -49,7 +49,8 @@ com.back
 │   ├── feed
 │   ├── performance
 │   ├── recruitment
-│   └── chat
+│   ├── chat
+│   └── notice
 └── global
     ├── config          // 설정 (Security, WebSocket, JPA, S3 등)
     ├── security        // 인증/인가, JWT, OAuth2

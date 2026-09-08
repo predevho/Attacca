@@ -4,6 +4,25 @@
 
 ---
 
+* [x] (2026-09-08) PERFORMANCE·FEED 공개 조회 + 인기글 정렬 — 새 홈(공개 랜딩)이 쓸 나머지 두 소스. 문서 PERFORMANCE-STATUTE §12 / FEED-STATUTE §12.
+  * **`PublicMemberDisplay` 신설**(`domain.member.dto`) — 닉네임·인증뱃지만 갖고 회원 id를 아예 담지 않는다. 기존 `MemberDisplay`는 `@JsonProperty("id")`로 회원 id를 직렬화하므로 공개 응답에 쓰면 안 된다. 규칙을 문서가 아니라 **타입으로 강제**한 것.
+  * **PERFORMANCE**: `/api/public/performances?scope=UPCOMING|PAST|ALL|SCHEDULED&from=&to=` + 단건. `SCHEDULED`는 NOTICE와 같은 이름·같은 `[from, to)` 규약(BFF가 두 도메인을 같은 모양으로 호출). enum은 공개 전용 `PublicPerformanceScope`로 분리 — 인증 경로에 의미 없는 값을 더하지 않기 위함.
+  * **FEED**: `/api/public/feed/posts?sort=LATEST|POPULAR` (목록만, 상세는 비공개 — 카드 클릭 시 인증 경로로 보내 로그인을 요구하는 동선이 의도). 인기순은 **최근 30일 창** 안에서 (좋아요+댓글) 내림차순, 동률 시 id DESC. 창이 없으면 한 번 터진 옛 글이 영구히 상단을 차지한다. 집계값 정렬이라 커서가 아닌 오프셋이며, 인증 경로의 커서 타임라인은 손대지 않았다.
+  * 공개 응답에서 `likedByMe` 제거 — 비인증 경로에서는 보는 사람을 몰라 계산할 수 없고, 있어서도 안 되는 값.
+  * NOTICE-STATUTE §6의 공개 규칙을 정정: "작성자 표시정보 전체 비노출"은 NOTICE 고유 판단이고, **모든 도메인 공통 고정 규칙은 회원 식별자·내부 상태·보는 사람 종속 값의 비노출**이다. 표시정보 노출 여부는 도메인이 판단한다.
+  * 테스트 15개 신규(공연 공개 7 / 피드 공개 8). 전체 **373/373 통과**.
+
+* [x] (2026-09-08) NOTICE(공지·소식·운영 일정) 도메인 문서화 + BE 구현 — 새 홈 화면의 캐러셀·달력 원천. 문서 `docs/DOMAIN-NOTICE-CONSTITUTION.md` / `STATUTE.md`.
+  * **엔티티 1종 `Notice`** (`type` NOTICE/NEWS/EVENT + `scheduledAt` nullable + `pinned` + `coverImageKey` + soft delete). 셋을 쪼개지 않은 이유는 작성 주체·필드·수명주기가 같고 홈이 한 번에 모아 조회하기 때문.
+  * **달력 노출 = `scheduledAt`의 유무**라는 단일 상태. 별도 플래그를 두지 않아 "날짜는 있는데 달력엔 없음" 같은 모순 상태가 만들어질 수 없다. `pinned`는 캐러셀만 제어하는 독립 축.
+  * **공개 조회를 처음 도입** — `/api/public/**` permitAll + 컨트롤러·DTO를 인증용과 분리. 공개 응답(`PublicNoticeResponse`)에는 작성자·회원 식별자를 담지 않는다. 이 규칙을 이후 도메인의 공개 조회 표준으로 삼는다(STATUTE §6).
+  * **쓰기는 경로로 게이팅** — `/api/admin/notices`가 기존 `hasRole("ADMIN")` 매처에 걸린다. 서비스 계층 권한 판정 없음, 소유자 판정도 없음(운영 주체의 글).
+  * 공통 `PageResponse<T>` 신규 — 공개 API는 외부 계약이라 `PageImpl` 직렬화에 기대지 않는다. 기존 도메인 전환은 BACKLOG 유지.
+  * **[결함] 잘못된 HTTP 메서드가 500으로 응답되던 것을 405-01로 수정** — `ErrorCode.METHOD_NOT_ALLOWED`가 정의만 되고 이를 쓰는 핸들러가 없어 catch-all로 떨어지고 있었다. 공개 경로에 쓰기가 없음을 확인하는 테스트가 잡아낸 기존 결함(2026-07 `NoResourceFoundException` 404, 2026-08 파라미터 바인딩 400과 같은 계열).
+  * 에러코드 404-12(`NOTICE_NOT_FOUND`) 추가. ARCHITECTURE-CONSTITUTION §3 도메인 표(6→7개)·STATUTE §2 패키지 트리 반영.
+  * 테스트 46개 신규(엔티티 8 / 리포지토리 8 / 서비스 14 / 어드민 컨트롤러 7 / 공개 컨트롤러 9). 전체 **358/358 통과**.
+  * 남은 범위 밖: 예약 발행·노출 기간, 댓글/좋아요, 태그 검색, 알림, 마크다운 본문(순수 텍스트로 확정).
+
 * [x] (2026-08-18) 전역 내비게이션 + 악보지 테마 — 브랜치 `feature/global-nav-paper-theme`. 설계 `docs/superpowers/specs/2026-08-18-global-nav-paper-theme-design.md`, 계획 `docs/superpowers/plans/2026-08-18-global-nav-paper-theme.md`.
   * **전역 헤더 신규**: 도메인 4개 링크(피드·공연·구인·채팅) + 닉네임·인증뱃지 + 어드민(ROLE_ADMIN만) + 로그아웃. 인증 화면에서는 스스로 렌더를 건너뛰고 신원 요청도 보내지 않는다. 판정 로직은 순수 함수로 분리해 단위 테스트.
   * **홈을 `/feed`로 전환하고 `/dashboard` 제거** — 내비가 생기면서 존재 이유가 사라진 페이지. 이동 대상 4곳(루트·로그인·카카오 콜백·어드민 게이트) 변경.

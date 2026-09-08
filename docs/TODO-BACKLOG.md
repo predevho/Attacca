@@ -142,3 +142,38 @@
 
 * [ ] **README 부재** — 루트·FE·BE 어디에도 README가 없다. 포트폴리오에서는 사실상 첫인상이므로 우선순위가 높다. 담을 것: 서비스 소개, 스택, 아키텍처(BFF·도메인 6개·JWT/OAuth·STOMP), 실행법(docker compose + bootRun + npm run dev, JDK 21 주의), 화면 스크린샷(라이트/다크), 그리고 LLM 에이전트 기반 개발 방식과 `docs/` 문서 체계 소개.
 * [ ] 화면 스크린샷 확보 — 전역 헤더·악보지 테마가 적용된 상태로 라이트/다크 각각. README와 포트폴리오에 함께 쓴다.
+
+## 홈 화면 신설 (2026-09-08 목업 작성, 구현 대기)
+
+목업: Claude Design 캔버스 "Attaca 화면 목업"(아트보드 11장 — 홈 라이트/다크/모바일 375 + 기존 8화면). 색·간격·컴포넌트 값은 실제 코드에서 그대로 가져왔다. 작업 `.dc.html` 파일은 세션 스크래치패드에 있어 휘발성이므로, 재작업 시 캔버스에서 `seed-canvas.mjs --extract`로 복원할 것.
+
+구성: 상단 자동 전환 캐러셀(공연·공지·뉴스) / 하단 2단 — 왼쪽 게시글 위젯(최신글·인기글 탭), 오른쪽 월간 달력 + 이번 달 일정.
+
+**확정된 결정 — 달력에 올라오는 것은 두 가지뿐이다 (2026-09-08).**
+
+* 공연 — 인증 연주자가 등록한 것. PERFORMANCE 등록 자격이 이미 `인증 연주자 | ROLE_ADMIN`으로 게이팅돼 있어 달력에서 별도 필터가 필요 없다.
+* 공지 일정 — ROLE_ADMIN이 직접 등록한 것.
+* 구인 마감은 달력에서 **제외**한다.
+
+선행 작업:
+
+* [x] ~~BE FEED: 인기글 정렬 옵션~~ — 2026-09-08 완료. `GET /api/public/feed/posts?sort=LATEST|POPULAR`. 인기순은 **최근 30일 창** 안에서 (좋아요+댓글) 내림차순(창이 없으면 옛 글이 영구 고정). 정렬 키가 id가 아니라 집계값이라 커서가 아닌 오프셋 페이징이며, 인증 경로의 커서 타임라인은 최신순 그대로 두었다. FEED-STATUTE §12.
+* [x] ~~BE PERFORMANCE: 월 범위 조회~~ — 2026-09-08 완료. `GET /api/public/performances?scope=SCHEDULED&from=&to=`. NOTICE와 같은 이름·같은 `[from, to)` 규약이라 BFF가 두 번 같은 모양으로 호출해 합치면 된다. PERFORMANCE-STATUTE §12.
+* [x] ~~NOTICE 도메인 문서 작성~~ — 2026-09-08 완료. `DOMAIN-NOTICE-CONSTITUTION.md` / `DOMAIN-NOTICE-STATUTE.md`. ARCHITECTURE-CONSTITUTION §3 도메인 표와 ARCHITECTURE-STATUTE §2 패키지 트리에도 반영.
+* [x] ~~NOTICE 도메인 BE 구현~~ — 2026-09-08 완료(TDD, 테스트 46개, 전체 358/358). STATUTE §11 미결정 4건도 함께 확정: `pinned`는 등록 제한 없이 **조회에서 상위 5건만**, 목록 size 기본 20/최대 50(PINNED만 5), 공개·어드민 모두 **`PageResponse<T>`**, `content`는 **순수 텍스트**(마크다운 미허용).
+* [ ] 기존 도메인 목록 응답을 `PageResponse<T>`로 전환 — NOTICE에서 도입했다. VERIFIED-PERFORMER 어드민 목록·PERFORMANCE 목록이 아직 `Page<T>`(PageImpl) 직렬화라 Boot 3.4 경고가 남아 있다. (기존 "BE 공통 정리" 항목과 같은 건 — 여기서 통합)
+* [ ] NOTICE 본문 마크다운 지원 — 지금은 순수 텍스트로 확정. 서식이 필요해지면 FE 렌더러와 XSS 처리(허용 태그 화이트리스트)를 함께 도입할 것.
+* [x] ~~**PERFORMANCE: 공개 조회 추가**~~ — 2026-09-08 완료(위 항목과 함께).
+* [ ] BFF `/api/bff/public/calendar` — 공연·공지 두 공개 조회를 호출해 홈 달력용 한 벌로 합친다. 합성이 BE가 아닌 FE 책임인 이유는 ARCHITECTURE-CONSTITUTION §2. **FE 홈 작업에 포함.**
+* [x] ~~홈의 비로그인 노출 여부 결정~~ — **공개 랜딩으로 확정(2026-09-08)**. 비로그인도 홈을 볼 수 있고, 상세로 들어가면 로그인으로 유도한다. 포트폴리오에서 링크만 열어도 서비스가 보이는 것이 목적.
+* [x] ~~**BE: 공개 조회 경로 신설**~~ — 2026-09-08 완료. `/api/public/**` permitAll + 도메인별 공개 컨트롤러·DTO 분리(NOTICE·PERFORMANCE·FEED 3종). 회원 id 미노출은 `PublicMemberDisplay`가 구조적으로 강제한다. 규칙은 NOTICE-STATUTE §6.
+* [ ] 홈 도입 시 헤더 변경 — `NAV_ITEMS`(`lib/layout/header.ts`)에 홈 추가, 홈 경로를 `/feed`에서 `/`로 이동. 헤더 컨테이너 폭은 목업 기준 `max-w-4xl`(896) → 1200.
+* [ ] (목업 제안, 선택) 채팅을 방 목록+대화창 한 화면 2단으로 / 공연 상세 포스터를 왼쪽 열로.
+
+## 접근성 — 색 대비·글자 크기 (2026-09-08 목업 검토에서 식별)
+
+WCAG AA 본문 기준(4.5:1) 미달. 특정 화면이 아니라 **토큰 값 자체**의 문제라 사용처를 하나씩 고치는 대신 한 번에 정리해야 한다.
+
+* [ ] `--ink-faint` 대비 미달 — 라이트 `#8a8378`가 `--surface`(#faf7f0)에서 **3.5:1**, `--paper`(#f5f0e6)에서 **3.3:1**. 다크 `#75706a`도 `--surface`(#232120)에서 **3.3:1**. 타임스탬프·입력 플레이스홀더·"불러오는 중..." 등 전 화면에 쓰여 영향 범위가 넓다.
+* [ ] 헤더 비활성 내비의 `opacity-75` — `--on-header`가 `--header` 위에서 **4.3:1**로 기준을 아슬하게 못 넘긴다(`components/layout/Header.tsx`). 불투명도를 올리거나 별도 토큰으로 분리.
+* [ ] 인증 뱃지 `text-[10px]` — 12px 미만(`components/feed/AuthorBadge.tsx`, `components/layout/Header.tsx`의 헤더 뱃지도 동일). 12px 이상으로 올리거나 아이콘+접근명으로 대체 검토.
