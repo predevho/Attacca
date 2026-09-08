@@ -20,7 +20,7 @@ describe('oauthState', () => {
 
     expect(state).toBeTruthy();
     expect(store.jar[STATE_COOKIE]).toBe(state);
-    const opts = (store.set as any).mock.calls[0][2];
+    const opts = (store.set as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][2];
     expect(opts).toMatchObject({ httpOnly: true, sameSite: 'lax', path: '/', maxAge: 600 });
   });
 

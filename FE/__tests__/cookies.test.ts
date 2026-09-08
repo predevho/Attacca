@@ -18,9 +18,9 @@ describe('cookies', () => {
 
     expect(store.jar[ACCESS_COOKIE]).toBe('A');
     expect(store.jar[REFRESH_COOKIE]).toBe('R');
-    const opts = (store.set as any).mock.calls[0][2];
+    const opts = (store.set as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][2];
     expect(opts).toMatchObject({ httpOnly: true, sameSite: 'lax', path: '/', maxAge: 1800 });
-    const refreshOpts = (store.set as any).mock.calls[1][2];
+    const refreshOpts = (store.set as unknown as { mock: { calls: unknown[][] } }).mock.calls[1][2];
     expect(refreshOpts.maxAge).toBe(1209600);
   });
 
