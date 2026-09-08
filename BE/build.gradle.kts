@@ -24,6 +24,10 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-websocket")
     implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    // 스키마 관리는 Hibernate가 아니라 Flyway가 한다(ddl-auto는 validate).
+    implementation("org.flywaydb:flyway-core")
+    implementation("org.flywaydb:flyway-mysql")
     implementation(platform("software.amazon.awssdk:bom:2.31.16"))
     implementation("software.amazon.awssdk:s3")
     implementation("io.jsonwebtoken:jjwt-api:0.12.6")

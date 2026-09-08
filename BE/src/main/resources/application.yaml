@@ -11,8 +11,33 @@ spring:
     password: ${DB_PASSWORD:attaca-local}
   jpa:
     hibernate:
-      ddl-auto: ${DDL_AUTO:update}
+      # 스키마는 Flyway가 만든다. Hibernate는 엔티티와 실제 스키마가 어긋나지 않는지 확인만 한다.
+      # update로 두면 운영 DB에서 Hibernate가 제 판단으로 스키마를 바꾸고, 컬럼 삭제·타입 변경은
+      # 반영조차 하지 않아 코드와 스키마가 조용히 어긋난다.
+      ddl-auto: ${DDL_AUTO:validate}
     open-in-view: false
+  flyway:
+    enabled: ${FLYWAY_ENABLED:true}
+    # 이미 테이블이 있는 DB(=ddl-auto:update로 만들어진 기존 로컬/개발 DB)에서는
+    # V1 베이스라인을 "적용된 것으로" 표시하고 그 다음 버전부터 실행한다.
+    baseline-on-migrate: true
+    baseline-version: 1
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # 헬스체크만 연다. 나머지(env·beans·heapdump 등)는 노출하지 않는다.
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+app:
+  ws:
+    # WS 핸드셰이크 허용 origin. 채팅은 브라우저가 BE에 직접 붙으므로(BFF를 안 거침)
+    # 이 값이 실제 접근 통제다. 운영에서는 FE origin으로 좁힐 것.
+    allowed-origins: ${WS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:3001}
 
 jwt:
   secret: ${JWT_SECRET:local-dev-secret-please-change-in-real-environment-0123456789}
