@@ -7,12 +7,17 @@
   ],
 
   "performer": {
-    "loginId": "yundaehyun",
-    "email": "yundaehyun@attacca.site",
-    "nickname": "윤대현",
+    "_note": [
+      "실명이 아니라 중립적인 이름으로 둔다. 계정을 만드는 순간 이름·사진이 공개 사이트에",
+      "올라가고 동의 기록이 그 이름으로 남는데, 본인 확인 없이 그렇게 하지 않기 위해서다.",
+      "당사자가 직접 쓰겠다고 하면 본인이 가입한 뒤 공연을 옮긴다(README '데이터 이관').",
+      "profileImage 를 두지 않는 이유도 같다 — 사람 얼굴은 본인이 올리는 것이다."
+    ],
+    "loginId": "archive",
+    "email": "archive@attacca.site",
+    "nickname": "공연 아카이브",
     "instruments": ["PIANO"],
-    "bio": "피아니스트. 정음피아노앙상블 단원으로 제4회 정기연주회 'Musical Innovations in the 20th and 21st Century'에 참여했고, Classic Ensemble M 시리즈 II 'TWO PIANO OPERA' 무대에 올랐습니다. 솔로와 앙상블을 오가며 20·21세기 레퍼토리와 오페라 편곡 작업에 관심을 두고 있습니다.",
-    "profileImage": "KakaoTalk_Photo_2026-09-08-15-00-32.jpeg"
+    "bio": "실제로 열린 공연 기록을 데모용으로 모아 둔 계정입니다. 공연 정보와 곡목은 각 공연의 프로그램에서 옮겼고, 출연자의 사진과 개인정보는 싣지 않았습니다."
   },
 
   "performances": [
