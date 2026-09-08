@@ -4,6 +4,16 @@
 
 ---
 
+* [x] (2026-09-08) 배포 준비 — 블로커 3건 해소 + 배포 산출물. 절차는 `docs/DEPLOY.md`.
+  * **`ddl-auto` → `validate` + Flyway 도입**. 기존 `update` 스키마(19테이블)를 `V1__baseline_schema.sql`로 추출. 기존 DB는 `baseline-on-migrate`로 흡수하고, **빈 DB에서는 마이그레이션이 실제로 돌아 앱이 뜨는 것까지 확인**했다(로컬 + 컨테이너 두 경로). 이제 엔티티를 바꾸면 기동이 실패하므로 마이그레이션을 반드시 함께 써야 한다 — Hibernate가 조용히 스키마를 바꾸는 것보다 낫다.
+  * **단일 인스턴스로 확정.** 채팅이 그대로 동작하는 것이 결정적이었다(인메모리 STOMP 브로커·presence). 스케일아웃·블루그린은 의도적으로 포기하고, 필요해지면 Redis를 먼저 넣는다.
+  * **WS origin 환경변수화**(`WS_ALLOWED_ORIGINS`). `*`였던 것을 좁혔다. 채팅은 브라우저가 BE에 직접 붙어 BFF를 거치지 않으므로 이 값이 실제 접근 통제다.
+  * **Actuator**: `health`만 노출 + `/actuator/health`만 permitAll. `/actuator/env`·`/beans`가 401인 것을 확인.
+  * 산출물: `BE/Dockerfile`(멀티스테이지, non-root uid 10001, `MaxRAMPercentage`) / `FE/Dockerfile`(standalone) / `docker-compose.prod.yml` / `deploy/nginx.conf`(WS Upgrade·1시간 타임아웃·업로드 상한 일치) / `.github/workflows/ci.yml`(한 워크플로 안에서 paths-filter + needs로 BE→FE 순서 강제) / `.env.prod.example`.
+  * **검증**: 두 이미지 모두 빌드 성공. BE 컨테이너를 **완전히 빈 DB**에 붙여 Flyway V1 적용 → `validate` 통과 → 기동 → `/actuator/health` UP → 공개 조회 200 → non-root 실행까지 확인. BE 373 / FE 353 테스트 통과.
+  * 테스트가 155건 깨졌다가 복구된 과정: `validate`가 `@DataJpaTest`(프로파일 미지정)에도 적용돼 H2에 스키마가 없어 실패했다. 테스트 소스셋 전역 `application.properties`로 `create-drop`+Flyway off를 주어 해소.
+  * 남은 것: 실제 AWS 프로비저닝, 인증서 발급, CI의 배포 job(EC2 접속 방식 미정), S3 실연동.
+
 * [x] (2026-09-08) FE 홈 화면 신설 — 공개 랜딩. `/`가 `/feed` 리다이렉트에서 실제 화면이 됐다.
   * **홈(`/`)**: 자동 전환 캐러셀(다가오는 공연 + 고정 공지) / 게시글 위젯(최신글·인기글 탭) / 월간 달력 + 이번 달 일정. 공개 조회(`/api/bff/public/**`)만 쓰고 신원 조회를 하지 않는다.
   * **BFF 4종**: 공지·공연·게시글 패스스루 + `/api/bff/public/calendar`(합성). `proxyPublic` 헬퍼 신설 — 쿠키를 읽지도 붙이지도 않는다(토큰 유무로 응답이 달라지면 안 되므로). 달력 합성은 한쪽만 실패해도 반쪽을 그리지 않고 실패로 내린다.
