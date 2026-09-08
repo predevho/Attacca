@@ -57,7 +57,7 @@
   * 남은 범위 밖: 구직 공고, PERFORMANCE 연결(`performanceId`), 지원 첨부파일, 지원자↔작성자 메시징(CHAT), 키워드/태그 검색, 알림, 마감 자동화 배치, `applicationCount` 응답, 공통 `PageResponse<T>` DTO(코드베이스 공통 BACKLOG).
 * [x] ~~CHAT: WebSocket(STOMP)+Redis 기반 1:1 / 1:N 채팅~~ — 2026-07-27 BE 구현 완료(TDD, 서브에이전트 주도 14태스크), **main 병합 완료(커밋 `7b5cff4`)**. 통합 방 모델(1:1 directKey 유일성+find-or-create, 그룹 평평한 모델), 인메모리 Simple Broker, CONNECT 프레임 JWT 인증, 읽음/안읽은수·presence·typing. 에러코드 404-10/404-11/403-03/400-03. 전체 307/307 통과.
   * 남은 범위 밖: FE 화면(채팅 UI), 메시지 수정/삭제, 파일 첨부, 메시지 검색, 알림 푸시, RECRUITMENT/PERFORMANCE 채팅 연계.
-  * Redis 이연: 다중 서버 확장 시 `enableStompBrokerRelay`로 브로커 교체 + Redis 기반 `PresenceRegistry`(현재 인메모리·단일서버만 정확) + refresh 토큰 로테이션(COMMON-STATUTE §4)을 함께 도입.
+  * Redis 이연: 다중 서버 확장 시 `enableStompBrokerRelay`로 브로커 교체 + Redis 기반 `PresenceRegistry`(현재 인메모리·단일서버만 정확). refresh 로테이션은 2026-09-08에 먼저 들어갔고 **Redis 인스턴스가 이미 떠 있으므로**, 남은 것은 브로커·presence 교체뿐이다.
   * 리뷰 이연(Minor): (1)DIRECT 방 2스레드 실경합 통합테스트(REQUIRES_NEW 구조는 correct-by-construction, 테스트만 이연), (2)`WebSocketConfig.setAllowedOriginPatterns("*")`를 프로덕션 시 FE origin으로 좁히기, (3)WS 통합테스트 `@AfterEach` 세션 disconnect/`stompClient.stop()` 정리(누수·공유 채널 인터셉터 변경창 하드닝), (4)`StompAuthChannelInterceptor` 미사용 import·`ChatPresenceEventListener` Principal FQN→import 정리.
 * [x] ~~FE: MEMBER 프로필 화면(조회/수정/이미지)~~ — 2026-07-16 완료(조회/수정 모드, 이미지 즉시 업로드, beFetch 멀티파트 지원). 라이브 수동 검증까지 성공(멀티파트 실체인: 브라우저→BFF→Spring @RequestPart→디스크→/files/** 서빙→DB key 저장·새로고침 유지). 실이미지 S3 검증만 별개 BACKLOG.
 * [x] ~~FE: 카카오 실제 로그인 왕복 수동 검증~~ — 2026-07-15 완료. 실제 카카오 앱 키/Client Secret/Redirect URI/이메일 동의로 브라우저 왕복 성공(로그인→/dashboard). 개인 개발자 비즈 앱 전환, redirect_uri는 `/config/callback`에 등록.
@@ -91,7 +91,7 @@
 
 * [x] ~~CORS 설정~~ — BFF 채택으로 브라우저 경로는 same-origin이라 불필요. 모바일 앱 등 BE 직접 호출 소비처가 생기면 재도입 검토. (2026-07-15 결정)
 * [ ] Swagger/OpenAPI 문서화 — `resultCode`의 문서화 용도가 COMMON-STATUTE §1에 명시돼 있으나 도입은 미착수
-* [ ] refresh 토큰 로테이션·철회 — Redis 도입 시(COMMON-STATUTE §4에 예정 명시). CHAT의 Redis 도입과 시기 조율 가능
+* [x] ~~refresh 토큰 로테이션·철회~~ — 2026-09-08 완료. Redis 화이트리스트(`rt:{memberId}` Set) + 로테이션 + 재사용 감지(전 기기 무효화) + `POST /api/auth/logout` 신설. fail-closed(503-01). 겸사겸사 **`reissue`의 role을 DB에서 다시 읽도록 고쳤다** — 이전에는 refresh claim의 role을 옮겨 담아 강등이 최대 14일간 안 먹혔다. 규칙은 COMMON-STATUTE §4.1.
 
 ## 배포 (AWS 전환) — 2026-08-18 정리
 

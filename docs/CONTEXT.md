@@ -35,6 +35,12 @@
 * 런타임 DB: MySQL(레포 루트 `docker-compose.yml`, `docker compose up -d` 후 `bootRun`). 데이터소스는 env 기본값(DB_URL/DB_USERNAME/DB_PASSWORD).
 * **스키마는 Flyway가 만든다(2026-09-08). `ddl-auto: validate`.** 엔티티를 바꾸면 Hibernate가 자동으로 따라오지 않고 **기동이 실패한다** — `db/migration/V2__*.sql`을 직접 추가할 것. 기존 DB는 `baseline-on-migrate`로 V1을 흡수한다. 테스트는 `BE/src/test/resources/application.properties`에서 Flyway를 끄고 `create-drop`을 쓴다(파일명이 `application.yaml`과 달라야 메인 설정을 가리지 않는다).
 * Actuator 도입 — `health`만 노출하고 `/actuator/health`만 permitAll. 나머지는 401.
+* **refresh 로테이션·철회(2026-09-08, Redis)**: refresh만 서버가 기억한다(화이트리스트 `rt:{memberId}` Set, 멤버=jti). access는 여전히 무상태(30분). `reissue`는 access·refresh를 **둘 다** 새로 주고 옛 것을 즉시 무효화한다. 화이트리스트에 없는 refresh가 오면 탈취로 보고 **전 기기 무효화**(401-09 `REVOKED_TOKEN`). `POST /api/auth/logout` 신설. **`reissue`는 role을 DB에서 다시 읽는다** — 예전에는 refresh claim의 role을 옮겨 담아 강등이 14일간 안 먹혔다.
+  * **fail-closed**: Redis 장애 시 503-01. 막히는 건 **토큰 발급 전체**(로그인 포함)이고, 공개 조회와 이미 발급된 access 요청은 계속 산다.
+  * 발급은 반드시 `TokenIssuer.issue()`를 거친다(발급+등록을 한 곳에 묶어 어긋날 수 없게). 저장소는 `RefreshTokenStore` 인터페이스 — 테스트는 `app.auth.token-store=memory`로 Redis 없이 돈다.
+  * role 조회는 `global.security.MemberRoleProvider` 포트 ↔ `domain.member` 구현. `global`이 `domain`을 참조하지 않기 위함.
+  * FE: `session.ts`가 쿠키 **두 개**를 갱신하고, `/api/bff/logout`이 BE 철회를 먼저 호출한다.
+* Redis는 로컬·운영 모두 compose 컨테이너(`attacca-redis`). ElastiCache 미사용(단일 인스턴스 전제, 프리티어 없음).
 * WS origin은 `WS_ALLOWED_ORIGINS`(기본 로컬 주소). 채팅은 브라우저가 BE에 직접 붙어 BFF를 안 거치므로 이 값이 실제 접근 통제다.
 * 배포 산출물: `BE/Dockerfile`·`FE/Dockerfile`(standalone)·`docker-compose.prod.yml`·`deploy/nginx.conf`·`.github/workflows/ci.yml`·`.env.prod.example`. 절차와 환경변수 표는 `docs/DEPLOY.md`. **단일 인스턴스 전제**(채팅 인메모리 브로커).
   * ⚠️ 이 개발 PC엔 시스템 환경변수 `DB_PASSWORD=1234`가 설정돼 있어 compose 기본값(`attacca-local`)을 덮어써 `bootRun`이 `Access denied`로 실패한다. 해결: `gradlew bootRun --args=--spring.datasource.password=attacca-local`로 override(명령행이 env보다 우선)하거나 `DB_PASSWORD`를 unset. compose 볼륨이 낡으면 `docker compose down -v` 후 재기동.

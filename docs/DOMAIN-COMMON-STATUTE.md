@@ -71,7 +71,52 @@
 | FORBIDDEN | 403-01 | 권한 부족 |
 
 * 소셜 로그인(OAuth2): provider 인증 성공 → 회원 조회/생성 → 동일 `JwtProvider` 발급 흐름으로 수렴 (MEMBER 도메인에서 구현).
-* refresh 로테이션·철회는 추후 Redis 도입 시 추가(현재 무상태).
+
+### 4.1 refresh 로테이션·철회 (2026-09-08 도입, Redis)
+
+무상태를 포기하고 refresh만 서버가 기억한다. access는 여전히 무상태다(30분이라 블랙리스트를 두지 않는다).
+
+**왜 바꾸는가** — 무상태 상태에서 다음 세 가지가 불가능했다.
+
+* **로그아웃이 서버에 없다.** FE가 쿠키만 지웠으므로 탈취된 refresh는 14일간 그대로 유효했다.
+* **로테이션이 없다.** `reissue`가 access만 새로 주고 같은 refresh를 14일 내내 재사용했다.
+* **철회 수단이 없다.** 토큰마다 식별자(`jti`)가 없어 개별 무효화가 불가능했다.
+
+**저장 구조** — 화이트리스트(유효한 것만 저장, 없으면 거부)
+
+```
+rt:{memberId}  →  Redis Set { jti, ... }   TTL = refresh 만료
+```
+
+Set 하나로 다중 기기가 자연히 지원되고, 전 기기 무효화가 `DEL` 한 번이다.
+
+| 동작 | 처리 |
+|---|---|
+| 로그인·소셜로그인 | 새 `jti` 발급 → `SADD` |
+| `POST /api/auth/reissue` | `SISMEMBER` 확인 → **access·refresh 모두 새로 발급** → 옛 `jti` `SREM`, 새 `jti` `SADD` |
+| `POST /api/auth/logout` | 해당 `jti` `SREM` (신설) |
+| **재사용 감지** | 이미 없는 `jti`가 오면 탈취로 보고 `DEL rt:{memberId}` — 그 회원의 **전 기기 로그아웃** |
+
+**확정 규칙**
+
+* **fail-closed.** Redis에 못 붙으면 `TOKEN_STORE_UNAVAILABLE`(503-01)로 거부한다. 철회를 도입하는 목적이 "무효화가 실제로 먹히게" 하는 것인데, fail-open이면 Redis를 죽이는 것만으로 철회를 무력화할 수 있다. Redis는 BE와 같은 compose 안에 있어 사실상 별도 장애점이 아니다.
+  * **막히는 범위는 `reissue`만이 아니라 토큰 발급 전체다** — 로그인·소셜 로그인도 503이 된다. 발급은 됐는데 화이트리스트 등록에 실패하면 그 refresh는 태어나자마자 무효라, 사용자가 로그인 직후 튕기는 것보다 503이 정직하다.
+  * **인증과 무관한 경로는 계속 산다.** 공개 조회(`/api/public/**`)와 이미 발급된 access로 하는 요청은 Redis를 보지 않으므로 그대로 동작한다. 즉 Redis 장애 = "로그인/갱신만 중단", 서비스 전면 중단이 아니다. (2026-09-08 로컬에서 Redis를 실제로 내려 확인)
+* **`reissue`는 role을 DB에서 다시 읽는다.** 이전에는 refresh claim의 role을 그대로 새 access에 옮겨 담았고, 그래서 **ADMIN에서 강등해도 최대 14일간 ADMIN access가 계속 발급**됐다. 무상태를 유지하려고 DB 조회를 뺀 설계였으나, 상태를 갖기로 한 이상 함께 고친다.
+* 의존 방향을 지키기 위해 role 조회는 `global.security`에 둔 포트 인터페이스(`MemberRoleProvider`)로 하고 구현을 MEMBER 도메인에 둔다. `global`이 `domain`을 직접 참조하지 않는다.
+* 저장소도 인터페이스(`RefreshTokenStore`)로 두어 테스트가 Redis 없이 인메모리 구현으로 돈다.
+
+**에러 코드 추가**
+
+| 코드 | resultCode | 사유 |
+|---|---|---|
+| `REVOKED_TOKEN` | 401-09 | 철회·회수되었거나 재사용이 감지된 refresh |
+| `TOKEN_STORE_UNAVAILABLE` | 503-01 | Redis 장애(fail-closed) |
+
+**FE 영향**
+
+* `lib/server/session.ts` — `reissue` 응답에 refresh가 함께 오므로 쿠키 **두 개**를 갱신한다(`setAuthCookies`).
+* `app/api/bff/logout` — 쿠키만 지우지 않고 BE `POST /api/auth/logout`을 먼저 호출한다.
 
 ---
 

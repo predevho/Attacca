@@ -4,6 +4,16 @@
 
 ---
 
+* [x] (2026-09-08) 인증/인가 — refresh 로테이션·철회 도입(Redis). 규칙은 `docs/DOMAIN-COMMON-STATUTE.md` §4.1.
+  * **왜**: 무상태 JWT에서는 (1) 서버 쪽 로그아웃이 없고 (2) 같은 refresh를 14일 재사용하며 (3) 개별 철회 수단이 없었다. 탈취되면 만료까지 손을 못 댔다.
+  * **구조**: refresh만 서버가 기억한다 — 화이트리스트 `rt:{memberId}` Set(멤버=`jti`, TTL=refresh 만료). access는 여전히 무상태(30분이라 블랙리스트를 두지 않는다). Set 하나로 다중 기기가 자연히 되고 전 기기 무효화가 `DEL` 한 번이다.
+  * **`reissue`가 access·refresh를 둘 다 새로 준다.** 옛 `jti`는 즉시 제거. 화이트리스트에 없는 refresh가 오면 탈취로 보고 `DEL rt:{memberId}` — 그 회원의 전 기기가 로그아웃된다(401-09 `REVOKED_TOKEN`).
+  * **덤으로 잡은 구멍**: `reissue`가 refresh claim의 role을 새 access로 그대로 옮겨 담고 있었다. ADMIN을 강등해도 **최대 14일간 ADMIN access가 계속 발급**됐다는 뜻이다. 이제 DB에서 role을 다시 읽는다. 상태를 갖기로 한 김에 함께 고쳤다.
+  * **fail-closed**(선택). Redis에 못 붙으면 503-01. 막히는 범위가 `reissue`만이 아니라 **로그인 포함 토큰 발급 전체**라는 점을 실제로 Redis를 내려 확인하고 문서를 고쳤다. 공개 조회와 이미 발급된 access 요청은 계속 산다.
+  * **어긋날 수 없게 만든 것들**: 발급은 반드시 `TokenIssuer.issue()`를 거친다(발급과 화이트리스트 등록이 한 곳). role 조회는 `global.security.MemberRoleProvider` 포트 ↔ MEMBER 도메인 구현 — `global`이 `domain`을 참조하지 않는다. 저장소는 `RefreshTokenStore` 인터페이스라 테스트가 Redis 없이 인메모리로 돈다(`app.auth.token-store=memory`).
+  * **FE**: `session.ts`가 쿠키 두 개를 갱신하고(옛 refresh를 남기면 다음 갱신에서 재사용으로 감지돼 전 기기가 날아간다), `/api/bff/logout`이 BE 철회를 먼저 호출한다. BE 호출이 실패해도 쿠키는 지운다.
+  * **검증**: 로컬 실제 Redis로 로그인→`rt:1` 1건 → 재발급→로테이션 → 옛 refresh 재사용→401-09 + `rt:*` 0건 → 로그아웃→401-09 → Redis 중단시 로그인·재발급 503-01 / 공개 조회 200 → Redis 복구시 200. BE 383 / FE 358 통과.
+
 * [x] (2026-09-08) 배포 준비 — 블로커 3건 해소 + 배포 산출물. 절차는 `docs/DEPLOY.md`.
   * **`ddl-auto` → `validate` + Flyway 도입**. 기존 `update` 스키마(19테이블)를 `V1__baseline_schema.sql`로 추출. 기존 DB는 `baseline-on-migrate`로 흡수하고, **빈 DB에서는 마이그레이션이 실제로 돌아 앱이 뜨는 것까지 확인**했다(로컬 + 컨테이너 두 경로). 이제 엔티티를 바꾸면 기동이 실패하므로 마이그레이션을 반드시 함께 써야 한다 — Hibernate가 조용히 스키마를 바꾸는 것보다 낫다.
   * **단일 인스턴스로 확정.** 채팅이 그대로 동작하는 것이 결정적이었다(인메모리 STOMP 브로커·presence). 스케일아웃·블루그린은 의도적으로 포기하고, 필요해지면 Redis를 먼저 넣는다.
