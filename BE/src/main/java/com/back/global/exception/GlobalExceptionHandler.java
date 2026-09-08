@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -36,6 +37,18 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleNoResourceFoundException(NoResourceFoundException e) {
         ErrorCode errorCode = ErrorCode.RESOURCE_NOT_FOUND;
         log.warn("NoResourceFoundException: path={}", e.getResourcePath());
+        return ResponseEntity.status(errorCode.getStatus())
+                .body(ApiResponse.error(errorCode));
+    }
+
+    // 경로는 맞지만 메서드가 다른 요청(예: 조회 전용 경로에 POST).
+    // ErrorCode에 405-01이 정의돼 있었는데 이를 쓰는 핸들러가 없어 catch-all로 떨어져 500으로 응답되고 있었다.
+    // NoResourceFoundException(404), 파라미터 바인딩 실패(400)와 같은 계열의 결함이다.
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMethodNotSupported(
+            HttpRequestMethodNotSupportedException e) {
+        ErrorCode errorCode = ErrorCode.METHOD_NOT_ALLOWED;
+        log.warn("HttpRequestMethodNotSupportedException: method={}", e.getMethod());
         return ResponseEntity.status(errorCode.getStatus())
                 .body(ApiResponse.error(errorCode));
     }
