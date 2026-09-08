@@ -36,6 +36,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/files/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
+                        // 비인증 읽기 전용 경로. 이 아래에는 쓰기 엔드포인트를 두지 않는다
+                        // (DOMAIN-NOTICE-STATUTE §6 — 공개 조회 규칙).
+                        .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex
