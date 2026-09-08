@@ -59,7 +59,10 @@ public class MemberService {
         Member member = memberRepository.findByLoginId(request.loginId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.LOGIN_FAILED));
 
-        if (member.getPassword() == null
+        // 탈퇴 회원은 loginId 가 null 이라 위 조회에서 이미 걸리지만, 의도를 코드에 남긴다.
+        // 이 확인이 없으면 나중에 loginId 를 남기는 쪽으로 바꿀 때 조용히 뚫린다.
+        if (member.isWithdrawn()
+                || member.getPassword() == null
                 || !passwordEncoder.matches(request.password(), member.getPassword())) {
             throw new BusinessException(ErrorCode.LOGIN_FAILED);
         }

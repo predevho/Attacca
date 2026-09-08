@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { getBff, putBff, putBffForm } from '@/lib/api';
+import { getBff, putBff, putBffForm, deleteBff } from '@/lib/api';
 import { AuthorBadge } from '@/components/feed/AuthorBadge';
 import type { Me } from '@/lib/feed/types';
 
@@ -18,6 +18,10 @@ export default function ProfilePage() {
   const [me, setMe] = useState<Me | null>(null);
   const [options, setOptions] = useState<Option[]>([]);
   const [editing, setEditing] = useState(false);
+  const [withdrawing, setWithdrawing] = useState(false);
+  const [confirmText, setConfirmText] = useState('');
+  const [withdrawPending, setWithdrawPending] = useState(false);
+  const [withdrawError, setWithdrawError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -81,6 +85,21 @@ export default function ProfilePage() {
   }
 
   if (!profile) return <main className="mx-auto mt-24 max-w-md px-4">불러오는 중...</main>;
+
+  // 확인 문구를 그대로 입력해야 눌린다. 되돌릴 수 없는 동작이라
+  // 실수로 누르는 경로를 만들지 않는다.
+  async function withdraw() {
+    setWithdrawPending(true);
+    setWithdrawError(null);
+    const res = await deleteBff('/api/bff/members/me');
+    setWithdrawPending(false);
+    if (res.ok) {
+      router.push('/');
+      router.refresh();
+    } else {
+      setWithdrawError(res.message ?? '탈퇴에 실패했습니다.');
+    }
+  }
 
   return (
     <main className="mx-auto mt-16 max-w-md px-4">
@@ -149,6 +168,39 @@ export default function ProfilePage() {
           </div>
         </section>
       )}
+
+      <section className="mt-16 border-t border-line pt-6">
+        <h2 className="text-sm font-medium text-ink-muted">회원 탈퇴</h2>
+        <p className="mt-2 text-sm">
+          탈퇴하면 아이디·이메일·닉네임·프로필이 지워집니다. <b>되돌릴 수 없습니다.</b>
+        </p>
+        <p className="mt-1 text-sm text-ink-muted">
+          이미 올린 글과 댓글은 남고 작성자만 “탈퇴한 회원”으로 바뀝니다.
+          다른 분들의 대화가 함께 무너지기 때문입니다. 글까지 지우려면 탈퇴 전에 직접 지워 주세요.
+        </p>
+
+        {!withdrawing ? (
+          <button onClick={() => setWithdrawing(true)}
+            className="mt-4 rounded border border-danger px-4 py-2 text-sm text-danger">탈퇴하기</button>
+        ) : (
+          <div className="mt-4 rounded border border-danger p-4">
+            <label className="block text-sm">
+              확인을 위해 <b>탈퇴합니다</b> 를 그대로 입력해 주세요.
+              <input value={confirmText} onChange={(e) => setConfirmText(e.target.value)}
+                className="mt-2 w-full rounded border border-line px-3 py-2 text-sm" />
+            </label>
+            {withdrawError && <p role="alert" className="mt-2 text-sm text-danger">{withdrawError}</p>}
+            <div className="mt-3 flex gap-2">
+              <button onClick={withdraw} disabled={confirmText !== '탈퇴합니다' || withdrawPending}
+                className="rounded bg-danger px-4 py-2 text-sm text-on-brand disabled:opacity-50">
+                영구 삭제
+              </button>
+              <button onClick={() => { setWithdrawing(false); setConfirmText(''); setWithdrawError(null); }}
+                className="rounded border border-line px-4 py-2 text-sm">취소</button>
+            </div>
+          </div>
+        )}
+      </section>
     </main>
   );
 }

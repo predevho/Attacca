@@ -68,6 +68,16 @@ public class MemberProfile extends BaseEntity {
         this.bio = bio;
     }
 
+    /**
+     * 탈퇴 시 프로필 비우기. 악기 선택은 개인을 특정하지 않으므로 함께 비운다
+     * (남겨 둘 이유가 없다). 파일 실제 삭제는 호출부가 한다 — 엔티티는 저장소를 모른다.
+     */
+    public void clearForWithdrawal() {
+        this.instruments.clear();
+        this.bio = null;
+        this.profileImageKey = null;
+    }
+
     public void changeImage(String newKey) {
         this.profileImageKey = newKey;
     }

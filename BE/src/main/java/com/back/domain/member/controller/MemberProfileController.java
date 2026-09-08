@@ -10,6 +10,7 @@ import com.back.global.common.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -27,6 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class MemberProfileController {
 
     private final MemberProfileService memberProfileService;
+    private final com.back.domain.member.service.MemberWithdrawService memberWithdrawService;
 
     @GetMapping("/me")
     public ApiResponse<MemberIdentityResponse> getMyIdentity(@AuthenticationPrincipal Long memberId) {
@@ -48,6 +50,18 @@ public class MemberProfileController {
     public ApiResponse<ProfileImageResponse> updateProfileImage(@AuthenticationPrincipal Long memberId,
             @RequestPart("file") MultipartFile file) {
         return ApiResponse.success(memberProfileService.updateProfileImage(memberId, file));
+    }
+
+    /**
+     * 회원 탈퇴. 되돌릴 수 없다. (DOMAIN-MEMBER-STATUTE §3.5)
+     *
+     * <p>이미 발급된 access 토큰은 만료(30분)까지 살아 있다. 로그아웃과 같은 절충으로,
+     * refresh 를 모두 철회해 재발급을 막는 것으로 끊는다.
+     */
+    @DeleteMapping("/me")
+    public ApiResponse<Void> withdraw(@AuthenticationPrincipal Long memberId) {
+        memberWithdrawService.withdraw(memberId);
+        return ApiResponse.success();
     }
 
     @GetMapping("/profile-options")

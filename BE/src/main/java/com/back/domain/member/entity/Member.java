@@ -3,6 +3,7 @@ package com.back.domain.member.entity;
 import com.back.global.common.BaseEntity;
 import com.back.global.security.Role;
 import jakarta.persistence.Column;
+import java.time.LocalDateTime;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -47,6 +48,10 @@ public class Member extends BaseEntity {
     @Column(nullable = false)
     private Role role;
 
+    /** 탈퇴 시각. 채워지면 로그인·재발급이 막힌다. (DOMAIN-MEMBER-STATUTE §3.5) */
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     private Member(String loginId, String password, String email, String nickname, Role role) {
         this.loginId = loginId;
         this.password = password;
@@ -63,5 +68,26 @@ public class Member extends BaseEntity {
     /** 소셜 전용 회원 생성. loginId/password 없음. */
     public static Member createSocial(String email, String nickname) {
         return new Member(null, null, email, nickname, Role.USER);
+    }
+
+    /**
+     * 탈퇴 처리. 개인 식별 정보를 지우거나 알아볼 수 없게 바꾼다. 되돌릴 수 없다.
+     *
+     * <p>email/nickname 은 유니크 제약이 있어 비울 수 없으므로 익명 값으로 바꾼다.
+     * 이메일 도메인 {@code .invalid} 는 RFC 2606이 이 용도로 예약한 것이라
+     * 실수로도 발송되지 않는다.
+     *
+     * <p>행 자체는 남긴다 — 이 회원이 쓴 글의 작성자 참조가 끊기면 남의 글타래가 무너진다.
+     */
+    public void withdraw() {
+        this.loginId = null;
+        this.password = null;
+        this.email = "deleted-" + this.id + "@attacca.invalid";
+        this.nickname = "탈퇴한회원" + this.id;
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public boolean isWithdrawn() {
+        return deletedAt != null;
     }
 }
