@@ -139,3 +139,20 @@ com.back.domain.performance
 * `description`/`program` 정규화 = 별도 트림 없이 `@NotBlank`(title/venue) + `@Size` 로만 제약.
 * 어드민 판정 `isAdmin` = `PerformanceController` 로컬 static(FEED의 것과 공용 헬퍼 추출은 BACKLOG).
 * 목록 응답 = `Page<PerformanceResponse>`(Spring Pageable). PageImpl 직렬화 안정화를 위한 공통 `PageResponse` DTO 도입은 코드베이스 공통 BACKLOG(VERIFIED-PERFORMER 목록과 함께).
+
+---
+
+## 12. 공개 조회 (2026-09-08 추가)
+
+새 홈이 공개 랜딩이 되면서 비인증 읽기를 열었다. 규칙 자체는 NOTICE가 먼저 확정했고(DOMAIN-NOTICE-STATUTE §6) 이 도메인은 그것을 따른다.
+
+* 접두사 `/api/public/performances`. **읽기만** 둔다 — 등록·수정·삭제·포스터는 인증 경로(`/api/performances`)에 그대로 있다.
+* `GET /?scope=UPCOMING|PAST|ALL|SCHEDULED&from=&to=&page=&size=` → `PageResponse<PublicPerformanceResponse>`
+  * `UPCOMING`(기본)·`PAST`·`ALL`은 인증 목록과 같은 정렬.
+  * `SCHEDULED`는 홈 달력용 — `performedAt`이 `[from, to)` 범위, `performedAt ASC`. `from`/`to` 없으면 400-01. 이름과 규약은 NOTICE의 같은 값과 일부러 맞췄다(BFF가 두 도메인을 같은 모양으로 호출한다).
+* `GET /{id}` → `PublicPerformanceResponse`. 삭제/없음이면 404-07.
+* **enum은 공개 전용 `PublicPerformanceScope`로 분리한다.** 인증 경로의 `PerformanceScope`에 `SCHEDULED`를 더하면 그 경로에서도 의미 없는 값을 받게 되기 때문이다.
+* `PublicPerformanceResponse`: `id, organizer{nickname, verified}, title, description, performedAt, venue, program, ticketInfo, ticketUrl, posterImageUrl, createdAt`
+  * `organizer`는 `PublicMemberDisplay` — **회원 id 없음**. 인증 응답의 `MemberDisplay`를 재사용하면 `@JsonProperty("id")`로 회원 id가 새므로 쓰지 않는다.
+  * `updatedAt`은 담지 않는다(내부 상태).
+* 목록 `size` 기본 20 / 최대 50.

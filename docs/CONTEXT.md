@@ -13,8 +13,19 @@
 * 확정된 기술 스택
   * BE: Spring Boot 3.4.x / Java 21 / MySQL / Spring Security(JWT + OAuth2) / WebSocket(STOMP)+Redis / FileStorage 추상화(로컬 기본/S3 opt-in)
   * FE: Next.js 16(App Router)/React 19/TS/Tailwind/Vitest, 위치 `FE/`. BFF+httpOnly 쿠키. `cd FE && npm run dev`(:3000)
-* 도메인 6개: MEMBER, VERIFIED-PERFORMER, FEED, PERFORMANCE, RECRUITMENT(구인/구직), CHAT
+* 도메인 7개: MEMBER, VERIFIED-PERFORMER, FEED, PERFORMANCE, RECRUITMENT(구인/구직), CHAT, **NOTICE(2026-09-08 BE 구현 완료)**
 * 어드민: 별도 도메인 아님. MEMBER의 ROLE_ADMIN.
+* **NOTICE(공지·소식·운영 일정)**: 새 홈 화면의 캐러셀·달력 원천. 엔티티 1종 `Notice`(`type` NOTICE/NEWS/EVENT, `scheduledAt` **nullable — 값이 있으면 달력에 뜬다는 단일 상태**, `pinned`=캐러셀 노출, coverImageKey, soft delete). 쓰기 `/api/admin/notices`(경로로 ROLE_ADMIN 게이팅, 소유자 판정 없음), 읽기 `/api/public/notices?scope=PINNED|SCHEDULED|ALL&from=&to=`(비인증). `EVENT`는 등록·수정 시 `scheduledAt` 필수(없으면 400-01), `SCHEDULED` 조회는 `from`·`to` 필수. 달력 범위는 **from 포함 / to 미포함**. `PINNED`은 최대 5건(그 외 기본 20/최대 50). 에러코드 404-12. 문서: `DOMAIN-NOTICE-CONSTITUTION.md`/`STATUTE.md`.
+* **공개 API 3종(2026-09-08, 새 홈이 소비)**: `/api/public/notices` · `/api/public/performances?scope=UPCOMING|PAST|ALL|SCHEDULED&from=&to=` · `/api/public/feed/posts?sort=LATEST|POPULAR`. 전부 **읽기 전용**이고 인증 경로와 컨트롤러·DTO가 분리돼 있다. 공개 응답의 회원 표시는 반드시 **`PublicMemberDisplay`**(닉네임+뱃지, 회원 id 없음) — `MemberDisplay`는 `@JsonProperty("id")`로 회원 id를 흘리므로 공개 응답에 쓰지 말 것. NOTICE는 작성자 자체를 담지 않고(운영 주체 명의), PERFORMANCE·FEED는 담는다. FEED 공개는 목록만(상세 비공개 = 로그인 유도 동선), `likedByMe` 없음. 인기글은 **최근 30일 창** 안의 (좋아요+댓글) 순, 오프셋 페이징(`FeedPublicService.POPULAR_WINDOW_DAYS`).
+* 공통 `PageResponse<T>`(`global.common`) — 공개 API 3종과 NOTICE 어드민이 사용. 기존 도메인(`Page<T>` 직렬화) 전환은 BACKLOG.
+* **405 매핑 추가(2026-09-08)**: 경로는 맞고 메서드만 다른 요청이 500으로 응답되던 결함 수정 → `METHOD_NOT_ALLOWED`(405-01). 이제 클라이언트 실수 계열은 400-01(검증·본문·파라미터)/404-02(경로 없음)/405-01(메서드)로 모두 매핑된다.
+* **공개 조회 규칙(NOTICE가 처음 도입, 이후 도메인 표준)**: 경로 `/api/public/**` permitAll, 컨트롤러·DTO를 인증용과 **분리**(같은 DTO 공유 금지 — 필드 추가가 조용히 공개로 새는 것을 막기 위함), 공개 응답에 회원 식별자·작성자·내부 상태 비노출, 공개는 **읽기 전용**. 홈 달력의 공연+일정 **합성은 BE가 아니라 BFF가 한다**(ARCHITECTURE-CONSTITUTION §2 "BE는 화면 로직을 갖지 않는다").
+* **FE 홈(2026-09-08 완료)**: `/`가 공개 랜딩(예전엔 `/feed` 리다이렉트). 캐러셀·게시글 위젯(최신/인기 탭)·월간 달력. BFF `/api/bff/public/**` 4종(공지·공연·게시글 패스스루 + `calendar` 합성)만 쓰고 신원 조회를 하지 않는다. 공개 프록시는 `proxyPublic`(쿠키를 읽지도 붙이지도 않음). 순수 로직은 `lib/home/logic.ts`, 컴포넌트는 `components/home/*`.
+  * **헤더**: 비로그인이면 로그인·회원가입을 보여준다(예전엔 신원 못 얻으면 헤더 자체를 렌더하지 않았음). 신원 미확정 동안엔 오른쪽만 비운다. `NAV_ITEMS`에 홈 포함(5개), 컨테이너 `max-w-5xl`.
+  * **로그인 복귀**: 미들웨어가 `?next=`를 붙이고 `LoginForm`이 `safeNext`로 내부 경로만 허용해 이동한다(열린 리다이렉트 방지).
+  * ⚠️ 그리드에서 `1fr`은 최소 크기가 `auto`라 `truncate`된 긴 텍스트가 열을 부풀린다. 사이드바가 있는 2단 레이아웃은 **`minmax(0,1fr)`**을 쓸 것(홈에서 가로 스크롤로 드러난 실제 결함).
+* `lib/api.ts`의 모든 헬퍼는 공용 `request()`를 거친다 — fetch reject를 `{ok:false, message}`로 흡수하므로 호출부에 `.catch`가 따로 필요 없다.
+* 이 PC 기동 편의: `BE/gradle.properties`에 `org.gradle.java.home`(graalvm-jdk-21) 고정해 뒀다(커밋 대상 아님). 그래서 `export JAVA_HOME` 없이 `./gradlew`가 동작한다. `.claude/launch.json`의 `be`는 preview 샌드박스 권한 문제로 실패하므로 BE는 셸에서 직접 띄운다.
 
 ## 주의
 

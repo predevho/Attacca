@@ -11,9 +11,10 @@ export const ERROR_MESSAGES: Record<string, string> = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; next?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, next } = await searchParams;
   const initialError = error ? (ERROR_MESSAGES[error] ?? '로그인에 실패했습니다.') : null;
-  return <LoginForm initialError={initialError} />;
+  // next는 미들웨어가 붙인 원래 목적지다. 안전성 검사는 LoginForm이 safeNext로 한다.
+  return <LoginForm initialError={initialError} next={next ?? null} />;
 }

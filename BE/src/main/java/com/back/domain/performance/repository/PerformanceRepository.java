@@ -21,4 +21,11 @@ public interface PerformanceRepository extends JpaRepository<Performance, Long> 
 
     /** 전체(미삭제): 공연일 최신 순. */
     Page<Performance> findByDeletedAtIsNullOrderByPerformedAtDesc(Pageable pageable);
+
+    /**
+     * 홈 달력용: performedAt이 [from, to) 범위, 이른 순.
+     * 경계는 from 포함 / to 미포함 — NOTICE의 일정 범위 조회와 같은 규약이다.
+     */
+    Page<Performance> findByDeletedAtIsNullAndPerformedAtGreaterThanEqualAndPerformedAtLessThanOrderByPerformedAtAsc(
+            LocalDateTime from, LocalDateTime to, Pageable pageable);
 }

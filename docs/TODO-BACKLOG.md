@@ -75,7 +75,7 @@
 
 ## 공연 FE 후속 (2026-08-02 최종 리뷰 이연)
 
-* [ ] FE(전역): `getBff('/api/bff/me/identity')` 등 신원 조회에 네트워크 레벨 fetch reject용 `.catch` 없음 — 정상 경로는 middleware 쿠키 보장으로 동작하나, fetch 자체가 reject하면 unhandled rejection + 페이지가 "불러오는 중…"에 영구 정지. 피드+공연 8+개 호출부 공통 → `getBff`/`beClient` 레벨 또는 공용 훅으로 **한 번에** 처리(개별 페이지 말고). (opus 최종 리뷰 Important, 비블로커)
+* [x] ~~FE(전역): 신원 조회에 네트워크 레벨 fetch reject용 `.catch` 없음~~ — 2026-09-08 해소. 개별 호출부가 아니라 **`lib/api.ts`의 공용 `request()`에서 한 번에** 흡수한다(fetch reject → `{ok:false, message:'서버에 연결할 수 없습니다.'}`). 모든 호출부가 이미 `ok===false`를 다루고 있어 반환 모양은 그대로다. 원문: `getBff('/api/bff/me/identity')` 등 신원 조회에 네트워크 레벨 fetch reject용 `.catch` 없음 — 정상 경로는 middleware 쿠키 보장으로 동작하나, fetch 자체가 reject하면 unhandled rejection + 페이지가 "불러오는 중…"에 영구 정지. 피드+공연 8+개 호출부 공통 → `getBff`/`beClient` 레벨 또는 공용 훅으로 **한 번에** 처리(개별 페이지 말고). (opus 최종 리뷰 Important, 비블로커)
 * [ ] FE 공연 a11y: `/performances/new`의 포스터 `<input type=file>`에 접근명 없음(다른 폼 필드는 aria-label 있음). edit 페이지는 `<label>` 래핑으로 회피 — new도 동일 처리.
 * [ ] FE 목록 empty-state 1프레임 flash: `/performances`(및 피드)에서 첫 렌더 시 `isLoading` 세팅 전 "등록된 공연이 없습니다"가 한 프레임 노출 → 훅의 `loaded` 플래그로 게이팅하면 해소.
 * [ ] FE 공연: 삭제 확인(confirm) 없음 — 상세에서 삭제 1클릭 즉시 실행(BE soft delete라 서버측 복구 가능). 피드와 동일 정책이나 확인 다이얼로그 검토 여지.
@@ -142,3 +142,42 @@
 
 * [ ] **README 부재** — 루트·FE·BE 어디에도 README가 없다. 포트폴리오에서는 사실상 첫인상이므로 우선순위가 높다. 담을 것: 서비스 소개, 스택, 아키텍처(BFF·도메인 6개·JWT/OAuth·STOMP), 실행법(docker compose + bootRun + npm run dev, JDK 21 주의), 화면 스크린샷(라이트/다크), 그리고 LLM 에이전트 기반 개발 방식과 `docs/` 문서 체계 소개.
 * [ ] 화면 스크린샷 확보 — 전역 헤더·악보지 테마가 적용된 상태로 라이트/다크 각각. README와 포트폴리오에 함께 쓴다.
+
+## 홈 화면 신설 (2026-09-08 목업 → BE → FE 완료)
+
+목업: Claude Design 캔버스 "Attaca 화면 목업"(아트보드 11장 — 홈 라이트/다크/모바일 375 + 기존 8화면). 색·간격·컴포넌트 값은 실제 코드에서 그대로 가져왔다. 작업 `.dc.html` 파일은 세션 스크래치패드에 있어 휘발성이므로, 재작업 시 캔버스에서 `seed-canvas.mjs --extract`로 복원할 것.
+
+구성: 상단 자동 전환 캐러셀(공연·공지·뉴스) / 하단 2단 — 왼쪽 게시글 위젯(최신글·인기글 탭), 오른쪽 월간 달력 + 이번 달 일정.
+
+**확정된 결정 — 달력에 올라오는 것은 두 가지뿐이다 (2026-09-08).**
+
+* 공연 — 인증 연주자가 등록한 것. PERFORMANCE 등록 자격이 이미 `인증 연주자 | ROLE_ADMIN`으로 게이팅돼 있어 달력에서 별도 필터가 필요 없다.
+* 공지 일정 — ROLE_ADMIN이 직접 등록한 것.
+* 구인 마감은 달력에서 **제외**한다.
+
+선행 작업:
+
+* [x] ~~BE FEED: 인기글 정렬 옵션~~ — 2026-09-08 완료. `GET /api/public/feed/posts?sort=LATEST|POPULAR`. 인기순은 **최근 30일 창** 안에서 (좋아요+댓글) 내림차순(창이 없으면 옛 글이 영구 고정). 정렬 키가 id가 아니라 집계값이라 커서가 아닌 오프셋 페이징이며, 인증 경로의 커서 타임라인은 최신순 그대로 두었다. FEED-STATUTE §12.
+* [x] ~~BE PERFORMANCE: 월 범위 조회~~ — 2026-09-08 완료. `GET /api/public/performances?scope=SCHEDULED&from=&to=`. NOTICE와 같은 이름·같은 `[from, to)` 규약이라 BFF가 두 번 같은 모양으로 호출해 합치면 된다. PERFORMANCE-STATUTE §12.
+* [x] ~~NOTICE 도메인 문서 작성~~ — 2026-09-08 완료. `DOMAIN-NOTICE-CONSTITUTION.md` / `DOMAIN-NOTICE-STATUTE.md`. ARCHITECTURE-CONSTITUTION §3 도메인 표와 ARCHITECTURE-STATUTE §2 패키지 트리에도 반영.
+* [x] ~~NOTICE 도메인 BE 구현~~ — 2026-09-08 완료(TDD, 테스트 46개, 전체 358/358). STATUTE §11 미결정 4건도 함께 확정: `pinned`는 등록 제한 없이 **조회에서 상위 5건만**, 목록 size 기본 20/최대 50(PINNED만 5), 공개·어드민 모두 **`PageResponse<T>`**, `content`는 **순수 텍스트**(마크다운 미허용).
+* [ ] 기존 도메인 목록 응답을 `PageResponse<T>`로 전환 — NOTICE에서 도입했다. VERIFIED-PERFORMER 어드민 목록·PERFORMANCE 목록이 아직 `Page<T>`(PageImpl) 직렬화라 Boot 3.4 경고가 남아 있다. (기존 "BE 공통 정리" 항목과 같은 건 — 여기서 통합)
+* [ ] NOTICE 본문 마크다운 지원 — 지금은 순수 텍스트로 확정. 서식이 필요해지면 FE 렌더러와 XSS 처리(허용 태그 화이트리스트)를 함께 도입할 것.
+* [x] ~~**PERFORMANCE: 공개 조회 추가**~~ — 2026-09-08 완료(위 항목과 함께).
+* [x] ~~BFF `/api/bff/public/calendar`~~ — 2026-09-08 완료. 공연·공지 두 공개 조회를 호출해 시각순 한 벌로 합친다. 한쪽이라도 실패하면 반쪽 달력을 그리지 않고 실패로 내린다(빠진 일정이 "없는 일정"으로 보이면 안 되므로).
+* [x] ~~FE 홈 화면~~ — 2026-09-08 완료. `/`(공개), 캐러셀·게시글 위젯(최신/인기)·월간 달력. 비로그인 헤더(로그인·회원가입)와 로그인 후 원래 경로 복귀(`next`)도 함께.
+* [x] ~~홈의 비로그인 노출 여부 결정~~ — **공개 랜딩으로 확정·구현 완료(2026-09-08)**. 비로그인도 홈을 볼 수 있고, 상세로 들어가면 로그인으로 유도한다. 포트폴리오에서 링크만 열어도 서비스가 보이는 것이 목적.
+* [x] ~~**BE: 공개 조회 경로 신설**~~ — 2026-09-08 완료. `/api/public/**` permitAll + 도메인별 공개 컨트롤러·DTO 분리(NOTICE·PERFORMANCE·FEED 3종). 회원 id 미노출은 `PublicMemberDisplay`가 구조적으로 강제한다. 규칙은 NOTICE-STATUTE §6.
+* [x] ~~홈 도입 시 헤더 변경~~ — 2026-09-08 완료. `NAV_ITEMS`에 홈 추가, 로고·홈 경로를 `/`로, 컨테이너 `max-w-4xl`→`max-w-5xl`. 비로그인이면 로그인·회원가입을 보여준다(예전에는 신원을 못 얻으면 헤더 자체를 렌더하지 않아 공개 홈에서 로그인할 방법이 없었다).
+* [ ] (목업 제안, 선택) 채팅을 방 목록+대화창 한 화면 2단으로 / 공연 상세 포스터를 왼쪽 열로.
+* [ ] 홈 후속: 캐러셀 자동 전환을 hover·포커스 시 일시정지(현재는 계속 넘어간다), `prefers-reduced-motion` 존중.
+* [ ] 홈 후속: 공지 상세 화면(`/notices/[id]`)이 없어 달력의 공지 항목은 클릭할 수 없다. 캐러셀의 공지 슬라이드도 CTA가 없다.
+* [ ] 홈 후속: 히어로 이미지가 없을 때 "이미지 없음" 회색 박스가 그대로 보인다 — 포스터 없는 공연이 많으면 밋밋하다. 타이포 기반 대체 디자인 검토.
+
+## 접근성 — 색 대비·글자 크기 (2026-09-08 목업 검토에서 식별)
+
+WCAG AA 본문 기준(4.5:1) 미달. 특정 화면이 아니라 **토큰 값 자체**의 문제라 사용처를 하나씩 고치는 대신 한 번에 정리해야 한다.
+
+* [ ] `--ink-faint` 대비 미달 — 라이트 `#8a8378`가 `--surface`(#faf7f0)에서 **3.5:1**, `--paper`(#f5f0e6)에서 **3.3:1**. 다크 `#75706a`도 `--surface`(#232120)에서 **3.3:1**. 타임스탬프·입력 플레이스홀더·"불러오는 중..." 등 전 화면에 쓰여 영향 범위가 넓다.
+* [ ] 헤더 비활성 내비의 `opacity-75` — `--on-header`가 `--header` 위에서 **4.3:1**로 기준을 아슬하게 못 넘긴다(`components/layout/Header.tsx`). 불투명도를 올리거나 별도 토큰으로 분리.
+* [ ] 인증 뱃지 `text-[10px]` — 12px 미만(`components/feed/AuthorBadge.tsx`, `components/layout/Header.tsx`의 헤더 뱃지도 동일). 12px 이상으로 올리거나 아이콘+접근명으로 대체 검토.

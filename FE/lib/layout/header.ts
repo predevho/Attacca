@@ -1,5 +1,6 @@
-/** 헤더에 노출하는 도메인 화면. 순서가 곧 표시 순서다. */
+/** 헤더에 노출하는 화면. 순서가 곧 표시 순서다. 홈만 공개이고 나머지는 인증이 필요하다. */
 export const NAV_ITEMS = [
+  { href: '/', label: '홈' },
   { href: '/feed', label: '피드' },
   { href: '/performances', label: '공연' },
   { href: '/recruitments', label: '구인' },

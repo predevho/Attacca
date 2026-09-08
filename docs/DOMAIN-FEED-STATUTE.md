@@ -173,3 +173,23 @@ com.back.domain.feed
 * 게시글 단건 조회는 댓글을 포함하지 않음(댓글은 별도 커서 엔드포인트).
 * 좋아요 동시성: 유니크 제약을 최종 방어선으로, `saveAndFlush` + `DataIntegrityViolationException` catch로 이중요청에도 멱등 200 유지(§4).
 * 좋아요 유니크 제약의 `@UniqueConstraint(columnNames=...)`는 **물리 컬럼명(snake_case)** 을 쓴다: `{"member_id","post_id"}` / `{"member_id","comment_id"}` (JPA 필드명 camelCase가 아님 — Hibernate 기본 네이밍 전략 기준).
+
+---
+
+## 12. 공개 조회 & 인기글 정렬 (2026-09-08 추가)
+
+새 홈의 게시글 위젯(최신글·인기글 탭)이 소비한다. 공개 규칙은 DOMAIN-NOTICE-STATUTE §6을 따른다.
+
+* 접두사 `/api/public/feed/posts`. **목록만** 연다.
+  * 단건 상세를 공개하지 않는 이유: 홈에서 카드를 누르면 인증 경로의 상세로 가고 거기서 로그인을 요구하는 것이 의도된 동선이다. 상세까지 공개하면 그 동선이 사라진다.
+  * 작성·수정·삭제·좋아요·댓글은 전부 인증 경로에 그대로 있다.
+* `GET /?sort=LATEST|POPULAR&page=&size=` → `PageResponse<PublicPostSummary>`
+  * `LATEST`(기본): 미삭제, `id DESC`.
+  * `POPULAR`: 최근 **30일** 안에서 `(좋아요 수 + 댓글 수)` 내림차순, 동률이면 `id DESC`.
+* **인기글에 기간 창(30일)을 두는 이유**: 창이 없으면 한 번 터진 옛 글이 영구히 상단을 차지해 "인기글"이 사실상 "역대 1위 고정"이 된다. 상수는 `FeedPublicService.POPULAR_WINDOW_DAYS`.
+* **인기글은 커서가 아니라 오프셋 페이징이다.** 정렬 키가 `id`가 아니라 집계값이라 keyset이 성립하지 않는다. 인증 경로의 커서 타임라인(§6)은 최신순 그대로 두고 건드리지 않았다.
+* `PublicPostSummary`: `id, author{nickname, verified}, content, likeCount, commentCount, createdAt`
+  * `likedByMe` 없음 — 비인증 경로에서는 보는 사람을 모르므로 계산할 수 없고, 있어서도 안 되는 값이다.
+  * `author`는 `PublicMemberDisplay`(회원 id 없음), `updatedAt`도 담지 않는다.
+  * 게시글에는 제목이 없다(`content`만). 홈 위젯의 한 줄 표시는 FE가 잘라 쓴다.
+* 목록 `size` 기본 20 / 최대 50. 빈 목록일 때 카운트 배치 조회에 `in ()`을 던지지 않도록 서비스에서 가드한다.
