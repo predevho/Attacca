@@ -19,6 +19,11 @@ BE/uploads/
 # 운영 환경변수(비밀값). .env.prod.example만 커밋한다.
 .env.prod
 
+# SSH 개인키. 레포에 들어가면 안 된다(공개 레포면 즉시 유출).
+# 키는 ~/.ssh/ 에 두는 것이 맞고, 여기 규칙은 실수 방지용 안전망이다.
+*.pem
+*.key
+
 # PC별 JDK 경로 (org.gradle.java.home)
 BE/gradle.properties
 
