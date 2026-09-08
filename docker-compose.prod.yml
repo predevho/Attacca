@@ -20,6 +20,8 @@ services:
       KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID:-}
       KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET:-}
       WS_ALLOWED_ORIGINS: ${PUBLIC_ORIGIN}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       STORAGE_TYPE: ${STORAGE_TYPE:-local}
       STORAGE_LOCAL_BASE_URL: ${PUBLIC_ORIGIN}/files
       S3_BUCKET: ${S3_BUCKET:-}
@@ -29,12 +31,28 @@ services:
     volumes:
       # storage.type=local일 때 업로드 보존. s3로 전환하면 필요 없다.
       - be-uploads:/app/uploads
+    depends_on:
+      redis:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
       interval: 15s
       timeout: 3s
       retries: 10
       start_period: 90s
+
+  # refresh 화이트리스트(로테이션·철회). DOMAIN-COMMON-STATUTE §4.1
+  # 데이터는 재시작 시 날아가도 된다 — 사용자가 다시 로그인하면 그만이고,
+  # 그래서 ElastiCache 대신 컨테이너로 둔다(단일 인스턴스 전제).
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: --save "" --appendonly no --maxmemory 128mb --maxmemory-policy noeviction
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
   fe:
     build:
