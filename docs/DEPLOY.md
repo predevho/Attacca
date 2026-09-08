@@ -234,7 +234,7 @@ FE의 `BE_BASE_URL`은 컨테이너 네트워크 이름(`http://be:8080`)이라 
 # 롤백 — 되돌릴 커밋 sha로 태그를 고정한다
 IMAGE_TAG=<sha> ./deploy/dc.sh up -d --no-build
 
-# 디스크 정리 (평소엔 update.sh가 알아서 지운다. 서버에서 직접 구웠을 때만 필요)
+# 디스크 정리 (평소엔 update.sh가 알아서 지운다)
 docker system prune -af --volumes=false
 ```
 
@@ -314,6 +314,11 @@ sudo systemctl disable --now attacca-update.timer   # 자동 배포 중단
 * **배포 중 짧은 끊김이 있다.** 컨테이너 1벌 구성이라 무중단이 아니다 —
   BE 재기동 동안(약 30초) 502가 난다. 블루-그린은 채팅의 인메모리 브로커 때문에
   Redis 릴레이가 선행돼야 한다.
+* **prod compose에 `build:` 섹션을 넣지 마라.** 넣으면 compose가 그 서비스를
+  "빌드로 관리되는 것"으로 보고 `--no-build`와 만났을 때 **이미지 변경 검사를
+  건너뛴다.** 새 이미지를 받아 놓고도 컨테이너를 교체하지 않아 타이머가 2분마다
+  "새 이미지가 있다"만 반복하며 영영 배포되지 않았다(2026-09-08에 겪음).
+  지금은 `update.sh`가 바뀐 서비스를 `--force-recreate`로 명시 교체해 이중으로 막는다.
 * **롤백할 때는 타이머를 멈춰라.** `IMAGE_TAG=<sha>`로 되돌린 컨테이너 자체는
   타이머가 건드리지 않지만(그 태그는 움직이지 않는다), **다음 푸시가 오면
   그대로 굴러간다.** 원인을 잡을 때까지는 `sudo systemctl stop attacca-update.timer`.

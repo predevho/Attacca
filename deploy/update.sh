@@ -53,14 +53,28 @@ main() {
   $DC pull --quiet 2>&1 | grep -v '^$' || true
 
   # --- 3. 배포가 필요한가 ---------------------------------------------------
-  if [ "$repo_changed" -eq 0 ] && ! needs_deploy "$DC"; then
+  local drifted
+  drifted=$(drifted_services "$DC")
+
+  if [ "$repo_changed" -eq 0 ] && [ -z "$drifted" ]; then
     exit 0
   fi
+  [ -n "$drifted" ] && echo "새 이미지를 쓸 서비스: $drifted"
 
   echo "반영 시작."
   # --no-build: 서버에서는 절대 굽지 않는다. GHCR에서 못 받으면 그대로 실패하는 편이
   # 낫다 — t3.micro에서 조용히 빌드가 시작되면 스왑을 긁으며 서비스까지 느려진다.
   $DC up -d --no-build
+
+  # 이미지가 바뀐 서비스는 **명시적으로** 교체한다.
+  # 그냥 `up -d`만 믿으면 안 된다 — compose가 이미지 변경을 못 알아채고 컨테이너를
+  # 그대로 두는 경우가 있었고(2026-09-08, prod compose에 build: 섹션이 남아 있을 때),
+  # 그러면 매 주기마다 "새 이미지가 있다"만 반복하며 영영 배포되지 않는다.
+  # 바뀐 서비스만 지정해 nginx·redis까지 괜히 끊지 않는다.
+  if [ -n "$drifted" ]; then
+    # shellcheck disable=SC2086
+    $DC up -d --no-build --force-recreate $drifted
+  fi
 
   if [ "$nginx_changed" -eq 1 ]; then
     echo "nginx 설정이 바뀌었다 — reload."
@@ -100,23 +114,22 @@ main() {
 # 이 비교는 `IMAGE_TAG=<sha>`로 되돌려 둔 상태를 지켜 준다 — 그 컨테이너는
 # `:<sha>`로 만들어졌고 그 태그는 움직이지 않으므로 드리프트로 잡히지 않는다.
 # (그래도 다음 푸시 때 굴러가는 걸 막으려면 타이머를 멈춰야 한다. docs/DEPLOY.md)
-needs_deploy() {
-  local DC=$1 svc cid running ref wanted
+drifted_services() {
+  local DC=$1 svc cid running ref wanted out=""
   for svc in $($DC config --services); do
     cid=$($DC ps -q "$svc" 2>/dev/null || true)
     if [ -z "$cid" ]; then
-      echo "  $svc: 컨테이너가 없다"
-      return 0
+      out="$out $svc"
+      continue
     fi
     running=$(docker inspect -f '{{.Image}}' "$cid")
     ref=$(docker inspect -f '{{.Config.Image}}' "$cid")
     wanted=$(docker image inspect -f '{{.Id}}' "$ref" 2>/dev/null || echo "")
     if [ -n "$wanted" ] && [ "$running" != "$wanted" ]; then
-      echo "  $svc: $ref 가 새 이미지를 가리킨다"
-      return 0
+      out="$out $svc"
     fi
   done
-  return 1
+  echo "${out# }"
 }
 
 main "$@"
