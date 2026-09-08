@@ -69,7 +69,7 @@
 - [ ] **Step 1: 작업 브랜치 생성**
 
 ```bash
-cd /Users/predevho/Desktop/Attaca && git checkout -b feature/recruitment-fe
+cd /Users/predevho/Desktop/Attacca && git checkout -b feature/recruitment-fe
 ```
 
 - [ ] **Step 2: 타입 파일 작성** — `FE/lib/recruitment/types.ts`

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Attaca의 마지막 미구현 도메인 CHAT(1:1 + 그룹 실시간 채팅)을 BE 먼저 TDD로 구현한다.
+**Goal:** Attacca의 마지막 미구현 도메인 CHAT(1:1 + 그룹 실시간 채팅)을 BE 먼저 TDD로 구현한다.
 
 **Architecture:** REST(상태·이력) + WebSocket/STOMP(실시간)로 역할을 분리한다. 방+참여자 통합 모델로 1:1은 참여자 2명 특수 케이스로 흡수하고, 1:1 중복은 정렬 키(`directKey`) unique 제약 + find-or-create로 막는다. 메시지 브로커는 인메모리 Simple Broker(추후 Redis 교체), WebSocket 인증은 STOMP CONNECT 프레임의 JWT를 `ChannelInterceptor`가 검증한다.
 
@@ -2160,7 +2160,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
 - [ ] **Step 4: 컨텍스트 로딩 확인(전체 컴파일 + 기존 테스트 회귀)**
 
-Run: `cd BE && ./gradlew test --tests "com.back.AttacaApplicationTests"`
+Run: `cd BE && ./gradlew test --tests "com.back.AttaccaApplicationTests"`
 Expected: PASS(애플리케이션 컨텍스트가 WebSocket 설정 포함해 정상 로딩).
 
 - [ ] **Step 5: 커밋**
@@ -2322,7 +2322,7 @@ public class ChatPresenceEventListener {
 
 - [ ] **Step 4: 컴파일 + 기존 테스트 회귀 확인**
 
-Run: `cd BE && ./gradlew test --tests "com.back.AttacaApplicationTests"`
+Run: `cd BE && ./gradlew test --tests "com.back.AttaccaApplicationTests"`
 Expected: PASS(컨텍스트 로딩·컴파일 정상).
 
 - [ ] **Step 5: 커밋**

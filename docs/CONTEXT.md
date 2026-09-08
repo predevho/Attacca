@@ -31,13 +31,13 @@
 
 * BE 스택: Spring Boot 3.4.5 / Gradle 8.11.1 / JDK 21(toolchain). Gradle 9는 Boot 3.4 미지원이므로 래퍼 올리지 말 것.
   * ⚠️ 이 개발 PC의 기본 `java`는 **JDK 25**라 Gradle 8.11.1이 Kotlin DSL 컴파일 단계에서 실패한다(에러 메시지가 "What went wrong: 25"로만 나와 원인 파악이 어렵다). 빌드 전 `export JAVA_HOME=/Users/predevho/Library/Java/JavaVirtualMachines/graalvm-jdk-21.0.7/Contents/Home` 필요.
-  * ⚠️ 로컬 8080/3000은 다른 프로젝트(Pokade)가 점유 중일 수 있다. 그럴 땐 Attaca를 BE 8081 / FE 3001로 띄운다: `./gradlew bootRun "--args=--spring.datasource.password=attaca-local --server.port=8081 --storage.local.base-url=http://localhost:8081/files"` + `FE/.env.local`의 `BE_BASE_URL`/`NEXT_PUBLIC_BE_WS_URL`을 8081로, FE는 `npm run dev -- -p 3001`. (`FE/.env.local`·`.claude/launch.json`은 PC별 값이라 gitignore 대상.)
+  * ⚠️ 로컬 8080/3000은 다른 프로젝트(Pokade)가 점유 중일 수 있다. 그럴 땐 Attacca를 BE 8081 / FE 3001로 띄운다: `./gradlew bootRun "--args=--spring.datasource.password=attacca-local --server.port=8081 --storage.local.base-url=http://localhost:8081/files"` + `FE/.env.local`의 `BE_BASE_URL`/`NEXT_PUBLIC_BE_WS_URL`을 8081로, FE는 `npm run dev -- -p 3001`. (`FE/.env.local`·`.claude/launch.json`은 PC별 값이라 gitignore 대상.)
 * 런타임 DB: MySQL(레포 루트 `docker-compose.yml`, `docker compose up -d` 후 `bootRun`). 데이터소스는 env 기본값(DB_URL/DB_USERNAME/DB_PASSWORD).
 * **스키마는 Flyway가 만든다(2026-09-08). `ddl-auto: validate`.** 엔티티를 바꾸면 Hibernate가 자동으로 따라오지 않고 **기동이 실패한다** — `db/migration/V2__*.sql`을 직접 추가할 것. 기존 DB는 `baseline-on-migrate`로 V1을 흡수한다. 테스트는 `BE/src/test/resources/application.properties`에서 Flyway를 끄고 `create-drop`을 쓴다(파일명이 `application.yaml`과 달라야 메인 설정을 가리지 않는다).
 * Actuator 도입 — `health`만 노출하고 `/actuator/health`만 permitAll. 나머지는 401.
 * WS origin은 `WS_ALLOWED_ORIGINS`(기본 로컬 주소). 채팅은 브라우저가 BE에 직접 붙어 BFF를 안 거치므로 이 값이 실제 접근 통제다.
 * 배포 산출물: `BE/Dockerfile`·`FE/Dockerfile`(standalone)·`docker-compose.prod.yml`·`deploy/nginx.conf`·`.github/workflows/ci.yml`·`.env.prod.example`. 절차와 환경변수 표는 `docs/DEPLOY.md`. **단일 인스턴스 전제**(채팅 인메모리 브로커).
-  * ⚠️ 이 개발 PC엔 시스템 환경변수 `DB_PASSWORD=1234`가 설정돼 있어 compose 기본값(`attaca-local`)을 덮어써 `bootRun`이 `Access denied`로 실패한다. 해결: `gradlew bootRun --args=--spring.datasource.password=attaca-local`로 override(명령행이 env보다 우선)하거나 `DB_PASSWORD`를 unset. compose 볼륨이 낡으면 `docker compose down -v` 후 재기동.
+  * ⚠️ 이 개발 PC엔 시스템 환경변수 `DB_PASSWORD=1234`가 설정돼 있어 compose 기본값(`attacca-local`)을 덮어써 `bootRun`이 `Access denied`로 실패한다. 해결: `gradlew bootRun --args=--spring.datasource.password=attacca-local`로 override(명령행이 env보다 우선)하거나 `DB_PASSWORD`를 unset. compose 볼륨이 낡으면 `docker compose down -v` 후 재기동.
 * 테스트는 H2 `test` 프로파일: `@SpringBootTest`에는 반드시 `@ActiveProfiles("test")`를 붙일 것(없으면 MySQL 접속 시도로 실패). `application-test.yaml`이 datasource/storage 루트를 덮어쓴다.
 * 검증: Bean Validation 도입(`@Valid`). 검증 실패·본문 파싱 실패(enum 오타)·multipart 파트 누락·**쿼리 파라미터 바인딩 실패(enum 변환 실패, 필수 파라미터 누락)** 는 400-01로 매핑(각각 과거 500 결함 수정, 마지막 건은 2026-08-18).
 * **쿼리 파라미터 enum은 상수명 그대로 대문자**로 보낸다: `?scope=OPEN|CLOSED|ALL`(구인), `?scope=UPCOMING|PAST|ALL`(공연), `?status=PENDING|...`(어드민). 소문자를 보내면 400-01. FE는 대문자로 보내고 있다.

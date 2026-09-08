@@ -20,12 +20,12 @@ class MemberTest {
     @Test
     void createLocal_populatesFieldsWithRoleUser() {
         Member saved = entityManager.persistFlushFind(
-                Member.createLocal("jazzman", "encoded-pw", "user@attaca.com", "재즈맨"));
+                Member.createLocal("jazzman", "encoded-pw", "user@attacca.com", "재즈맨"));
 
         assertThat(saved.getId()).isNotNull();
         assertThat(saved.getLoginId()).isEqualTo("jazzman");
         assertThat(saved.getPassword()).isEqualTo("encoded-pw");
-        assertThat(saved.getEmail()).isEqualTo("user@attaca.com");
+        assertThat(saved.getEmail()).isEqualTo("user@attacca.com");
         assertThat(saved.getNickname()).isEqualTo("재즈맨");
         assertThat(saved.getRole()).isEqualTo(Role.USER);
         assertThat(saved.getCreatedAt()).isNotNull();
@@ -34,12 +34,12 @@ class MemberTest {
     @Test
     void createSocial_hasNullLoginIdAndPassword() {
         Member saved = entityManager.persistFlushFind(
-                Member.createSocial("social@attaca.com", "소셜러"));
+                Member.createSocial("social@attacca.com", "소셜러"));
 
         assertThat(saved.getId()).isNotNull();
         assertThat(saved.getLoginId()).isNull();
         assertThat(saved.getPassword()).isNull();
-        assertThat(saved.getEmail()).isEqualTo("social@attaca.com");
+        assertThat(saved.getEmail()).isEqualTo("social@attacca.com");
         assertThat(saved.getRole()).isEqualTo(Role.USER);
     }
 }

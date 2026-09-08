@@ -16,7 +16,7 @@ class MemberRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        memberRepository.save(Member.createLocal("jazzman", "pw", "user@attaca.com", "재즈맨"));
+        memberRepository.save(Member.createLocal("jazzman", "pw", "user@attacca.com", "재즈맨"));
     }
 
     @Test
@@ -28,14 +28,14 @@ class MemberRepositoryTest {
     @Test
     void findByLoginId() {
         assertThat(memberRepository.findByLoginId("jazzman"))
-                .get().extracting(Member::getEmail).isEqualTo("user@attaca.com");
+                .get().extracting(Member::getEmail).isEqualTo("user@attacca.com");
         assertThat(memberRepository.findByLoginId("none")).isEmpty();
     }
 
     @Test
     void existsByEmailAndNickname() {
-        assertThat(memberRepository.existsByEmail("user@attaca.com")).isTrue();
+        assertThat(memberRepository.existsByEmail("user@attacca.com")).isTrue();
         assertThat(memberRepository.existsByNickname("재즈맨")).isTrue();
-        assertThat(memberRepository.findByEmail("user@attaca.com")).isPresent();
+        assertThat(memberRepository.findByEmail("user@attacca.com")).isPresent();
     }
 }

@@ -22,7 +22,7 @@ class MemberProfileRepositoryTest {
 
     private Member savedMember(String suffix) {
         return memberRepository.save(
-                Member.createLocal("user" + suffix, "pw", suffix + "@attaca.com", "닉" + suffix));
+                Member.createLocal("user" + suffix, "pw", suffix + "@attacca.com", "닉" + suffix));
     }
 
     @Test

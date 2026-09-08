@@ -47,15 +47,26 @@ IAM 사용자 권한은 1인 프로젝트 기준 `AdministratorAccess` + MFA가 
 
 | 항목 | 값 | 비고 |
 |---|---|---|
-| 엔진 | **MySQL 8.0** | 8.4는 Flyway가 "지원 테스트 안 됨" 경고를 낸다. 동작은 하지만 8.0이 안전하다 |
+| 엔진 | **MySQL 8.4** | 8.0은 2026-07-31에 RDS 표준 지원이 끝나 **유료 Extended Support**가 붙는다(생성 자체가 거부된다) |
 | 템플릿 | 프리 티어 | |
 | 인스턴스 | `db.t3.micro` | |
 | 스토리지 | gp3 20GB, **자동 조정 끄기** | 켜두면 모르는 사이 과금이 는다 |
 | 퍼블릭 액세스 | **아니요** | 인터넷에 DB를 열지 않는다 |
-| 초기 데이터베이스 이름 | `attaca` | 안 넣으면 DB가 안 만들어져 접속이 실패한다 |
+| 초기 데이터베이스 이름 | `attacca` | 안 넣으면 DB가 안 만들어져 접속이 실패한다 |
 | 자격 증명 | 사용자명·비밀번호 기록해 둘 것 | `.env.prod`에 쓴다 |
 
-**파라미터 그룹은 손대지 않아도 된다.** MySQL 8.0은 기본 문자셋이 이미 `utf8mb4`이고,
+**첫 기동 로그에 Flyway 경고가 뜨는 건 정상이다.**
+
+```
+Flyway upgrade recommended: MySQL 8.4 is newer than this version of Flyway
+and support has not been tested. The latest supported version of MySQL is 8.1.
+```
+
+번들된 Flyway가 10.20.1이라 나오는 경고일 뿐이고, **로컬 MySQL 8.4에서 베이스라인·신규 마이그레이션·
+`validate`가 모두 정상 동작하는 것을 확인했다.** 경고를 없애려면 Flyway를 올려야 하는데,
+운영 스키마를 관리하는 도구를 메이저 버전으로 점프시키는 일이라 배포와 분리해서 한다(BACKLOG).
+
+**파라미터 그룹은 손대지 않아도 된다.** MySQL 8.x는 기본 문자셋이 이미 `utf8mb4`이고,
 베이스라인 SQL이 테이블마다 `CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`를 명시하므로
 서버 기본값과 무관하게 한글이 안전하다. (서버 기본 collation이 `utf8mb4_0900_ai_ci`라
 로컬과 다르지만, 테이블 레벨 지정이 이기므로 실제 정렬도 동일하다.)
@@ -124,7 +135,7 @@ free -h   # Swap 2.0Gi 확인
 ### 1-5. 배포
 
 ```bash
-git clone <레포 주소> attaca && cd attaca
+git clone <레포 주소> attacca && cd attacca
 cp .env.prod.example .env.prod
 vi .env.prod
 ```
@@ -134,7 +145,7 @@ vi .env.prod
 ```bash
 PUBLIC_ORIGIN=http://<Elastic IP>
 NEXT_PUBLIC_BE_WS_URL=ws://<Elastic IP>/ws
-DB_URL=jdbc:mysql://<RDS 엔드포인트>:3306/attaca
+DB_URL=jdbc:mysql://<RDS 엔드포인트>:3306/attacca
 DB_USERNAME=<RDS 사용자>
 DB_PASSWORD=<RDS 비밀번호>
 JWT_SECRET=$(openssl rand -base64 48)   # 실제 값을 넣을 것
@@ -151,7 +162,7 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
 docker compose -f docker-compose.prod.yml logs -f be
 ```
 
-**`Successfully applied 1 migration`** 과 **`Started AttacaApplication`** 이 보이면 성공이다.
+**`Successfully applied 1 migration`** 과 **`Started AttaccaApplication`** 이 보이면 성공이다.
 `SchemaManagementException`이 나오면 엔티티와 스키마가 어긋난 것이다(마이그레이션을 추가해야 한다).
 
 브라우저에서 `http://<Elastic IP>` 로 접속한다.
@@ -182,7 +193,7 @@ docker compose -f docker-compose.prod.yml logs -f be
 |---|---|---|
 | `PUBLIC_ORIGIN` | `http://13.0.0.0` | 외부에서 보이는 주소. WS 허용 origin·파일 URL·카카오 콜백이 이걸로 조립된다 |
 | `NEXT_PUBLIC_BE_WS_URL` | `ws://13.0.0.0/ws` | **빌드 시점에 박힌다.** 바꾸면 `--build` 필수 |
-| `DB_URL` | `jdbc:mysql://<endpoint>:3306/attaca` | RDS 엔드포인트 |
+| `DB_URL` | `jdbc:mysql://<endpoint>:3306/attacca` | RDS 엔드포인트 |
 | `DB_USERNAME` / `DB_PASSWORD` | | RDS 자격증명 |
 | `JWT_SECRET` | | **반드시 교체.** 32자 이상 무작위 |
 | `STORAGE_TYPE` | `local` | 단일 인스턴스라 `local` + 볼륨으로 충분. S3는 나중에 |

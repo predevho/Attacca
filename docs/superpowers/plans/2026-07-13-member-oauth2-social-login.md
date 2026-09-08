@@ -152,12 +152,12 @@ class MemberTest {
     @Test
     void createLocal_populatesFieldsWithRoleUser() {
         Member saved = entityManager.persistFlushFind(
-                Member.createLocal("jazzman", "encoded-pw", "user@attaca.com", "재즈맨"));
+                Member.createLocal("jazzman", "encoded-pw", "user@attacca.com", "재즈맨"));
 
         assertThat(saved.getId()).isNotNull();
         assertThat(saved.getLoginId()).isEqualTo("jazzman");
         assertThat(saved.getPassword()).isEqualTo("encoded-pw");
-        assertThat(saved.getEmail()).isEqualTo("user@attaca.com");
+        assertThat(saved.getEmail()).isEqualTo("user@attacca.com");
         assertThat(saved.getNickname()).isEqualTo("재즈맨");
         assertThat(saved.getRole()).isEqualTo(Role.USER);
         assertThat(saved.getCreatedAt()).isNotNull();
@@ -166,12 +166,12 @@ class MemberTest {
     @Test
     void createSocial_hasNullLoginIdAndPassword() {
         Member saved = entityManager.persistFlushFind(
-                Member.createSocial("social@attaca.com", "소셜러"));
+                Member.createSocial("social@attacca.com", "소셜러"));
 
         assertThat(saved.getId()).isNotNull();
         assertThat(saved.getLoginId()).isNull();
         assertThat(saved.getPassword()).isNull();
-        assertThat(saved.getEmail()).isEqualTo("social@attaca.com");
+        assertThat(saved.getEmail()).isEqualTo("social@attacca.com");
         assertThat(saved.getRole()).isEqualTo(Role.USER);
     }
 }
@@ -280,7 +280,7 @@ class MemberRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        memberRepository.save(Member.createLocal("jazzman", "pw", "user@attaca.com", "재즈맨"));
+        memberRepository.save(Member.createLocal("jazzman", "pw", "user@attacca.com", "재즈맨"));
     }
 
     @Test
@@ -292,15 +292,15 @@ class MemberRepositoryTest {
     @Test
     void findByLoginId() {
         assertThat(memberRepository.findByLoginId("jazzman"))
-                .get().extracting(Member::getEmail).isEqualTo("user@attaca.com");
+                .get().extracting(Member::getEmail).isEqualTo("user@attacca.com");
         assertThat(memberRepository.findByLoginId("none")).isEmpty();
     }
 
     @Test
     void existsByEmailAndNickname() {
-        assertThat(memberRepository.existsByEmail("user@attaca.com")).isTrue();
+        assertThat(memberRepository.existsByEmail("user@attacca.com")).isTrue();
         assertThat(memberRepository.existsByNickname("재즈맨")).isTrue();
-        assertThat(memberRepository.findByEmail("user@attaca.com")).isPresent();
+        assertThat(memberRepository.findByEmail("user@attacca.com")).isPresent();
     }
 }
 ```
@@ -410,7 +410,7 @@ class MemberServiceTest {
     @Test
     void signup_persistsWithEncodedPassword() {
         SignupResponse res = memberService.signup(
-                new SignupRequest("jazzman", "raw-pw", "user@attaca.com", "재즈맨"));
+                new SignupRequest("jazzman", "raw-pw", "user@attacca.com", "재즈맨"));
 
         assertThat(res.loginId()).isEqualTo("jazzman");
         assertThat(res.role()).isEqualTo(Role.USER);
@@ -421,34 +421,34 @@ class MemberServiceTest {
 
     @Test
     void signup_duplicateLoginId_throws() {
-        memberRepository.save(Member.createLocal("dup", "x", "a@attaca.com", "닉A"));
+        memberRepository.save(Member.createLocal("dup", "x", "a@attacca.com", "닉A"));
         assertThatThrownBy(() -> memberService.signup(
-                new SignupRequest("dup", "raw-pw", "b@attaca.com", "닉B")))
+                new SignupRequest("dup", "raw-pw", "b@attacca.com", "닉B")))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode").isEqualTo(ErrorCode.LOGIN_ID_ALREADY_EXISTS);
     }
 
     @Test
     void signup_duplicateEmail_throws() {
-        memberRepository.save(Member.createLocal("id1", "x", "dup@attaca.com", "닉A"));
+        memberRepository.save(Member.createLocal("id1", "x", "dup@attacca.com", "닉A"));
         assertThatThrownBy(() -> memberService.signup(
-                new SignupRequest("id2", "raw-pw", "dup@attaca.com", "닉B")))
+                new SignupRequest("id2", "raw-pw", "dup@attacca.com", "닉B")))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode").isEqualTo(ErrorCode.EMAIL_ALREADY_EXISTS);
     }
 
     @Test
     void signup_duplicateNickname_throws() {
-        memberRepository.save(Member.createLocal("id1", "x", "a@attaca.com", "중복닉"));
+        memberRepository.save(Member.createLocal("id1", "x", "a@attacca.com", "중복닉"));
         assertThatThrownBy(() -> memberService.signup(
-                new SignupRequest("id2", "raw-pw", "b@attaca.com", "중복닉")))
+                new SignupRequest("id2", "raw-pw", "b@attacca.com", "중복닉")))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode").isEqualTo(ErrorCode.NICKNAME_ALREADY_EXISTS);
     }
 
     @Test
     void login_validCredentials_returnsTokens() {
-        memberService.signup(new SignupRequest("jazzman", "raw-pw", "user@attaca.com", "재즈맨"));
+        memberService.signup(new SignupRequest("jazzman", "raw-pw", "user@attacca.com", "재즈맨"));
 
         TokenPairResponse tokens = memberService.login(new LoginRequest("jazzman", "raw-pw"));
 
@@ -466,16 +466,16 @@ class MemberServiceTest {
 
     @Test
     void login_socialOnlyMemberWithNullPassword_throwsLoginFailed() {
-        memberRepository.save(Member.createSocial("social@attaca.com", "소셜러"));
+        memberRepository.save(Member.createSocial("social@attacca.com", "소셜러"));
         // 소셜 전용 회원은 loginId 가 없으므로 loginId 로 로그인 시도 자체가 실패
-        assertThatThrownBy(() -> memberService.login(new LoginRequest("social@attaca.com", "raw-pw")))
+        assertThatThrownBy(() -> memberService.login(new LoginRequest("social@attacca.com", "raw-pw")))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode").isEqualTo(ErrorCode.LOGIN_FAILED);
     }
 
     @Test
     void login_wrongPassword_throwsLoginFailed() {
-        memberService.signup(new SignupRequest("jazzman", "correct-pw", "user@attaca.com", "재즈맨"));
+        memberService.signup(new SignupRequest("jazzman", "correct-pw", "user@attacca.com", "재즈맨"));
         assertThatThrownBy(() -> memberService.login(new LoginRequest("jazzman", "wrong-pw")))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode").isEqualTo(ErrorCode.LOGIN_FAILED);
@@ -561,7 +561,7 @@ public class MemberService {
     void signup_returns200WithMemberData() throws Exception {
         mockMvc.perform(post("/api/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json(new SignupRequest("newbie", "raw-password", "new@attaca.com", "새회원"))))
+                        .content(json(new SignupRequest("newbie", "raw-password", "new@attacca.com", "새회원"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.loginId").value("newbie"))
@@ -572,10 +572,10 @@ public class MemberService {
     @Test
     void signup_duplicateLoginId_returns409() throws Exception {
         mockMvc.perform(post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON)
-                        .content(json(new SignupRequest("dup", "raw-password", "a@attaca.com", "닉A"))))
+                        .content(json(new SignupRequest("dup", "raw-password", "a@attacca.com", "닉A"))))
                 .andExpect(status().isOk());
         mockMvc.perform(post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON)
-                        .content(json(new SignupRequest("dup", "raw-password", "b@attaca.com", "닉B"))))
+                        .content(json(new SignupRequest("dup", "raw-password", "b@attacca.com", "닉B"))))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error.resultCode").value("409-03"));
     }
@@ -583,7 +583,7 @@ public class MemberService {
     @Test
     void login_validCredentials_returns200WithTokens() throws Exception {
         mockMvc.perform(post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON)
-                        .content(json(new SignupRequest("loginuser", "raw-password", "login@attaca.com", "로그인유저"))))
+                        .content(json(new SignupRequest("loginuser", "raw-password", "login@attacca.com", "로그인유저"))))
                 .andExpect(status().isOk());
         mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
                         .content(json(new LoginRequest("loginuser", "raw-password"))))
@@ -595,7 +595,7 @@ public class MemberService {
     @Test
     void login_wrongPassword_returns401() throws Exception {
         mockMvc.perform(post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON)
-                        .content(json(new SignupRequest("pwuser", "correct-password", "pw@attaca.com", "비번유저"))))
+                        .content(json(new SignupRequest("pwuser", "correct-password", "pw@attacca.com", "비번유저"))))
                 .andExpect(status().isOk());
         mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
                         .content(json(new LoginRequest("pwuser", "wrong-password"))))
@@ -655,7 +655,7 @@ class SocialAccountRepositoryTest {
 
     @Test
     void findByProviderAndProviderUserId() {
-        Member member = memberRepository.save(Member.createSocial("s@attaca.com", "소셜러"));
+        Member member = memberRepository.save(Member.createSocial("s@attacca.com", "소셜러"));
         socialAccountRepository.save(SocialAccount.create(member, OAuthProvider.KAKAO, "kakao-123"));
 
         assertThat(socialAccountRepository.findByProviderAndProviderUserId(OAuthProvider.KAKAO, "kakao-123"))
@@ -859,12 +859,12 @@ class MemberOAuthServiceTest {
 
     @Test
     void newSocialUser_isCreatedAndLoggedIn() {
-        fakeClient.next = new OAuthUserInfo("kakao-1", "new@attaca.com", true, "카카오유저");
+        fakeClient.next = new OAuthUserInfo("kakao-1", "new@attacca.com", true, "카카오유저");
 
         TokenPairResponse tokens = service.oauthLogin(OAuthProvider.KAKAO, "code", "https://app/cb");
 
         assertThat(tokens.accessToken()).isNotBlank();
-        Member created = memberRepository.findByEmail("new@attaca.com").orElseThrow();
+        Member created = memberRepository.findByEmail("new@attacca.com").orElseThrow();
         assertThat(created.getLoginId()).isNull();
         assertThat(created.getPassword()).isNull();
         assertThat(socialAccountRepository.findByProviderAndProviderUserId(OAuthProvider.KAKAO, "kakao-1"))
@@ -873,9 +873,9 @@ class MemberOAuthServiceTest {
 
     @Test
     void existingSocialAccount_logsInSameMember() {
-        Member member = memberRepository.save(Member.createSocial("s@attaca.com", "기존소셜"));
+        Member member = memberRepository.save(Member.createSocial("s@attacca.com", "기존소셜"));
         socialAccountRepository.save(SocialAccount.create(member, OAuthProvider.KAKAO, "kakao-1"));
-        fakeClient.next = new OAuthUserInfo("kakao-1", "s@attaca.com", true, "기존소셜");
+        fakeClient.next = new OAuthUserInfo("kakao-1", "s@attacca.com", true, "기존소셜");
 
         service.oauthLogin(OAuthProvider.KAKAO, "code", "https://app/cb");
 
@@ -886,8 +886,8 @@ class MemberOAuthServiceTest {
     @Test
     void verifiedEmailMatchingExistingMember_autoLinks() {
         Member local = memberRepository.save(
-                Member.createLocal("jazzman", "pw", "same@attaca.com", "재즈맨"));
-        fakeClient.next = new OAuthUserInfo("kakao-9", "same@attaca.com", true, "재즈맨");
+                Member.createLocal("jazzman", "pw", "same@attacca.com", "재즈맨"));
+        fakeClient.next = new OAuthUserInfo("kakao-9", "same@attacca.com", true, "재즈맨");
 
         service.oauthLogin(OAuthProvider.KAKAO, "code", "https://app/cb");
 
@@ -899,7 +899,7 @@ class MemberOAuthServiceTest {
 
     @Test
     void unverifiedEmail_throwsOauthEmailUnverified() {
-        fakeClient.next = new OAuthUserInfo("kakao-2", "x@attaca.com", false, "미검증");
+        fakeClient.next = new OAuthUserInfo("kakao-2", "x@attacca.com", false, "미검증");
 
         assertThatThrownBy(() -> service.oauthLogin(OAuthProvider.KAKAO, "code", "https://app/cb"))
                 .isInstanceOf(BusinessException.class)
@@ -908,12 +908,12 @@ class MemberOAuthServiceTest {
 
     @Test
     void newSocialUser_nicknameCollision_generatesUnique() {
-        memberRepository.save(Member.createLocal("id1", "pw", "a@attaca.com", "중복닉"));
-        fakeClient.next = new OAuthUserInfo("kakao-3", "b@attaca.com", true, "중복닉");
+        memberRepository.save(Member.createLocal("id1", "pw", "a@attacca.com", "중복닉"));
+        fakeClient.next = new OAuthUserInfo("kakao-3", "b@attacca.com", true, "중복닉");
 
         service.oauthLogin(OAuthProvider.KAKAO, "code", "https://app/cb");
 
-        Member created = memberRepository.findByEmail("b@attaca.com").orElseThrow();
+        Member created = memberRepository.findByEmail("b@attacca.com").orElseThrow();
         assertThat(created.getNickname()).isNotEqualTo("중복닉");
         assertThat(created.getNickname()).startsWith("중복닉");
     }
@@ -1315,7 +1315,7 @@ class MemberAuthControllerOAuthTest {
     @Test
     void kakaoLogin_newVerifiedUser_returns200WithTokens() throws Exception {
         when(kakaoOAuthClient.fetch(any(), any()))
-                .thenReturn(new OAuthUserInfo("kakao-1", "new@attaca.com", true, "카카오유저"));
+                .thenReturn(new OAuthUserInfo("kakao-1", "new@attacca.com", true, "카카오유저"));
 
         mockMvc.perform(post("/api/auth/oauth/kakao")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -1329,7 +1329,7 @@ class MemberAuthControllerOAuthTest {
     @Test
     void kakaoLogin_unverifiedEmail_returns401() throws Exception {
         when(kakaoOAuthClient.fetch(any(), any()))
-                .thenReturn(new OAuthUserInfo("kakao-2", "x@attaca.com", false, "미검증"));
+                .thenReturn(new OAuthUserInfo("kakao-2", "x@attacca.com", false, "미검증"));
 
         mockMvc.perform(post("/api/auth/oauth/kakao")
                         .contentType(MediaType.APPLICATION_JSON)

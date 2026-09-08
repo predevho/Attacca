@@ -90,7 +90,7 @@
 
 **구조**
 
-* 좌: 로고 `Attaca`(→ `/feed`) + 링크 4개 — 피드 `/feed` · 공연 `/performances` · 구인 `/recruitments` · 채팅 `/chat`
+* 좌: 로고 `Attacca`(→ `/feed`) + 링크 4개 — 피드 `/feed` · 공연 `/performances` · 구인 `/recruitments` · 채팅 `/chat`
 * 우: 닉네임 + 인증 뱃지(→ `/profile`) · 어드민(→ `/admin/verified-performers`, `role === 'ADMIN'`일 때만) · 로그아웃
 
 **동작**
@@ -141,7 +141,7 @@ usePathname()이 /login · /signup 으로 시작 → 즉시 null 반환 (신원 
 
 ## 5. 기타
 
-* `app/layout.tsx` metadata: `title: 'Attaca'`, `description`은 서비스 설명으로 교체.
+* `app/layout.tsx` metadata: `title: 'Attacca'`, `description`은 서비스 설명으로 교체.
 * 파비콘: Next 기본값을 브랜드 색 기반으로 교체.
 
 ---

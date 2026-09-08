@@ -61,7 +61,7 @@ main yaml에 MySQL datasource가 생기면 기존 `@SpringBootTest` 4개가 MySQ
 - Modify: `BE/build.gradle.kts`
 - Modify: `BE/src/main/resources/application.yaml`
 - Create: `BE/src/test/resources/application-test.yaml`
-- Modify: `BE/src/test/java/com/back/AttacaApplicationTests.java`
+- Modify: `BE/src/test/java/com/back/AttaccaApplicationTests.java`
 - Modify: `BE/src/test/java/com/back/global/config/LocalFileServingConfigTest.java`
 - Modify: `BE/src/test/java/com/back/domain/member/controller/MemberAuthControllerTest.java`
 - Modify: `BE/src/test/java/com/back/domain/member/controller/MemberAuthControllerOAuthTest.java`
@@ -83,15 +83,15 @@ main yaml에 MySQL datasource가 생기면 기존 `@SpringBootTest` 4개가 MySQ
 ```yaml
 spring:
   application:
-    name: attaca
+    name: attacca
   servlet:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/attaca}
-    username: ${DB_USERNAME:attaca}
-    password: ${DB_PASSWORD:attaca-local}
+    url: ${DB_URL:jdbc:mysql://localhost:3306/attacca}
+    username: ${DB_USERNAME:attacca}
+    password: ${DB_PASSWORD:attacca-local}
   jpa:
     hibernate:
       ddl-auto: ${DDL_AUTO:update}   # 개발 단계 편의. 운영 전환 시 validate+마이그레이션 도구로 재결정
@@ -101,7 +101,7 @@ spring:
 - [ ] **Step 2: 테스트가 깨지는지 확인 (RED)**
 
 ```bash
-BE/gradlew -p BE test --tests "com.back.AttacaApplicationTests"
+BE/gradlew -p BE test --tests "com.back.AttaccaApplicationTests"
 ```
 
 Expected: FAIL — MySQL(localhost:3306) 접속 실패로 컨텍스트 로딩 에러. (H2 자동 구성이 datasource 설정에 밀려났음을 확인)
@@ -113,7 +113,7 @@ Expected: FAIL — MySQL(localhost:3306) 접속 실패로 컨텍스트 로딩 �
 ```yaml
 spring:
   datasource:
-    url: jdbc:h2:mem:attaca-test;DB_CLOSE_DELAY=-1
+    url: jdbc:h2:mem:attacca-test;DB_CLOSE_DELAY=-1
     username: sa
     password: ""
   jpa:
@@ -127,14 +127,14 @@ storage:
 
 > 같은 이름의 `application.yaml`을 test 리소스에 두면 main 파일이 통째로 가려져 jwt/oauth/storage 기본값이 사라진다. 반드시 **프로파일 파일**(`application-test.yaml`)로 만들어 main 위에 병합되게 한다.
 
-`@SpringBootTest`가 붙은 4개 클래스(위 Files 목록)에 각각 `@ActiveProfiles("test")`를 추가한다. 예 (`AttacaApplicationTests.java`):
+`@SpringBootTest`가 붙은 4개 클래스(위 Files 목록)에 각각 `@ActiveProfiles("test")`를 추가한다. 예 (`AttaccaApplicationTests.java`):
 
 ```java
 import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
 @ActiveProfiles("test")
-class AttacaApplicationTests {
+class AttaccaApplicationTests {
 ```
 
 나머지 3개 클래스도 클래스 레벨 애너테이션과 import만 동일하게 추가한다(기존 애너테이션·본문은 그대로).
@@ -155,13 +155,13 @@ Expected: BUILD SUCCESSFUL (전체 테스트가 H2로 통과)
 services:
   mysql:
     image: mysql:8.4
-    container_name: attaca-mysql
+    container_name: attacca-mysql
     ports:
       - "3306:3306"
     environment:
-      MYSQL_DATABASE: attaca
-      MYSQL_USER: attaca
-      MYSQL_PASSWORD: attaca-local     # 로컬 개발 전용 기본값. 운영 자격증명은 env로 별도 주입
+      MYSQL_DATABASE: attacca
+      MYSQL_USER: attacca
+      MYSQL_PASSWORD: attacca-local     # 로컬 개발 전용 기본값. 운영 자격증명은 env로 별도 주입
       MYSQL_ROOT_PASSWORD: root-local
     volumes:
       - mysql-data:/var/lib/mysql
@@ -180,13 +180,13 @@ docker compose up -d
 BE/gradlew -p BE bootRun
 ```
 
-별도 셸에서 `POST http://localhost:8080/api/auth/signup`(body: `{"loginId":"t1","password":"pw12345678","email":"t1@attaca.com","nickname":"테스터"}`)가 200으로 응답하고 MySQL `attaca.member` 테이블에 행이 생기는지 확인 후 서버·컨테이너를 내린다.
+별도 셸에서 `POST http://localhost:8080/api/auth/signup`(body: `{"loginId":"t1","password":"pw12345678","email":"t1@attacca.com","nickname":"테스터"}`)가 200으로 응답하고 MySQL `attacca.member` 테이블에 행이 생기는지 확인 후 서버·컨테이너를 내린다.
 **Docker를 쓸 수 없으면 이 스텝을 건너뛰고 보고서에 "수동 검증 미수행"을 명시한다.** (자동 테스트는 영향 없음)
 
 - [ ] **Step 7: 커밋**
 
 ```bash
-git add docker-compose.yml BE/build.gradle.kts BE/src/main/resources/application.yaml BE/src/test/resources/application-test.yaml BE/src/test/java/com/back/AttacaApplicationTests.java BE/src/test/java/com/back/global/config/LocalFileServingConfigTest.java BE/src/test/java/com/back/domain/member/controller/
+git add docker-compose.yml BE/build.gradle.kts BE/src/main/resources/application.yaml BE/src/test/resources/application-test.yaml BE/src/test/java/com/back/AttaccaApplicationTests.java BE/src/test/java/com/back/global/config/LocalFileServingConfigTest.java BE/src/test/java/com/back/domain/member/controller/
 git commit -m "feat: 런타임 MySQL 데이터소스 구성 및 테스트 H2 프로파일 분리"
 ```
 
@@ -401,7 +401,7 @@ import org.junit.jupiter.api.Test;
 class MemberProfileTest {
 
     private Member member() {
-        return Member.createLocal("user1", "encoded-pw", "u1@attaca.com", "유저일");
+        return Member.createLocal("user1", "encoded-pw", "u1@attacca.com", "유저일");
     }
 
     @Test
@@ -473,7 +473,7 @@ class MemberProfileRepositoryTest {
 
     private Member savedMember(String suffix) {
         return memberRepository.save(
-                Member.createLocal("user" + suffix, "pw", suffix + "@attaca.com", "닉" + suffix));
+                Member.createLocal("user" + suffix, "pw", suffix + "@attacca.com", "닉" + suffix));
     }
 
     @Test
@@ -736,7 +736,7 @@ class MemberProfileServiceTest {
 
     private Member savedMember(String suffix) {
         return memberRepository.save(
-                Member.createLocal("user" + suffix, "pw", suffix + "@attaca.com", "닉" + suffix));
+                Member.createLocal("user" + suffix, "pw", suffix + "@attacca.com", "닉" + suffix));
     }
 
     private MockMultipartFile pngFile() {
@@ -1112,7 +1112,7 @@ class MemberProfileControllerTest {
     @BeforeEach
     void setUp() {
         Member member = memberRepository.save(
-                Member.createLocal("profileuser", "pw", "profile@attaca.com", "프로필유저"));
+                Member.createLocal("profileuser", "pw", "profile@attacca.com", "프로필유저"));
         bearer = "Bearer " + jwtProvider.createAccessToken(member.getId(), Role.USER);
     }
 

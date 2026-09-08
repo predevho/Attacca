@@ -59,7 +59,7 @@
 - [ ] **Step 1: 작업 브랜치 생성(main에서 분기)**
 
 ```bash
-cd /Users/predevho/Desktop/Attaca && git checkout main && git checkout -b feature/verified-performer-fe
+cd /Users/predevho/Desktop/Attacca && git checkout main && git checkout -b feature/verified-performer-fe
 ```
 
 - [ ] **Step 2: 타입 파일** — `FE/lib/verification/types.ts`

@@ -14,7 +14,7 @@
 
 ## 사전 확인 (작업 시작 전 1회)
 
-- [ ] BE·FE가 기동 중인지 확인. 8080/3000이 다른 프로젝트에 점유돼 있으면 Attaca는 BE 8081 / FE 3001로 띄운다.
+- [ ] BE·FE가 기동 중인지 확인. 8080/3000이 다른 프로젝트에 점유돼 있으면 Attacca는 BE 8081 / FE 3001로 띄운다.
 
 ```bash
 export JAVA_HOME=/Users/predevho/Library/Java/JavaVirtualMachines/graalvm-jdk-21.0.7/Contents/Home
@@ -455,7 +455,7 @@ export function Header() {
   return (
     <header className="bg-header text-on-header">
       <nav className="mx-auto flex max-w-4xl flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3">
-        <Link href="/feed" className="text-lg font-bold tracking-tight">Attaca</Link>
+        <Link href="/feed" className="text-lg font-bold tracking-tight">Attacca</Link>
 
         <ul className="flex flex-wrap items-center gap-4 text-sm">
           {NAV_ITEMS.map((item) => {
@@ -533,7 +533,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Attaca",
+  title: "Attacca",
   description: "음악인 커뮤니티 — 연주회 소개, 구인, 연주자들의 소통",
 };
 
@@ -1309,7 +1309,7 @@ BE(별도 셸):
 
 ```bash
 export JAVA_HOME=/Users/predevho/Library/Java/JavaVirtualMachines/graalvm-jdk-21.0.7/Contents/Home
-cd BE && ./gradlew bootRun "--args=--spring.datasource.password=attaca-local --server.port=8081 --storage.local.base-url=http://localhost:8081/files"
+cd BE && ./gradlew bootRun "--args=--spring.datasource.password=attacca-local --server.port=8081 --storage.local.base-url=http://localhost:8081/files"
 ```
 
 FE(별도 셸):
@@ -1380,7 +1380,7 @@ rm FE/app/favicon.ico
 cd FE && npx next build
 ```
 
-Expected: 성공. 개발 서버에서 탭에 `Attaca`와 새 아이콘이 보인다.
+Expected: 성공. 개발 서버에서 탭에 `Attacca`와 새 아이콘이 보인다.
 
 - [ ] **Step 4: 커밋**
 

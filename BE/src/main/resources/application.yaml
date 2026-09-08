@@ -1,14 +1,14 @@
 spring:
   application:
-    name: attaca
+    name: attacca
   servlet:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/attaca}
-    username: ${DB_USERNAME:attaca}
-    password: ${DB_PASSWORD:attaca-local}
+    url: ${DB_URL:jdbc:mysql://localhost:3306/attacca}
+    username: ${DB_USERNAME:attacca}
+    password: ${DB_PASSWORD:attacca-local}
   jpa:
     hibernate:
       # 스키마는 Flyway가 만든다. Hibernate는 엔티티와 실제 스키마가 어긋나지 않는지 확인만 한다.

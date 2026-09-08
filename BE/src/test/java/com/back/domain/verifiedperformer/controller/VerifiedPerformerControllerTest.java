@@ -38,7 +38,7 @@ class VerifiedPerformerControllerTest {
     @BeforeEach
     void setUp() {
         Member member = memberRepository.save(
-                Member.createLocal("performer", "pw", "performer@attaca.com", "연주자"));
+                Member.createLocal("performer", "pw", "performer@attacca.com", "연주자"));
         bearer = "Bearer " + jwtProvider.createAccessToken(member.getId(), Role.USER);
     }
 

@@ -7,7 +7,7 @@
 ## 2026-07-05 — 프로젝트 초기 설계 확정
 
 ### 서비스 정의
-* Attaca = 음악인 커뮤니티 SNS. 음악인 간 자유로운 소통, 연주회 소개, 구인/구직.
+* Attacca = 음악인 커뮤니티 SNS. 음악인 간 자유로운 소통, 연주회 소개, 구인/구직.
 
 ### 도메인 (6개)
 * MEMBER, VERIFIED-PERFORMER, FEED, PERFORMANCE, RECRUITMENT, CHAT
@@ -125,4 +125,4 @@
 
 ### 기동 환경(이 PC 한정)
 * 시스템 기본 JDK가 25 → Gradle 8.11.1이 실패. `JAVA_HOME`을 JDK 21로 고정해야 한다.
-* 8080/3000은 다른 프로젝트가 점유 → Attaca는 BE 8081 / FE 3001로 기동(포트 override + `FE/.env.local`).
+* 8080/3000은 다른 프로젝트가 점유 → Attacca는 BE 8081 / FE 3001로 기동(포트 override + `FE/.env.local`).

@@ -42,12 +42,12 @@ class MemberOAuthServiceTest {
 
     @Test
     void newSocialUser_isCreatedAndLoggedIn() {
-        fakeClient.next = new OAuthUserInfo("kakao-1", "new@attaca.com", true, "카카오유저");
+        fakeClient.next = new OAuthUserInfo("kakao-1", "new@attacca.com", true, "카카오유저");
 
         TokenPairResponse tokens = service.oauthLogin(OAuthProvider.KAKAO, "code", "https://app/cb");
 
         assertThat(tokens.accessToken()).isNotBlank();
-        Member created = memberRepository.findByEmail("new@attaca.com").orElseThrow();
+        Member created = memberRepository.findByEmail("new@attacca.com").orElseThrow();
         assertThat(created.getLoginId()).isNull();
         assertThat(created.getPassword()).isNull();
         assertThat(socialAccountRepository.findByProviderAndProviderUserId(OAuthProvider.KAKAO, "kakao-1"))
@@ -56,9 +56,9 @@ class MemberOAuthServiceTest {
 
     @Test
     void existingSocialAccount_logsInSameMember() {
-        Member member = memberRepository.save(Member.createSocial("s@attaca.com", "기존소셜"));
+        Member member = memberRepository.save(Member.createSocial("s@attacca.com", "기존소셜"));
         socialAccountRepository.save(SocialAccount.create(member, OAuthProvider.KAKAO, "kakao-1"));
-        fakeClient.next = new OAuthUserInfo("kakao-1", "s@attaca.com", true, "기존소셜");
+        fakeClient.next = new OAuthUserInfo("kakao-1", "s@attacca.com", true, "기존소셜");
 
         service.oauthLogin(OAuthProvider.KAKAO, "code", "https://app/cb");
 
@@ -69,8 +69,8 @@ class MemberOAuthServiceTest {
     @Test
     void verifiedEmailMatchingExistingMember_autoLinks() {
         Member local = memberRepository.save(
-                Member.createLocal("jazzman", "pw", "same@attaca.com", "재즈맨"));
-        fakeClient.next = new OAuthUserInfo("kakao-9", "same@attaca.com", true, "재즈맨");
+                Member.createLocal("jazzman", "pw", "same@attacca.com", "재즈맨"));
+        fakeClient.next = new OAuthUserInfo("kakao-9", "same@attacca.com", true, "재즈맨");
 
         service.oauthLogin(OAuthProvider.KAKAO, "code", "https://app/cb");
 
@@ -82,7 +82,7 @@ class MemberOAuthServiceTest {
 
     @Test
     void unverifiedEmail_throwsOauthEmailUnverified() {
-        fakeClient.next = new OAuthUserInfo("kakao-2", "x@attaca.com", false, "미검증");
+        fakeClient.next = new OAuthUserInfo("kakao-2", "x@attacca.com", false, "미검증");
 
         assertThatThrownBy(() -> service.oauthLogin(OAuthProvider.KAKAO, "code", "https://app/cb"))
                 .isInstanceOf(BusinessException.class)
@@ -91,8 +91,8 @@ class MemberOAuthServiceTest {
 
     @Test
     void unverifiedEmailMatchingExistingMember_isRejectedAndNotLinked() {
-        memberRepository.save(Member.createLocal("victim", "pw", "victim@attaca.com", "피해자"));
-        fakeClient.next = new OAuthUserInfo("kakao-attacker", "victim@attaca.com", false, "공격자");
+        memberRepository.save(Member.createLocal("victim", "pw", "victim@attacca.com", "피해자"));
+        fakeClient.next = new OAuthUserInfo("kakao-attacker", "victim@attacca.com", false, "공격자");
 
         assertThatThrownBy(() -> service.oauthLogin(OAuthProvider.KAKAO, "code", "https://app/cb"))
                 .isInstanceOf(BusinessException.class)
@@ -104,12 +104,12 @@ class MemberOAuthServiceTest {
 
     @Test
     void newSocialUser_nicknameCollision_generatesUnique() {
-        memberRepository.save(Member.createLocal("id1", "pw", "a@attaca.com", "중복닉"));
-        fakeClient.next = new OAuthUserInfo("kakao-3", "b@attaca.com", true, "중복닉");
+        memberRepository.save(Member.createLocal("id1", "pw", "a@attacca.com", "중복닉"));
+        fakeClient.next = new OAuthUserInfo("kakao-3", "b@attacca.com", true, "중복닉");
 
         service.oauthLogin(OAuthProvider.KAKAO, "code", "https://app/cb");
 
-        Member created = memberRepository.findByEmail("b@attaca.com").orElseThrow();
+        Member created = memberRepository.findByEmail("b@attacca.com").orElseThrow();
         assertThat(created.getNickname()).isNotEqualTo("중복닉");
         assertThat(created.getNickname()).startsWith("중복닉");
     }

@@ -167,7 +167,7 @@ git commit -m "feat: 파일 저장 에러코드 3종 추가 및 예외 원인 �
 
 ## Task 2: 설정 바인딩 (`StorageProperties`)
 
-`storage.*` 설정을 바인딩한다. `AttacaApplication`에 이미 `@ConfigurationPropertiesScan`이 붙어 있으므로 별도 등록은 필요 없다.
+`storage.*` 설정을 바인딩한다. `AttaccaApplication`에 이미 `@ConfigurationPropertiesScan`이 붙어 있으므로 별도 등록은 필요 없다.
 
 **Files:**
 - Create: `BE/src/main/java/com/back/global/storage/StorageProperties.java`
@@ -207,22 +207,22 @@ class StoragePropertiesTest {
                         "storage.type=s3",
                         "storage.local.root-dir=./uploads",
                         "storage.local.base-url=http://localhost:8080/files",
-                        "storage.s3.bucket=attaca-bucket",
+                        "storage.s3.bucket=attacca-bucket",
                         "storage.s3.region=ap-northeast-2",
                         "storage.s3.access-key=AK",
                         "storage.s3.secret-key=SK",
-                        "storage.s3.base-url=https://cdn.attaca.com")
+                        "storage.s3.base-url=https://cdn.attacca.com")
                 .run(context -> {
                     StorageProperties props = context.getBean(StorageProperties.class);
 
                     assertThat(props.type()).isEqualTo("s3");
                     assertThat(props.local().rootDir()).isEqualTo("./uploads");
                     assertThat(props.local().baseUrl()).isEqualTo("http://localhost:8080/files");
-                    assertThat(props.s3().bucket()).isEqualTo("attaca-bucket");
+                    assertThat(props.s3().bucket()).isEqualTo("attacca-bucket");
                     assertThat(props.s3().region()).isEqualTo("ap-northeast-2");
                     assertThat(props.s3().accessKey()).isEqualTo("AK");
                     assertThat(props.s3().secretKey()).isEqualTo("SK");
-                    assertThat(props.s3().baseUrl()).isEqualTo("https://cdn.attaca.com");
+                    assertThat(props.s3().baseUrl()).isEqualTo("https://cdn.attacca.com");
                 });
     }
 
@@ -272,7 +272,7 @@ public record StorageProperties(String type, Local local, S3 s3) {
 ```yaml
 spring:
   application:
-    name: attaca
+    name: attacca
   servlet:
     multipart:
       max-file-size: 10MB
@@ -641,8 +641,8 @@ class S3FileStorageTest {
         storage = new S3FileStorage(s3Client, new StorageProperties(
                 "s3",
                 null,
-                new StorageProperties.S3("attaca-bucket", "ap-northeast-2", "AK", "SK",
-                        "https://cdn.attaca.com")));
+                new StorageProperties.S3("attacca-bucket", "ap-northeast-2", "AK", "SK",
+                        "https://cdn.attacca.com")));
     }
 
     private InputStream content(String text) {
@@ -661,7 +661,7 @@ class S3FileStorageTest {
         verify(s3Client).putObject(captor.capture(), any(RequestBody.class));
 
         PutObjectRequest request = captor.getValue();
-        assertThat(request.bucket()).isEqualTo("attaca-bucket");
+        assertThat(request.bucket()).isEqualTo("attacca-bucket");
         assertThat(request.key()).isEqualTo(key);
         assertThat(request.contentType()).isEqualTo("image/png");
     }
@@ -675,14 +675,14 @@ class S3FileStorageTest {
         ArgumentCaptor<DeleteObjectRequest> captor = ArgumentCaptor.forClass(DeleteObjectRequest.class);
         verify(s3Client).deleteObject(captor.capture());
 
-        assertThat(captor.getValue().bucket()).isEqualTo("attaca-bucket");
+        assertThat(captor.getValue().bucket()).isEqualTo("attacca-bucket");
         assertThat(captor.getValue().key()).isEqualTo(key);
     }
 
     @Test
     void baseUrl과_key를_이어_URL을_만든다() {
         assertThat(storage.getUrl("profile/2026/07/14/abc.png"))
-                .isEqualTo("https://cdn.attaca.com/profile/2026/07/14/abc.png");
+                .isEqualTo("https://cdn.attacca.com/profile/2026/07/14/abc.png");
     }
 
     @Test

@@ -46,7 +46,7 @@ export function Header() {
   return (
     <header className="bg-header text-on-header">
       <nav className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3">
-        <Link href="/" className="text-lg font-bold tracking-tight">Attaca</Link>
+        <Link href="/" className="text-lg font-bold tracking-tight">Attacca</Link>
 
         <ul className="flex flex-wrap items-center gap-4 text-sm">
           {NAV_ITEMS.map((item) => {

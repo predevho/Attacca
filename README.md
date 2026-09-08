@@ -1,11 +1,11 @@
-# Attaca
+# Attacca
 
 **음악인 커뮤니티** — 연주회를 알리고, 함께 연주할 사람을 찾고, 서로 이야기하는 공간.
 
 서로 모르는 연주자들이 자신의 연주회를 소개하고(PERFORMANCE), 구인 공고로 함께할 사람을 찾고(RECRUITMENT),
 자유롭게 소통하며(FEED), 1:1로 이야기한다(CHAT). 인증 연주자 심사를 거친 사람만 공연을 올릴 수 있다(VERIFIED-PERFORMER).
 
-> **Attaca** — 악장 사이를 쉬지 않고 바로 이어 연주하라는 악상 기호.
+> **Attacca** — 악장 사이를 쉬지 않고 바로 이어 연주하라는 악상 기호.
 
 ---
 
@@ -127,7 +127,7 @@ DTO를 공유하지 않는 이유는 단순합니다. 하나를 공유하면 나
 docker compose up -d
 ```
 
-MySQL 8.4가 `3306`에 뜹니다(DB `attaca`).
+MySQL 8.4가 `3306`에 뜹니다(DB `attacca`).
 
 ### 2. 백엔드
 
@@ -140,7 +140,7 @@ cd BE && ./gradlew bootRun
 접속이 거부되면 명령행으로 덮어쓰세요.
 
 ```bash
-./gradlew bootRun "--args=--spring.datasource.password=attaca-local"
+./gradlew bootRun "--args=--spring.datasource.password=attacca-local"
 ```
 
 ### 3. 프론트엔드

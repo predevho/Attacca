@@ -152,7 +152,7 @@ CONTEXT.md 규칙
 
 ## 대상
 
-- 허브 페이지 "Attaca 프로젝트" (워크스페이스: `AIBE6 기록`)
+- 허브 페이지 "Attacca 프로젝트" (워크스페이스: `AIBE6 기록`)
   - page_id : `394dca37-4f2e-81ed-8fbf-c86c386714f6`
 - 데이터베이스 (data_source_id)
   - ✅ TODO 보드 : `12c759a2-7e93-4614-aae3-1b82bfb7a857`

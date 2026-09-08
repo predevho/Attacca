@@ -1,13 +1,13 @@
 services:
   mysql:
     image: mysql:8.4
-    container_name: attaca-mysql
+    container_name: attacca-mysql
     ports:
       - "3306:3306"
     environment:
-      MYSQL_DATABASE: attaca
-      MYSQL_USER: attaca
-      MYSQL_PASSWORD: attaca-local
+      MYSQL_DATABASE: attacca
+      MYSQL_USER: attacca
+      MYSQL_PASSWORD: attacca-local
       MYSQL_ROOT_PASSWORD: root-local
     volumes:
       - mysql-data:/var/lib/mysql

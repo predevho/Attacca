@@ -36,8 +36,8 @@ class S3FileStorageTest {
         storage = new S3FileStorage(s3Client, new StorageProperties(
                 "s3",
                 null,
-                new StorageProperties.S3("attaca-bucket", "ap-northeast-2", "AK", "SK",
-                        "https://cdn.attaca.com")));
+                new StorageProperties.S3("attacca-bucket", "ap-northeast-2", "AK", "SK",
+                        "https://cdn.attacca.com")));
     }
 
     private InputStream content(String text) {
@@ -56,7 +56,7 @@ class S3FileStorageTest {
         verify(s3Client).putObject(captor.capture(), any(RequestBody.class));
 
         PutObjectRequest request = captor.getValue();
-        assertThat(request.bucket()).isEqualTo("attaca-bucket");
+        assertThat(request.bucket()).isEqualTo("attacca-bucket");
         assertThat(request.key()).isEqualTo(key);
         assertThat(request.contentType()).isEqualTo("image/png");
     }
@@ -70,14 +70,14 @@ class S3FileStorageTest {
         ArgumentCaptor<DeleteObjectRequest> captor = ArgumentCaptor.forClass(DeleteObjectRequest.class);
         verify(s3Client).deleteObject(captor.capture());
 
-        assertThat(captor.getValue().bucket()).isEqualTo("attaca-bucket");
+        assertThat(captor.getValue().bucket()).isEqualTo("attacca-bucket");
         assertThat(captor.getValue().key()).isEqualTo(key);
     }
 
     @Test
     void baseUrl과_key를_이어_URL을_만든다() {
         assertThat(storage.getUrl("profile/2026/07/14/abc.png"))
-                .isEqualTo("https://cdn.attaca.com/profile/2026/07/14/abc.png");
+                .isEqualTo("https://cdn.attacca.com/profile/2026/07/14/abc.png");
     }
 
     @Test
