@@ -1,6 +1,13 @@
 # 단일 인스턴스 배포용. DB는 여기 없다 — RDS를 쓰고 DB_URL로 가리킨다.
 #
-#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+#   ./deploy/dc.sh pull && ./deploy/dc.sh up -d
+#
+# 이미지는 이 서버에서 만들지 않는다. GitHub Actions가 빌드해 GHCR에 올리고
+# 여기서는 받아 쓰기만 한다. t3.micro(1GB)에서 Gradle·Next를 빌드하면 스왑을
+# 긁으며 오래 걸리고, 빌드 캐시가 5GB까지 불어났었다.
+# 자동 갱신은 systemd 타이머가 `deploy/update.sh`를 2분마다 돌린다.
+#
+# build: 섹션은 비상용으로 남겨 뒀다. GHCR이 막혔을 때만 `up -d --build`.
 #
 # 현재는 1단계(IP + HTTP) 구성이다. 도메인·HTTPS는 docs/DEPLOY.md 2단계 참고.
 #
@@ -10,7 +17,8 @@
 
 services:
   be:
-    build: ./BE
+    image: ${BE_IMAGE:-ghcr.io/predevho/attacca-be}:${IMAGE_TAG:-latest}
+    build: ./BE          # 비상용. 평소에는 GHCR 이미지를 받아 쓴다.
     restart: unless-stopped
     environment:
       DB_URL: ${DB_URL}
@@ -55,11 +63,13 @@ services:
       retries: 5
 
   fe:
-    build:
+    image: ${FE_IMAGE:-ghcr.io/predevho/attacca-fe}:${IMAGE_TAG:-latest}
+    # NEXT_PUBLIC_*은 빌드 시점에 번들에 박히므로 런타임 env로는 못 바꾼다.
+    # 그래서 이 값은 CI에서 이미지를 구울 때 주입한다(.github/workflows/ci.yml).
+    # 접속 주소가 바뀌면 CI 변수 NEXT_PUBLIC_BE_WS_URL을 고치고 다시 구워야 한다.
+    build:               # 비상용.
       context: ./FE
       args:
-        # NEXT_PUBLIC_*은 빌드 시점에 번들에 박힌다. 런타임 env로는 못 바꾼다.
-        # 주소가 바뀌면 --build 로 다시 빌드해야 한다.
         NEXT_PUBLIC_BE_WS_URL: ${NEXT_PUBLIC_BE_WS_URL}
     restart: unless-stopped
     environment:

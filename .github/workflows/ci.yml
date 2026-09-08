@@ -67,5 +67,54 @@ jobs:
       - run: npm run build
         working-directory: FE
 
-# 배포 job은 아직 없다. EC2 접속 방식(SSH 키 / SSM / ECR)이 정해지면
-# frontend 다음에 needs로 붙인다 — docs/DEPLOY.md "아직 안 한 것" 참고.
+  # 이미지를 여기서 굽고 GHCR에 올린다. 서버는 받아 쓰기만 한다.
+  #
+  # 왜 서버에서 안 굽는가: t3.micro(1GB)에서 Gradle과 Next를 빌드하면 스왑을 긁으며
+  # 오래 걸리고, 빌드 캐시가 5GB까지 불어나 디스크를 먹었다. 빌드를 밖으로 빼면
+  # 서버가 할 일은 pull과 컨테이너 교체뿐이다.
+  #
+  # 배포 트리거는 여기 없다. 서버의 systemd 타이머가 2분마다 새 이미지를 확인하고
+  # 스스로 갱신한다(deploy/update.sh). 그래서 EC2에 인바운드 포트를 하나도
+  # 열지 않아도 되고, GitHub에 서버 자격증명을 두지 않아도 된다.
+  images:
+    needs: [changes, backend, frontend]
+    # 문서만 바뀐 커밋은 굽지 않는다. 한쪽만 바뀌었어도 **둘 다** 굽는다 —
+    # `latest` 두 개가 항상 같은 커밋을 가리켜야 API 계약이 바뀐 배포에서
+    # BE 신버전 + FE 구버전 같은 조합이 생기지 않는다(위 changes job 주석과 같은 이유).
+    if: >-
+      always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+      && needs.backend.result != 'failure' && needs.frontend.result != 'failure'
+      && (needs.changes.outputs.be == 'true' || needs.changes.outputs.fe == 'true')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - name: be
+            context: ./BE
+          - name: fe
+            context: ./FE
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          push: true
+          # latest는 타이머가 보는 태그, sha는 어떤 커밋이 떠 있는지 되짚기 위한 것.
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/attacca-${{ matrix.name }}:latest
+            ghcr.io/${{ github.repository_owner }}/attacca-${{ matrix.name }}:${{ github.sha }}
+          # NEXT_PUBLIC_*은 번들에 박히므로 굽는 시점에 넣어야 한다. BE는 이 값을 무시한다.
+          # 접속 주소가 바뀌면 저장소 Variables의 NEXT_PUBLIC_BE_WS_URL을 고칠 것.
+          build-args: |
+            NEXT_PUBLIC_BE_WS_URL=${{ vars.NEXT_PUBLIC_BE_WS_URL }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,scope=${{ matrix.name }},mode=max
