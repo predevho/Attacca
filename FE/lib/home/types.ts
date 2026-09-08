@@ -67,7 +67,11 @@ export type CalendarEntry = {
 
 /** 캐러셀 한 장. */
 export type Slide = {
-  kind: 'PERFORMANCE' | NoticeType;
+  /**
+   * `PAST_PERFORMANCE` 는 다가오는 공연이 없을 때만 쓰는 대체 슬라이드다.
+   * `PERFORMANCE` 로 뭉뚱그리면 지난 공연이 다가오는 것처럼 읽히므로 종류를 나눈다.
+   */
+  kind: 'PERFORMANCE' | 'PAST_PERFORMANCE' | NoticeType;
   id: number;
   title: string;
   /** 부제 한 줄(일시·장소 등). */

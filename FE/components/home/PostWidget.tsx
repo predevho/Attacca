@@ -50,7 +50,13 @@ export function PostWidget({
       {isLoading && <p className="px-4 pb-4 text-sm text-ink-faint">불러오는 중...</p>}
 
       {!isLoading && posts.length === 0 && (
-        <p className="px-4 pb-6 text-sm text-ink-faint">아직 게시글이 없습니다.</p>
+        <div className="px-4 pb-6">
+          {/* 빈 문구만 두면 막다른 길이다. 무엇을 할 수 있는지 함께 준다. */}
+          <p className="text-sm text-ink-faint">아직 게시글이 없습니다.</p>
+          <Link href="/feed" className="mt-1 inline-block text-sm text-brand-strong">
+            첫 글 남기기 →
+          </Link>
+        </div>
       )}
 
       <ul>

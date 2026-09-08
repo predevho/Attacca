@@ -111,7 +111,13 @@ export function MonthCalendar({
         <h2 className="p-4 font-semibold">이번 달 일정</h2>
         {isLoading && <p className="px-4 pb-4 text-sm text-ink-faint">불러오는 중...</p>}
         {!isLoading && entries.length === 0 && (
-          <p className="px-4 pb-6 text-sm text-ink-faint">이번 달 일정이 없습니다.</p>
+          <div className="px-4 pb-6">
+            {/* 이번 달이 비어도 지난 공연은 있을 수 있다. 그쪽으로 길을 낸다. */}
+            <p className="text-sm text-ink-faint">이번 달 일정이 없습니다.</p>
+            <Link href="/performances" className="mt-1 inline-block text-sm text-brand-strong">
+              공연 둘러보기 →
+            </Link>
+          </div>
         )}
         <ul>
           {entries.map((entry) => {

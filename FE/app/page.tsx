@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { EmptyHero } from '@/components/home/EmptyHero';
 import { HeroCarousel } from '@/components/home/HeroCarousel';
 import { MonthCalendar } from '@/components/home/MonthCalendar';
 import { PostWidget } from '@/components/home/PostWidget';
@@ -34,17 +35,23 @@ export default function HomePage() {
   const [entries, setEntries] = useState<CalendarEntry[]>([]);
   const [calendarLoading, setCalendarLoading] = useState(true);
 
-  // 히어로: 다가오는 공연 + 고정 공지
+  // 히어로: 다가오는 공연 + 고정 공지. 다가오는 공연이 없으면 지난 공연으로 채운다
+  // (없으면 히어로가 통째로 사라져 홈 위쪽이 텅 빈다 — toSlides 주석 참고).
   useEffect(() => {
     let cancelled = false;
+    const content = <T,>(r: { ok: boolean; data?: unknown }) =>
+      (r.ok ? (r.data as PageResponse<T>).content : []);
     Promise.all([
       getBff<PageResponse<PublicPerformance>>('/api/bff/public/performances?scope=UPCOMING&size=3'),
       getBff<PageResponse<PublicNotice>>('/api/bff/public/notices?scope=PINNED&size=5'),
-    ]).then(([performances, notices]) => {
+      getBff<PageResponse<PublicPerformance>>('/api/bff/public/performances?scope=PAST&size=3'),
+    ]).then(([upcoming, notices, past]) => {
       if (cancelled) return;
       setSlides(toSlides(
-        performances.ok ? (performances.data as PageResponse<PublicPerformance>).content : [],
-        notices.ok ? (notices.data as PageResponse<PublicNotice>).content : [],
+        content<PublicPerformance>(upcoming),
+        content<PublicNotice>(notices),
+        5,
+        content<PublicPerformance>(past),
       ));
     });
     return () => {
@@ -98,7 +105,7 @@ export default function HomePage() {
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8">
-      {slides.length > 0 && <HeroCarousel slides={slides} />}
+      {slides.length > 0 ? <HeroCarousel slides={slides} /> : <EmptyHero />}
 
       {/*
         첫 열을 minmax(0,1fr)로 두는 것이 중요하다. 그냥 1fr이면 최소 크기가 auto라

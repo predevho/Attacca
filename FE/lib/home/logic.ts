@@ -142,20 +142,31 @@ export function formatDayLabel(at: string): string {
  * 캐러셀 슬라이드. 다가오는 공연을 먼저, 그 뒤에 고정 공지를 붙이고 max장으로 자른다.
  * 공연을 앞에 두는 이유는 홈의 목적이 연주회 홍보이기 때문이다.
  */
+/**
+ * 히어로 슬라이드를 만든다. 다가오는 공연 → 공지 → (다가오는 공연이 없을 때만) 지난 공연.
+ *
+ * `past` 대체가 있는 이유: 다가오는 공연이 하나도 없으면 홈의 주 영역이 통째로
+ * 사라져 방문자가 빈 화면을 봤다(2026-09-09). 지난 공연이라도 태워 채우되,
+ * 배지를 '지난 공연'으로 달아 **지난 것임을 감추지 않는다**.
+ */
 export function toSlides(
   performances: PublicPerformance[],
   notices: PublicNotice[],
   max = 5,
+  past: PublicPerformance[] = [],
 ): Slide[] {
-  const fromPerformances: Slide[] = performances.map((p) => ({
-    kind: 'PERFORMANCE',
-    id: p.id,
-    title: p.title,
-    caption: `${formatDateTime(p.performedAt)} · ${p.venue}`,
-    body: p.description,
-    imageUrl: p.posterImageUrl,
-    href: `/performances/${p.id}`,
-  }));
+  const toPerformanceSlide = (kind: 'PERFORMANCE' | 'PAST_PERFORMANCE') =>
+    (p: PublicPerformance): Slide => ({
+      kind,
+      id: p.id,
+      title: p.title,
+      caption: `${formatDateTime(p.performedAt)} · ${p.venue}`,
+      body: p.description,
+      imageUrl: p.posterImageUrl,
+      href: `/performances/${p.id}`,
+    });
+
+  const fromPerformances = performances.map(toPerformanceSlide('PERFORMANCE'));
   const fromNotices: Slide[] = notices.map((n) => ({
     kind: n.type,
     id: n.id,
@@ -165,12 +176,16 @@ export function toSlides(
     imageUrl: n.coverImageUrl,
     href: null,
   }));
-  return [...fromPerformances, ...fromNotices].slice(0, max);
+  // 지난 공연은 다가오는 공연이 하나도 없을 때만 뒤에 덧붙인다.
+  const fallback = performances.length === 0 ? past.map(toPerformanceSlide('PAST_PERFORMANCE')) : [];
+  return [...fromPerformances, ...fromNotices, ...fallback].slice(0, max);
 }
 
 /** 슬라이드 배지 문구. */
 export function slideLabel(kind: Slide['kind']): string {
-  return kind === 'PERFORMANCE' ? '공연' : noticeLabel(kind);
+  if (kind === 'PERFORMANCE') return '공연';
+  if (kind === 'PAST_PERFORMANCE') return '지난 공연';
+  return noticeLabel(kind);
 }
 
 /**

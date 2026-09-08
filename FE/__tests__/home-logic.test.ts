@@ -155,6 +155,34 @@ describe('toSlides', () => {
     const [slide] = toSlides([performance(1, '공연', '2026-09-26T19:30:00')], []);
     expect(slide.caption).toBe('2026.09.26 (토) 19:30 · 한강아트홀');
   });
+
+  // 다가오는 공연이 없으면 홈의 주 영역이 통째로 사라졌다(2026-09-09).
+  // 지난 공연이라도 태워 화면을 채우되, **지난 것임을 감추지 않는다**.
+  it('다가오는 공연이 없으면 지난 공연을 태운다', () => {
+    const slides = toSlides([], [], 5, [performance(9, '지난공연', '2024-06-24T19:30:00')]);
+
+    expect(slides.map((s) => s.title)).toEqual(['지난공연']);
+    expect(slides[0].kind).toBe('PAST_PERFORMANCE');
+    expect(slides[0].href).toBe('/performances/9');
+  });
+
+  it('다가오는 공연이 있으면 지난 공연은 태우지 않는다', () => {
+    const slides = toSlides(
+      [performance(1, '다가오는', '2026-12-01T19:00:00')],
+      [],
+      5,
+      [performance(9, '지난공연', '2024-06-24T19:30:00')],
+    );
+
+    expect(slides.map((s) => s.title)).toEqual(['다가오는']);
+  });
+
+  it('지난 공연은 공지 뒤에 놓는다', () => {
+    const slides = toSlides([], [notice(2, '공지', null)], 5,
+      [performance(9, '지난공연', '2024-06-24T19:30:00')]);
+
+    expect(slides.map((s) => s.title)).toEqual(['공지', '지난공연']);
+  });
 });
 
 describe('slideLabel', () => {
@@ -163,6 +191,8 @@ describe('slideLabel', () => {
     expect(slideLabel('NOTICE')).toBe('공지');
     expect(slideLabel('NEWS')).toBe('뉴스');
     expect(slideLabel('EVENT')).toBe('일정');
+    // 지난 공연을 '공연'으로 적으면 다가오는 것처럼 읽힌다.
+    expect(slideLabel('PAST_PERFORMANCE')).toBe('지난 공연');
   });
 });
 
