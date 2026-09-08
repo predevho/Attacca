@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   pull_request:
+  # 코드는 그대로인데 이미지를 다시 구워야 할 때가 있다.
+  # 예: NEXT_PUBLIC_BE_WS_URL 같은 빌드 시점 변수만 바뀐 경우 —
+  # 그 값은 번들에 박히므로 변수만 고쳐서는 아무 일도 일어나지 않는다.
+  # Actions 탭에서 "Run workflow"로 부른다.
+  workflow_dispatch:
 
 # 모노레포지만 워크플로 파일을 나누지 않는다.
 # 파일을 나누면 BE와 FE가 같이 바뀐 커밋에서 실행 순서가 보장되지 않아,
@@ -30,7 +35,7 @@ jobs:
 
   backend:
     needs: changes
-    if: needs.changes.outputs.be == 'true'
+    if: needs.changes.outputs.be == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -47,7 +52,9 @@ jobs:
   frontend:
     needs: [changes, backend]
     # backend를 건너뛰었어도(BE 변경 없음) FE는 돌아야 한다.
-    if: always() && needs.changes.outputs.fe == 'true' && needs.backend.result != 'failure'
+    if: >-
+      always() && needs.backend.result != 'failure'
+      && (needs.changes.outputs.fe == 'true' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -82,9 +89,11 @@ jobs:
     # `latest` 두 개가 항상 같은 커밋을 가리켜야 API 계약이 바뀐 배포에서
     # BE 신버전 + FE 구버전 같은 조합이 생기지 않는다(위 changes job 주석과 같은 이유).
     if: >-
-      always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+      always()
       && needs.backend.result != 'failure' && needs.frontend.result != 'failure'
-      && (needs.changes.outputs.be == 'true' || needs.changes.outputs.fe == 'true')
+      && (github.event_name == 'workflow_dispatch'
+          || (github.event_name == 'push' && github.ref == 'refs/heads/main'
+              && (needs.changes.outputs.be == 'true' || needs.changes.outputs.fe == 'true')))
     runs-on: ubuntu-latest
     permissions:
       contents: read
