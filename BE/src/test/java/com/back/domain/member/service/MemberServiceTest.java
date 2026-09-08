@@ -40,7 +40,7 @@ class MemberServiceTest {
     @Test
     void signup_persistsWithEncodedPassword() {
         SignupResponse res = memberService.signup(
-                new SignupRequest("jazzman", "raw-pw", "user@attaca.com", "재즈맨"));
+                new SignupRequest("jazzman", "raw-pw", "user@attacca.com", "재즈맨"));
 
         assertThat(res.loginId()).isEqualTo("jazzman");
         assertThat(res.role()).isEqualTo(Role.USER);
@@ -51,34 +51,34 @@ class MemberServiceTest {
 
     @Test
     void signup_duplicateLoginId_throws() {
-        memberRepository.save(Member.createLocal("dup", "x", "a@attaca.com", "닉A"));
+        memberRepository.save(Member.createLocal("dup", "x", "a@attacca.com", "닉A"));
         assertThatThrownBy(() -> memberService.signup(
-                new SignupRequest("dup", "raw-pw", "b@attaca.com", "닉B")))
+                new SignupRequest("dup", "raw-pw", "b@attacca.com", "닉B")))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode").isEqualTo(ErrorCode.LOGIN_ID_ALREADY_EXISTS);
     }
 
     @Test
     void signup_duplicateEmail_throws() {
-        memberRepository.save(Member.createLocal("id1", "x", "dup@attaca.com", "닉A"));
+        memberRepository.save(Member.createLocal("id1", "x", "dup@attacca.com", "닉A"));
         assertThatThrownBy(() -> memberService.signup(
-                new SignupRequest("id2", "raw-pw", "dup@attaca.com", "닉B")))
+                new SignupRequest("id2", "raw-pw", "dup@attacca.com", "닉B")))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode").isEqualTo(ErrorCode.EMAIL_ALREADY_EXISTS);
     }
 
     @Test
     void signup_duplicateNickname_throws() {
-        memberRepository.save(Member.createLocal("id1", "x", "a@attaca.com", "중복닉"));
+        memberRepository.save(Member.createLocal("id1", "x", "a@attacca.com", "중복닉"));
         assertThatThrownBy(() -> memberService.signup(
-                new SignupRequest("id2", "raw-pw", "b@attaca.com", "중복닉")))
+                new SignupRequest("id2", "raw-pw", "b@attacca.com", "중복닉")))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode").isEqualTo(ErrorCode.NICKNAME_ALREADY_EXISTS);
     }
 
     @Test
     void login_validCredentials_returnsTokens() {
-        memberService.signup(new SignupRequest("jazzman", "raw-pw", "user@attaca.com", "재즈맨"));
+        memberService.signup(new SignupRequest("jazzman", "raw-pw", "user@attacca.com", "재즈맨"));
 
         TokenPairResponse tokens = memberService.login(new LoginRequest("jazzman", "raw-pw"));
 
@@ -96,16 +96,16 @@ class MemberServiceTest {
 
     @Test
     void login_socialOnlyMember_cannotLoginByLoginId_throwsLoginFailed() {
-        memberRepository.save(Member.createSocial("social@attaca.com", "소셜러"));
+        memberRepository.save(Member.createSocial("social@attacca.com", "소셜러"));
         // 소셜 전용 회원은 loginId 가 없으므로 loginId/password 로그인 경로로는 인증할 수 없다
-        assertThatThrownBy(() -> memberService.login(new LoginRequest("social@attaca.com", "raw-pw")))
+        assertThatThrownBy(() -> memberService.login(new LoginRequest("social@attacca.com", "raw-pw")))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode").isEqualTo(ErrorCode.LOGIN_FAILED);
     }
 
     @Test
     void login_wrongPassword_throwsLoginFailed() {
-        memberService.signup(new SignupRequest("jazzman", "correct-pw", "user@attaca.com", "재즈맨"));
+        memberService.signup(new SignupRequest("jazzman", "correct-pw", "user@attacca.com", "재즈맨"));
         assertThatThrownBy(() -> memberService.login(new LoginRequest("jazzman", "wrong-pw")))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode").isEqualTo(ErrorCode.LOGIN_FAILED);

@@ -1,4 +1,4 @@
-# Attaca — 프론트엔드
+# Attacca — 프론트엔드
 
 Next.js 16(App Router) / React 19 / TypeScript / Tailwind CSS v4 / Vitest.
 서비스 전체 소개는 [루트 README](../README.md)를 보세요.

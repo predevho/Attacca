@@ -77,7 +77,7 @@ FE/
 - [ ] **Step 1: create-next-app 실행 (레포 루트에서)**
 
 ```bash
-cd /c/Users/dlagu/Desktop/CS/Attaca
+cd /c/Users/dlagu/Desktop/CS/Attacca
 npx --yes create-next-app@latest FE --ts --tailwind --eslint --app --src-dir=false --import-alias "@/*" --use-npm --no-turbopack --disable-git
 ```
 

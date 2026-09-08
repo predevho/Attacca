@@ -1,4 +1,4 @@
-# Attaca — 백엔드
+# Attacca — 백엔드
 
 Spring Boot 3.4.5 / Java 21 / MySQL. 서비스 전체 소개는 [루트 README](../README.md)를 보세요.
 
@@ -21,7 +21,7 @@ cd BE && ./gradlew bootRun
 그럴 땐 명령행이 이깁니다.
 
 ```bash
-./gradlew bootRun "--args=--spring.datasource.password=attaca-local"
+./gradlew bootRun "--args=--spring.datasource.password=attacca-local"
 ```
 
 ## 테스트

@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Attaca",
+  title: "Attacca",
   description: "음악인 커뮤니티 — 연주회 소개, 구인, 연주자들의 소통",
 };
 

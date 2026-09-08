@@ -1,7 +1,7 @@
 # TIL — OAuth2 소셜 로그인(카카오)을 무상태 JWT API에 붙이기
 
 > 작성일: 2026-07-13
-> 목적: Attaca의 카카오 소셜 로그인 구현(`com.back.domain.member`)에 쓰인 OAuth2 흐름과 설계 판단을, **이 문서 하나로** 이해할 수 있게 정리한다.
+> 목적: Attacca의 카카오 소셜 로그인 구현(`com.back.domain.member`)에 쓰인 OAuth2 흐름과 설계 판단을, **이 문서 하나로** 이해할 수 있게 정리한다.
 > 관련 코드: `domain.member.oauth`, `domain.member.service.MemberOAuthService` / 규칙: `docs/DOMAIN-MEMBER-STATUTE.md §3`
 
 ---

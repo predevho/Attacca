@@ -42,7 +42,7 @@ class MemberProfileControllerTest {
     @BeforeEach
     void setUp() {
         Member member = memberRepository.save(
-                Member.createLocal("profileuser", "pw", "profile@attaca.com", "프로필유저"));
+                Member.createLocal("profileuser", "pw", "profile@attacca.com", "프로필유저"));
         bearer = "Bearer " + jwtProvider.createAccessToken(member.getId(), Role.USER);
     }
 

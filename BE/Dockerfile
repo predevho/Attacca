@@ -16,10 +16,10 @@ FROM eclipse-temurin:21-jre AS runtime
 WORKDIR /app
 
 # root로 돌리지 않는다.
-RUN useradd --system --create-home --uid 10001 attaca
-USER attaca
+RUN useradd --system --create-home --uid 10001 attacca
+USER attacca
 
-COPY --from=build --chown=attaca:attaca /src/build/libs/*.jar app.jar
+COPY --from=build --chown=attacca:attacca /src/build/libs/*.jar app.jar
 
 # storage.type=local일 때 업로드가 여기 쌓인다. 컨테이너를 새로 띄우면 사라지므로
 # 운영에서는 볼륨을 붙이거나 storage.type=s3로 전환할 것.

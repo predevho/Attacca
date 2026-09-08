@@ -48,7 +48,7 @@ class MemberAuthControllerOAuthTest {
     @Test
     void kakaoLogin_newVerifiedUser_returns200WithTokens() throws Exception {
         when(kakaoOAuthClient.fetch(any(), any()))
-                .thenReturn(new OAuthUserInfo("kakao-1", "new@attaca.com", true, "카카오유저"));
+                .thenReturn(new OAuthUserInfo("kakao-1", "new@attacca.com", true, "카카오유저"));
 
         mockMvc.perform(post("/api/auth/oauth/kakao")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -62,7 +62,7 @@ class MemberAuthControllerOAuthTest {
     @Test
     void kakaoLogin_unverifiedEmail_returns401() throws Exception {
         when(kakaoOAuthClient.fetch(any(), any()))
-                .thenReturn(new OAuthUserInfo("kakao-2", "x@attaca.com", false, "미검증"));
+                .thenReturn(new OAuthUserInfo("kakao-2", "x@attacca.com", false, "미검증"));
 
         mockMvc.perform(post("/api/auth/oauth/kakao")
                         .contentType(MediaType.APPLICATION_JSON)

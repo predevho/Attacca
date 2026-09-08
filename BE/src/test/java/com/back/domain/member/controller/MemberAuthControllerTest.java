@@ -36,7 +36,7 @@ class MemberAuthControllerTest {
     void signup_returns200WithMemberData() throws Exception {
         mockMvc.perform(post("/api/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json(new SignupRequest("newbie", "raw-password", "new@attaca.com", "새회원"))))
+                        .content(json(new SignupRequest("newbie", "raw-password", "new@attacca.com", "새회원"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.loginId").value("newbie"))
@@ -47,10 +47,10 @@ class MemberAuthControllerTest {
     @Test
     void signup_duplicateLoginId_returns409() throws Exception {
         mockMvc.perform(post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON)
-                        .content(json(new SignupRequest("dup", "raw-password", "a@attaca.com", "닉A"))))
+                        .content(json(new SignupRequest("dup", "raw-password", "a@attacca.com", "닉A"))))
                 .andExpect(status().isOk());
         mockMvc.perform(post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON)
-                        .content(json(new SignupRequest("dup", "raw-password", "b@attaca.com", "닉B"))))
+                        .content(json(new SignupRequest("dup", "raw-password", "b@attacca.com", "닉B"))))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error.resultCode").value("409-03"));
     }
@@ -58,7 +58,7 @@ class MemberAuthControllerTest {
     @Test
     void login_validCredentials_returns200WithTokens() throws Exception {
         mockMvc.perform(post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON)
-                        .content(json(new SignupRequest("loginuser", "raw-password", "login@attaca.com", "로그인유저"))))
+                        .content(json(new SignupRequest("loginuser", "raw-password", "login@attacca.com", "로그인유저"))))
                 .andExpect(status().isOk());
         mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
                         .content(json(new LoginRequest("loginuser", "raw-password"))))
@@ -70,7 +70,7 @@ class MemberAuthControllerTest {
     @Test
     void login_wrongPassword_returns401() throws Exception {
         mockMvc.perform(post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON)
-                        .content(json(new SignupRequest("pwuser", "correct-password", "pw@attaca.com", "비번유저"))))
+                        .content(json(new SignupRequest("pwuser", "correct-password", "pw@attacca.com", "비번유저"))))
                 .andExpect(status().isOk());
         mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
                         .content(json(new LoginRequest("pwuser", "wrong-password"))))

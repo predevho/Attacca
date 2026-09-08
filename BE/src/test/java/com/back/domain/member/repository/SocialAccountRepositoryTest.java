@@ -19,7 +19,7 @@ class SocialAccountRepositoryTest {
 
     @Test
     void findByProviderAndProviderUserId() {
-        Member member = memberRepository.save(Member.createSocial("s@attaca.com", "소셜러"));
+        Member member = memberRepository.save(Member.createSocial("s@attacca.com", "소셜러"));
         socialAccountRepository.save(SocialAccount.create(member, OAuthProvider.KAKAO, "kakao-123"));
 
         assertThat(socialAccountRepository.findByProviderAndProviderUserId(OAuthProvider.KAKAO, "kakao-123"))

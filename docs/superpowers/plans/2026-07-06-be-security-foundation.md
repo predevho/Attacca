@@ -183,7 +183,7 @@ git commit -m "feat: Role enum 및 인증 계열 ErrorCode 추가"
 - Modify: `BE/src/main/resources/application.yaml`
 - Create: `BE/src/main/java/com/back/global/security/jwt/JwtProperties.java`
 - Create: `BE/src/main/java/com/back/global/security/jwt/JwtProvider.java`
-- Modify: `BE/src/main/java/com/back/AttacaApplication.java` (`@ConfigurationPropertiesScan`)
+- Modify: `BE/src/main/java/com/back/AttaccaApplication.java` (`@ConfigurationPropertiesScan`)
 - Test: `BE/src/test/java/com/back/global/security/jwt/JwtProviderTest.java`
 
 **Interfaces:**
@@ -211,7 +211,7 @@ git commit -m "feat: Role enum 및 인증 계열 ErrorCode 추가"
 ```yaml
 spring:
   application:
-    name: attaca
+    name: attacca
 
 jwt:
   secret: ${JWT_SECRET:local-dev-secret-please-change-in-real-environment-0123456789}
@@ -242,7 +242,7 @@ public record JwtProperties(
 
 - [ ] **Step 4: Enable configuration properties scanning**
 
-`BE/src/main/java/com/back/AttacaApplication.java` 의 클래스 애노테이션에 `@ConfigurationPropertiesScan` 추가:
+`BE/src/main/java/com/back/AttaccaApplication.java` 의 클래스 애노테이션에 `@ConfigurationPropertiesScan` 추가:
 ```java
 package com.back;
 
@@ -252,10 +252,10 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 
 @SpringBootApplication
 @ConfigurationPropertiesScan
-public class AttacaApplication {
+public class AttaccaApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(AttacaApplication.class, args);
+        SpringApplication.run(AttaccaApplication.class, args);
     }
 }
 ```
@@ -424,7 +424,7 @@ Expected: PASS
 - [ ] **Step 9: Commit**
 
 ```bash
-git add BE/build.gradle.kts BE/src/main/resources/application.yaml BE/src/main/java/com/back/AttacaApplication.java BE/src/main/java/com/back/global/security/jwt/JwtProperties.java BE/src/main/java/com/back/global/security/jwt/JwtProvider.java BE/src/test/java/com/back/global/security/jwt/JwtProviderTest.java
+git add BE/build.gradle.kts BE/src/main/resources/application.yaml BE/src/main/java/com/back/AttaccaApplication.java BE/src/main/java/com/back/global/security/jwt/JwtProperties.java BE/src/main/java/com/back/global/security/jwt/JwtProvider.java BE/src/test/java/com/back/global/security/jwt/JwtProviderTest.java
 git commit -m "feat: JwtProvider 및 JwtProperties, jjwt 의존성 추가"
 ```
 

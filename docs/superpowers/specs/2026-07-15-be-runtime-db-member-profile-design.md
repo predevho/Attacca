@@ -51,13 +51,13 @@
 services:
   mysql:
     image: mysql:8.4
-    container_name: attaca-mysql
+    container_name: attacca-mysql
     ports:
       - "3306:3306"
     environment:
-      MYSQL_DATABASE: attaca
-      MYSQL_USER: attaca
-      MYSQL_PASSWORD: attaca-local     # 로컬 개발 전용. 운영 자격증명은 env로 별도 주입
+      MYSQL_DATABASE: attacca
+      MYSQL_USER: attacca
+      MYSQL_PASSWORD: attacca-local     # 로컬 개발 전용. 운영 자격증명은 env로 별도 주입
       MYSQL_ROOT_PASSWORD: root-local
     volumes:
       - mysql-data:/var/lib/mysql
@@ -78,9 +78,9 @@ volumes:
 ```yaml
 spring:
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/attaca}
-    username: ${DB_USERNAME:attaca}
-    password: ${DB_PASSWORD:attaca-local}
+    url: ${DB_URL:jdbc:mysql://localhost:3306/attacca}
+    username: ${DB_USERNAME:attacca}
+    password: ${DB_PASSWORD:attacca-local}
   jpa:
     hibernate:
       ddl-auto: ${DDL_AUTO:update}   # 개발 단계 편의. 운영 전환 시 validate+마이그레이션 도구로 재결정
@@ -102,7 +102,7 @@ main `application.yaml`에 MySQL URL이 생기는 순간, 지금까지 "데이�
 ```yaml
 spring:
   datasource:
-    url: jdbc:h2:mem:attaca-test;DB_CLOSE_DELAY=-1
+    url: jdbc:h2:mem:attacca-test;DB_CLOSE_DELAY=-1
     username: sa
     password: ""
   jpa:
@@ -111,7 +111,7 @@ spring:
 ```
 
 - 모든 `@SpringBootTest` 클래스에 `@ActiveProfiles("test")`를 부착한다. (구현 시 grep으로 전수
-  확인. 최소: `AttacaApplicationTests`, `LocalFileServingConfigTest`, MEMBER 컨트롤러 통합 테스트류)
+  확인. 최소: `AttaccaApplicationTests`, `LocalFileServingConfigTest`, MEMBER 컨트롤러 통합 테스트류)
 - 프로파일 파일은 main `application.yaml` 위에 **덮어쓰기로 병합**되므로 jwt/oauth/storage
   기본값은 그대로 유지된다. (test 리소스에 같은 이름 `application.yaml`을 두면 main이 통째로
   가려지므로 금지)

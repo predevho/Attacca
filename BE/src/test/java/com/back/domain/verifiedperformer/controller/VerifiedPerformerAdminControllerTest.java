@@ -46,7 +46,7 @@ class VerifiedPerformerAdminControllerTest {
     @BeforeEach
     void setUp() {
         Member member = memberRepository.save(
-                Member.createLocal("applicant", "pw", "applicant@attaca.com", "신청자"));
+                Member.createLocal("applicant", "pw", "applicant@attacca.com", "신청자"));
         memberId = member.getId();
         adminBearer = "Bearer " + jwtProvider.createAccessToken(9999L, Role.ADMIN);
         userBearer = "Bearer " + jwtProvider.createAccessToken(memberId, Role.USER);

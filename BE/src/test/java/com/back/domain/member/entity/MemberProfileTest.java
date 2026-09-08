@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 class MemberProfileTest {
 
     private Member member() {
-        return Member.createLocal("user1", "encoded-pw", "u1@attaca.com", "유저일");
+        return Member.createLocal("user1", "encoded-pw", "u1@attacca.com", "유저일");
     }
 
     @Test
