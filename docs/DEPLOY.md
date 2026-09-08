@@ -165,17 +165,66 @@ docker compose -f docker-compose.prod.yml logs -f be
 
 ## 2단계 — 도메인 + HTTPS
 
-도메인이 생긴 뒤에 한다. 순서가 중요하다.
+도메인: **attacca.site** (가비아, 2026-09-08 등록). 서버: Elastic IP `3.39.184.71`(`attacca-eip`).
 
-1. A 레코드를 Elastic IP로 연결하고 전파를 확인(`dig <도메인>`)
-2. EC2 보안 그룹에 **443** 추가
-3. `docker-compose.prod.yml`의 nginx 블록에서 주석 처리된 2단계 항목으로 교체
-   (`nginx.https.conf` 마운트, certbot 볼륨, `SERVER_NAME`, 443 포트)
-4. certbot으로 인증서 발급
-5. `.env.prod` 수정 — `PUBLIC_ORIGIN`을 `https://`로, `NEXT_PUBLIC_BE_WS_URL`을 `wss://`로,
-   `SERVER_NAME` 추가
-6. **FE 이미지를 다시 빌드한다**(`--build`). `NEXT_PUBLIC_*`은 런타임 env로 안 바뀐다
-7. 카카오 콘솔 Redirect URI를 https 주소로 등록·수정
+**왜 급한가** — 지금 HTTP에서는 **로그인이 아예 안 된다.** `NODE_ENV=production`이라
+쿠키에 `Secure`가 붙는데 HTTP에서는 브라우저가 그 쿠키를 저장하지 않는다.
+즉 HTTPS는 "있으면 좋은 것"이 아니라 서비스 동작 조건이다.
+
+순서가 중요하다. **인증서를 받기 전에 nginx를 HTTPS 설정으로 바꾸면 안 된다** —
+`ssl_certificate` 파일이 없어 nginx가 기동에 실패하고 사이트 전체가 죽는다.
+
+### 1. DNS (가비아)
+
+My가비아 → 서비스 관리 → 도메인 → DNS 관리툴 → DNS 설정 → 레코드 추가
+
+| 타입 | 호스트 | 값/위치 | TTL |
+|---|---|---|---|
+| A | `@` | `3.39.184.71` | 3600 |
+| A | `www` | `3.39.184.71` | 3600 |
+
+`www`도 함께 넣는다. 나중에 추가하려면 인증서를 다시 받아야 하는데
+**진짜 발급은 도메인당 주 5회 제한**이 있다.
+
+확인: `dig +short A attacca.site @ns.gabia.co.kr`
+
+### 2. 보안 그룹에 443 추가
+
+EC2 → 보안 그룹 → 인바운드 규칙 편집 → 유형 `HTTPS`, 소스 `0.0.0.0/0`.
+
+### 3. 인증서 발급
+
+`.env.prod`에 `SERVER_NAME=attacca.site`, `CERTBOT_EMAIL=<메일>`이 있어야 한다.
+
+```bash
+./deploy/issue-cert.sh --staging   # 연습 (횟수 제한 없음)
+./deploy/issue-cert.sh             # 진짜
+```
+
+스크립트가 발급 전에 **DNS가 이 서버를 가리키는지**와 **챌린지 경로가 실제로
+서빙되는지**를 직접 확인한다. 이 확인 없이 certbot을 부르면 실패하면서
+발급 횟수만 깎아먹는다.
+
+### 4. nginx를 HTTPS로 전환
+
+`docker-compose.prod.yml`의 nginx 블록에서 1단계 주석을 2단계로 바꾼다
+(`nginx.https.conf`를 templates로, certbot 볼륨 2개, `SERVER_NAME`, 443 포트).
+푸시하면 자동 배포가 반영한다.
+
+### 5. 주소를 https/wss로 바꾼다
+
+* `.env.prod`: `PUBLIC_ORIGIN=https://attacca.site`
+* **저장소 Variables의 `NEXT_PUBLIC_BE_WS_URL`을 `wss://attacca.site/ws`로**
+  → 이 값은 번들에 박히므로 **FE 이미지를 다시 구워야** 적용된다.
+  변수만 바꾸면 아무 일도 일어나지 않는다. FE에 닿는 커밋을 푸시하거나
+  Actions에서 재실행해 이미지를 새로 만들 것.
+* ⚠️ 순서: https 전환 **후에** wss로 바꾼다. 반대로 하면 HTTP 페이지에서
+  `wss://`를 열려다 채팅이 죽는다.
+
+### 6. 카카오 (지금은 해당 없음)
+
+`KAKAO_CLIENT_ID`가 비어 있어 자체 로그인만 쓴다. 나중에 붙일 때
+Redirect URI를 `https://attacca.site/api/bff/oauth/kakao/callback`로 등록한다.
 
 ---
 
