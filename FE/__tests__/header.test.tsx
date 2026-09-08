@@ -61,18 +61,37 @@ describe('Header', () => {
     expect(screen.queryByRole('link', { name: '어드민' })).not.toBeInTheDocument();
   });
 
-  it('신원 조회에 실패하면 아무것도 렌더하지 않는다', async () => {
+  it('비로그인이면 로그인·회원가입을 보여준다', async () => {
+    // 홈이 공개 랜딩이 되면서 바뀐 동작. 예전에는 아무것도 렌더하지 않아
+    // 공개 홈에 헤더가 사라지고 로그인할 방법이 없었다.
     getBff.mockResolvedValue({ ok: false, message: '인증 필요' });
-    const { container } = render(<Header />);
-    await waitFor(() => expect(getBff).toHaveBeenCalled());
-    expect(container).toBeEmptyDOMElement();
+    render(<Header />);
+    expect(await screen.findByRole('link', { name: '로그인' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '회원가입' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '로그아웃' })).not.toBeInTheDocument();
   });
 
-  it('fetch가 reject해도 죽지 않고 렌더만 건너뛴다', async () => {
+  it('비로그인에게도 내비게이션은 그대로 보여준다', async () => {
+    getBff.mockResolvedValue({ ok: false, message: '인증 필요' });
+    render(<Header />);
+    await screen.findByRole('link', { name: '로그인' });
+    expect(screen.getByRole('link', { name: '홈' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '공연' })).toBeInTheDocument();
+  });
+
+  it('fetch가 reject해도 죽지 않고 비로그인으로 본다', async () => {
     getBff.mockRejectedValue(new Error('network'));
-    const { container } = render(<Header />);
-    await waitFor(() => expect(getBff).toHaveBeenCalled());
-    expect(container).toBeEmptyDOMElement();
+    render(<Header />);
+    expect(await screen.findByRole('link', { name: '로그인' })).toBeInTheDocument();
+  });
+
+  it('신원을 아직 모르는 동안에는 로그인도 로그아웃도 보여주지 않는다', () => {
+    // 상태가 번갈아 번쩍이지 않도록 오른쪽만 비워 둔다.
+    getBff.mockReturnValue(new Promise(() => {}));
+    render(<Header />);
+    expect(screen.queryByRole('link', { name: '로그인' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '로그아웃' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '홈' })).toBeInTheDocument();
   });
 
   it('로그인 화면에서는 렌더하지 않고 신원 조회도 하지 않는다', async () => {

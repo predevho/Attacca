@@ -3,8 +3,16 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { postBff } from '@/lib/api';
+import { safeNext } from '@/lib/home/logic';
 
-export function LoginForm({ initialError }: { initialError: string | null }) {
+export function LoginForm({
+  initialError,
+  next = null,
+}: {
+  initialError: string | null;
+  /** 미들웨어가 넘긴 원래 목적지. 내부 경로가 아니면 무시한다(safeNext). */
+  next?: string | null;
+}) {
   const router = useRouter();
   const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
@@ -17,7 +25,7 @@ export function LoginForm({ initialError }: { initialError: string | null }) {
     setError(null);
     const res = await postBff('/api/bff/login', { loginId, password });
     setPending(false);
-    if (res.ok) router.push('/feed');
+    if (res.ok) router.push(safeNext(next));
     else setError(res.message ?? '로그인에 실패했습니다.');
   }
 

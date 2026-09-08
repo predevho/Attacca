@@ -34,7 +34,20 @@ describe('isActive', () => {
 });
 
 describe('NAV_ITEMS', () => {
-  it('도메인 화면 4개를 담는다', () => {
-    expect(NAV_ITEMS.map((i) => i.href)).toEqual(['/feed', '/performances', '/recruitments', '/chat']);
+  it('홈과 도메인 화면 4개를 담는다', () => {
+    expect(NAV_ITEMS.map((i) => i.href))
+      .toEqual(['/', '/feed', '/performances', '/recruitments', '/chat']);
+  });
+});
+
+describe('홈(/) 활성 판정', () => {
+  it('홈에서만 활성이다', () => {
+    expect(isActive('/', '/')).toBe(true);
+  });
+
+  it('다른 경로가 홈을 활성으로 만들지 않는다', () => {
+    // '/'는 모든 경로의 접두사처럼 보이므로 여기서 새면 항상 홈이 활성이 된다.
+    expect(isActive('/feed', '/')).toBe(false);
+    expect(isActive('/performances/12', '/')).toBe(false);
   });
 });
