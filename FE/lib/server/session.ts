@@ -2,7 +2,7 @@ import 'server-only';
 import { beFetch, type BeResult } from '@/lib/server/beClient';
 import {
   ACCESS_COOKIE, REFRESH_COOKIE,
-  setAccessCookie, clearAuthCookies, type CookieStore,
+  setAuthCookies, clearAuthCookies, type CookieStore,
 } from '@/lib/server/cookies';
 
 const UNAUTHENTICATED: BeResult = { ok: false, status: 401, data: null, message: '로그인이 필요합니다.' };
@@ -33,12 +33,17 @@ export async function authedBeFetch(store: CookieStore, path: string, init?: Req
     method: 'POST',
     body: JSON.stringify({ refreshToken: refresh }),
   });
-  const newAccess = reissued.ok ? (reissued.data as { accessToken?: string })?.accessToken : undefined;
-  if (!reissued.ok || !newAccess) {
+  // BE가 로테이션을 하므로 refresh도 함께 새로 온다. 옛 refresh는 그 즉시 무효라서
+  // 쿠키를 둘 다 갱신해야 한다 — access만 갱신하면 다음 재발급에서 재사용으로 감지돼
+  // 전 기기가 로그아웃된다(DOMAIN-COMMON-STATUTE §4.1).
+  const tokens = reissued.ok
+    ? (reissued.data as { accessToken?: string; refreshToken?: string })
+    : undefined;
+  if (!reissued.ok || !tokens?.accessToken || !tokens?.refreshToken) {
     clearAuthCookies(store);
     return UNAUTHENTICATED;
   }
 
-  setAccessCookie(store, newAccess);
-  return beFetch(path, withBearer(init, newAccess)); // 정확히 1회 재시도
+  setAuthCookies(store, tokens.accessToken, tokens.refreshToken);
+  return beFetch(path, withBearer(init, tokens.accessToken)); // 정확히 1회 재시도
 }

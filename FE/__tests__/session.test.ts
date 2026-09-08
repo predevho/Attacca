@@ -38,17 +38,48 @@ describe('authedBeFetch', () => {
     const store = fakeStore('expired', 'good-refresh');
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(json({ success: false, data: null, error: { resultCode: '401-04', code: 'EXPIRED_TOKEN', message: '만료' } }, 401))
-      .mockResolvedValueOnce(json({ success: true, data: { accessToken: 'new-access' }, error: null }, 200)) // reissue
+      .mockResolvedValueOnce(json({ success: true, data: { accessToken: 'new-access', refreshToken: 'new-refresh' }, error: null }, 200)) // reissue
       .mockResolvedValueOnce(json({ success: true, data: { hi: 2 }, error: null }, 200));                    // retry
     vi.stubGlobal('fetch', fetchMock);
 
     const res = await authedBeFetch(store, '/api/members/me/profile');
 
     expect(res.ok).toBe(true);
-    expect(store.jar[ACCESS_COOKIE]).toBe('new-access');       // 쿠키 갱신
+    expect(store.jar[ACCESS_COOKIE]).toBe('new-access');
     expect(fetchMock).toHaveBeenCalledTimes(3);
     const retryHeader = (fetchMock.mock.calls[2][1] as RequestInit).headers as Record<string, string>;
     expect(retryHeader.Authorization).toBe('Bearer new-access');
+  });
+
+  it('reissue로 받은 refresh도 쿠키에 갱신한다', async () => {
+    // BE가 로테이션을 하므로 옛 refresh는 즉시 무효다. 여기서 안 갱신하면
+    // 다음 재발급에서 재사용으로 감지돼 전 기기가 로그아웃된다.
+    const store = fakeStore('expired', 'old-refresh');
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(json({ success: false, data: null, error: { resultCode: '401-04', code: 'EXPIRED_TOKEN', message: '만료' } }, 401))
+      .mockResolvedValueOnce(json({ success: true, data: { accessToken: 'new-access', refreshToken: 'new-refresh' }, error: null }, 200))
+      .mockResolvedValueOnce(json({ success: true, data: { hi: 2 }, error: null }, 200));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await authedBeFetch(store, '/api/members/me/profile');
+
+    expect(store.jar[REFRESH_COOKIE]).toBe('new-refresh');
+  });
+
+  it('reissue 응답에 refresh가 없으면 실패로 보고 쿠키를 지운다', async () => {
+    // 옛 계약(access만)을 돌려주는 서버와 붙으면, 옛 refresh를 그대로 두는 것보다
+    // 재로그인시키는 편이 안전하다 — 그 refresh는 이미 무효일 수 있다.
+    const store = fakeStore('expired', 'old-refresh');
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(json({ success: false, data: null, error: { resultCode: '401-04', code: 'EXPIRED_TOKEN', message: '만료' } }, 401))
+      .mockResolvedValueOnce(json({ success: true, data: { accessToken: 'new-access' }, error: null }, 200));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const res = await authedBeFetch(store, '/api/members/me/profile');
+
+    expect(res.status).toBe(401);
+    expect(store.jar[ACCESS_COOKIE]).toBeUndefined();
+    expect(store.jar[REFRESH_COOKIE]).toBeUndefined();
   });
 
   it('reissue도 실패하면 쿠키를 지우고 401을 반환한다', async () => {
