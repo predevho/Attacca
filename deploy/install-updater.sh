@@ -53,8 +53,42 @@ AccuracySec=15s
 WantedBy=timers.target
 EOF
 
+# --- 인증서 갱신 ---
+# 인증서가 아직 없어도 무해하다(certbot renew가 할 일 없이 끝난다).
+# 하루 두 번은 Let's Encrypt 권장값이다 — 만료 30일 전부터 갱신하므로
+# 한 번쯤 실패해도 여유가 있다.
+cat > /etc/systemd/system/attacca-renew.service <<EOF
+[Unit]
+Description=Attacca 인증서 갱신 (Let's Encrypt)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=$RUN_USER
+WorkingDirectory=$REPO_DIR
+# 갱신되면 nginx가 새 인증서를 읽도록 reload한다. 인증서는 디렉터리 마운트라
+# 파일 교체가 컨테이너에도 보인다(설정 파일과 달리 재생성이 필요 없다).
+ExecStart=/bin/bash -c '$REPO_DIR/deploy/dc.sh --profile tools run --rm certbot renew --webroot -w /var/www/certbot --quiet && $REPO_DIR/deploy/dc.sh exec -T nginx nginx -s reload'
+TimeoutStartSec=600
+EOF
+
+cat > /etc/systemd/system/attacca-renew.timer <<'EOF'
+[Unit]
+Description=Attacca 인증서 갱신을 하루 두 번 확인
+
+[Timer]
+OnCalendar=*-*-* 03,15:17:00
+RandomizedDelaySec=3600
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+
 systemctl daemon-reload
 systemctl enable --now attacca-update.timer
+systemctl enable --now attacca-renew.timer
 
 echo "설치 완료."
 systemctl list-timers attacca-update.timer --no-pager || true

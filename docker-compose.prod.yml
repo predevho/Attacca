@@ -88,7 +88,13 @@ services:
       # - "443:443"
     volumes:
       # 1단계: IP + HTTP. 치환할 변수가 없어 conf.d로 바로 마운트한다.
+      #
+      # ⚠️ 파일 하나를 마운트하면 그 inode에 고정된다. git pull이 파일을 갈아끼우면
+      #    컨테이너는 옛 파일을 계속 본다 — 그래서 reload가 아니라 재생성해야
+      #    반영된다(deploy/update.sh가 그렇게 한다).
       - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # Let's Encrypt 발급·갱신용 webroot. 인증서를 받기 전부터 필요하다.
+      - ./deploy/certbot/www:/var/www/certbot:ro
       # 2단계: 아래로 교체(${SERVER_NAME} 치환이 필요해 templates/ 로 간다)
       # - ./deploy/nginx.https.conf:/etc/nginx/templates/default.conf.template:ro
       # - ./deploy/certbot/conf:/etc/letsencrypt:ro
@@ -98,6 +104,16 @@ services:
     depends_on:
       - fe
       - be
+
+  # 인증서 발급·갱신 전용. 평소에는 뜨지 않는다(profiles).
+  #   발급: ./deploy/issue-cert.sh
+  #   갱신: deploy/install-updater.sh 가 설치하는 attacca-renew 타이머
+  certbot:
+    image: certbot/certbot:latest
+    profiles: ["tools"]
+    volumes:
+      - ./deploy/certbot/conf:/etc/letsencrypt
+      - ./deploy/certbot/www:/var/www/certbot
 
 volumes:
   be-uploads:
