@@ -52,7 +52,7 @@ class MemberAuthControllerOAuthTest {
 
         mockMvc.perform(post("/api/auth/oauth/kakao")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json(new OAuthLoginRequest("auth-code", "https://app/cb"))))
+                        .content(json(new OAuthLoginRequest("auth-code", "https://app/cb", true, true))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
@@ -66,7 +66,7 @@ class MemberAuthControllerOAuthTest {
 
         mockMvc.perform(post("/api/auth/oauth/kakao")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json(new OAuthLoginRequest("auth-code", "https://app/cb"))))
+                        .content(json(new OAuthLoginRequest("auth-code", "https://app/cb", true, true))))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.error.resultCode").value("401-08"));
     }

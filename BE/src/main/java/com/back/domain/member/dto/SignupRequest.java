@@ -34,5 +34,12 @@ public record SignupRequest(
         @NotBlank(message = "닉네임을 입력해 주세요.")
         @Pattern(regexp = "^\\s*\\S(.*\\S)?\\s*$", message = "닉네임을 입력해 주세요.")
         @Size(min = 2, max = 20, message = "닉네임은 2자 이상 20자 이하여야 합니다.")
-        String nickname) {
+        String nickname,
+
+        // 동의는 화면이 아니라 기록이다. 이 두 값이 참일 때만 가입되고,
+        // 가입과 같은 트랜잭션에서 이력이 남는다(DOMAIN-MEMBER-STATUTE §3.4).
+        // @AssertTrue 를 쓰지 않는 이유: 메시지가 "입력값이 올바르지 않습니다"로 뭉뚱그려져
+        // 무엇을 해야 하는지 알 수 없다. 서비스에서 CONSENT_REQUIRED(400-04)로 따로 답한다.
+        boolean agreedTerms,
+        boolean agreedPrivacy) {
 }

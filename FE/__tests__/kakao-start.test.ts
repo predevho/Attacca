@@ -46,7 +46,7 @@ describe('GET /api/bff/oauth/kakao/start', () => {
     process.env.KAKAO_CLIENT_ID = 'rest-key';
     const { GET } = await import('@/app/api/bff/oauth/kakao/start/route');
 
-    const res = await GET(new Request('http://localhost:3000/api/bff/oauth/kakao/start'));
+    const res = await GET(new Request('http://localhost:3000/api/bff/oauth/kakao/start?consent=1'));
 
     // 카카오로 나가는 것은 외부 절대 주소가 맞다.
     const u = new URL(locationOf(res));
@@ -59,5 +59,17 @@ describe('GET /api/bff/oauth/kakao/start', () => {
     const savedState = jar['oauth_state'];
     expect(savedState).toBeTruthy();
     expect(u.searchParams.get('state')).toBe(savedState);
+    // 동의 표시도 함께 저장돼 콜백까지 날라간다.
+    expect(jar['oauth_consent']).toBe('1');
+  });
+
+  it('동의 없이 부르면 카카오로 보내지 않는다', () => {
+    // 카카오는 최초 사용 시 곧바로 가입이 된다. 동의 없이 가입되는 경로를 남기지 않는다.
+    process.env.KAKAO_CLIENT_ID = 'rest-key';
+    return import('@/app/api/bff/oauth/kakao/start/route').then(async ({ GET }) => {
+      const res = await GET(new Request('http://localhost:3000/api/bff/oauth/kakao/start'));
+      expect(res.headers.get('location')).toBe('/login?error=consent');
+      expect(jar['oauth_state']).toBeUndefined();
+    });
   });
 });

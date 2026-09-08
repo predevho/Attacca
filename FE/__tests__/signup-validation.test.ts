@@ -7,6 +7,8 @@ const ok: SignupForm = {
   passwordConfirm: 'goodpassword',
   email: 'a@attacca.com',
   nickname: '닉네임',
+  agreedTerms: true,
+  agreedPrivacy: true,
 };
 
 function withField(patch: Partial<SignupForm>) {
@@ -58,6 +60,14 @@ describe('회원가입 입력 검증', () => {
     // 서버가 trim 후 저장하므로 화면도 같은 기준이어야 한다.
     expect(withField({ nickname: '  가나  ' }).nickname).toBeUndefined();
     expect(withField({ nickname: '  가  ' }).nickname).toBeTruthy();
+  });
+
+  it('약관에 동의하지 않으면 거부한다', () => {
+    expect(withField({ agreedTerms: false }).agreedTerms).toBeTruthy();
+  });
+
+  it('개인정보 수집·이용에 동의하지 않으면 거부한다', () => {
+    expect(withField({ agreedPrivacy: false }).agreedPrivacy).toBeTruthy();
   });
 
   it('이메일 형식을 본다', () => {

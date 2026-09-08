@@ -15,6 +15,8 @@ export type SignupForm = {
   passwordConfirm: string;
   email: string;
   nickname: string;
+  agreedTerms: boolean;
+  agreedPrivacy: boolean;
 };
 
 export type SignupErrors = Partial<Record<keyof SignupForm, string>>;
@@ -46,6 +48,10 @@ export function validateSignup(form: SignupForm): SignupErrors {
   const nickname = form.nickname.trim();
   if (!nickname) e.nickname = '닉네임을 입력해 주세요.';
   else if (nickname.length < 2 || nickname.length > 20) e.nickname = '2자 이상 20자 이하로 입력해 주세요.';
+
+  // 둘 다 필수다. 선택 동의는 두지 않는다 — 보내는 것이 없으므로 받을 이유가 없다.
+  if (!form.agreedTerms) e.agreedTerms = '이용약관에 동의해 주세요.';
+  if (!form.agreedPrivacy) e.agreedPrivacy = '개인정보 수집·이용에 동의해 주세요.';
 
   return e;
 }

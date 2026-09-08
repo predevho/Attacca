@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
@@ -14,10 +15,22 @@ describe('LoginForm', () => {
     expect(screen.getByRole('button', { name: '로그인' })).toBeInTheDocument();
   });
 
-  it('카카오 로그인 링크가 start 라우트를 가리킨다', () => {
+  it('동의 전에는 카카오 로그인이 눌리지 않는다', () => {
+    // 카카오는 최초 사용 시 곧바로 가입이 된다. 동의 없이 가입되는 경로를 남기지 않는다.
     render(<LoginForm initialError={null} />);
+    const kakao = screen.getByText('카카오 로그인');
+    expect(kakao).not.toHaveAttribute('href');
+    expect(kakao).toHaveAttribute('aria-disabled', 'true');
+  });
+
+  it('동의하면 카카오 로그인 링크가 start 라우트를 가리킨다', async () => {
+    const user = userEvent.setup();
+    render(<LoginForm initialError={null} />);
+
+    await user.click(screen.getByRole('checkbox'));
+
     const kakao = screen.getByRole('link', { name: '카카오 로그인' });
-    expect(kakao).toHaveAttribute('href', '/api/bff/oauth/kakao/start');
+    expect(kakao).toHaveAttribute('href', '/api/bff/oauth/kakao/start?consent=1');
   });
 
   it('initialError를 화면에 표시한다', () => {

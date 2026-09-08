@@ -27,25 +27,29 @@ public class MemberOAuthService {
     private final SocialAccountRepository socialAccountRepository;
     private final TokenIssuer tokenIssuer;
     private final List<OAuthClient> oauthClients;
+    private final MemberConsentService consentService;
 
     public MemberOAuthService(MemberRepository memberRepository,
                               SocialAccountRepository socialAccountRepository,
                               TokenIssuer tokenIssuer,
-                              List<OAuthClient> oauthClients) {
+                              List<OAuthClient> oauthClients,
+                              MemberConsentService consentService) {
         this.memberRepository = memberRepository;
         this.socialAccountRepository = socialAccountRepository;
         this.tokenIssuer = tokenIssuer;
         this.oauthClients = oauthClients;
+        this.consentService = consentService;
     }
 
     @Transactional
-    public TokenPairResponse oauthLogin(OAuthProvider provider, String code, String redirectUri) {
+    public TokenPairResponse oauthLogin(OAuthProvider provider, String code, String redirectUri,
+            boolean agreedTerms, boolean agreedPrivacy) {
         OAuthUserInfo info = resolveClient(provider).fetch(code, redirectUri);
 
         Member member = socialAccountRepository
                 .findByProviderAndProviderUserId(provider, info.providerUserId())
                 .map(SocialAccount::getMember)
-                .orElseGet(() -> linkOrCreate(provider, info));
+                .orElseGet(() -> linkOrCreate(provider, info, agreedTerms, agreedPrivacy));
 
         TokenIssuer.IssuedTokens tokens = tokenIssuer.issue(member.getId(), member.getRole());
         return new TokenPairResponse(tokens.accessToken(), tokens.refreshToken());
@@ -59,14 +63,22 @@ public class MemberOAuthService {
     }
 
     /** SocialAccount 미존재 시: 검증된 이메일로 기존 회원 연결, 없으면 신규 소셜 회원 생성. */
-    private Member linkOrCreate(OAuthProvider provider, OAuthUserInfo info) {
+    private Member linkOrCreate(OAuthProvider provider, OAuthUserInfo info,
+            boolean agreedTerms, boolean agreedPrivacy) {
         if (!info.emailVerified() || info.email() == null || info.email().isBlank()) {
             throw new BusinessException(ErrorCode.OAUTH_EMAIL_UNVERIFIED);
         }
 
+        // 이미 있는 회원에 소셜 계정을 붙이는 것은 '가입'이 아니므로 동의를 다시 묻지 않는다.
+        // 새로 만드는 경우에만 요구한다(DOMAIN-MEMBER-STATUTE §3.4).
         Member member = memberRepository.findByEmail(info.email())
-                .orElseGet(() -> memberRepository.save(
-                        Member.createSocial(info.email(), uniqueNickname(info.nickname()))));
+                .orElseGet(() -> {
+                    consentService.requireAgreed(agreedTerms, agreedPrivacy);
+                    Member created = memberRepository.save(
+                            Member.createSocial(info.email(), uniqueNickname(info.nickname())));
+                    consentService.recordRequired(created.getId());
+                    return created;
+                });
 
         socialAccountRepository.save(SocialAccount.create(member, provider, info.providerUserId()));
         return member;

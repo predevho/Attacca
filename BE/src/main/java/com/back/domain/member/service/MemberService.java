@@ -24,9 +24,13 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenIssuer tokenIssuer;
+    private final MemberConsentService consentService;
 
     @Transactional
     public SignupResponse signup(SignupRequest request) {
+        // 중복 검사보다 먼저 본다. 동의하지 않았다면 아이디가 비었는지 따질 이유가 없다.
+        consentService.requireAgreed(request.agreedTerms(), request.agreedPrivacy());
+
         if (memberRepository.existsByLoginId(request.loginId())) {
             throw new BusinessException(ErrorCode.LOGIN_ID_ALREADY_EXISTS);
         }
@@ -43,6 +47,7 @@ public class MemberService {
         String encodedPassword = passwordEncoder.encode(request.password());
         Member member = memberRepository.save(
                 Member.createLocal(request.loginId(), encodedPassword, request.email(), nickname));
+        consentService.recordRequired(member.getId());
         return SignupResponse.from(member);
     }
 

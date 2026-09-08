@@ -44,8 +44,10 @@ class MemberAuthValidationTest {
 
     private String signupJson(String loginId, String password, String email, String nickname)
             throws Exception {
-        return objectMapper.writeValueAsString(
-                Map.of("loginId", loginId, "password", password, "email", email, "nickname", nickname));
+        // 동의는 이 테스트의 관심사가 아니다(§3.4 전용 테스트가 따로 있다). 항상 참으로 둔다.
+        return objectMapper.writeValueAsString(Map.of(
+                "loginId", loginId, "password", password, "email", email, "nickname", nickname,
+                "agreedTerms", true, "agreedPrivacy", true));
     }
 
     private void expectRejected(String loginId, String password, String email, String nickname)
