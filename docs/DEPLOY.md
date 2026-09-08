@@ -55,10 +55,18 @@ IAM 사용자 권한은 1인 프로젝트 기준 `AdministratorAccess` + MFA가 
 | 초기 데이터베이스 이름 | `attaca` | 안 넣으면 DB가 안 만들어져 접속이 실패한다 |
 | 자격 증명 | 사용자명·비밀번호 기록해 둘 것 | `.env.prod`에 쓴다 |
 
-생성 후 **파라미터 그룹**에서 `character_set_server=utf8mb4`,
-`collation_server=utf8mb4_unicode_ci`로 바꾼다(기본값이면 한글이 깨질 수 있다).
+**파라미터 그룹은 손대지 않아도 된다.** MySQL 8.0은 기본 문자셋이 이미 `utf8mb4`이고,
+베이스라인 SQL이 테이블마다 `CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`를 명시하므로
+서버 기본값과 무관하게 한글이 안전하다. (서버 기본 collation이 `utf8mb4_0900_ai_ci`라
+로컬과 다르지만, 테이블 레벨 지정이 이기므로 실제 정렬도 동일하다.)
+
+**리전을 확인한다.** 서울(`ap-northeast-2`)로 만들고 **EC2도 같은 리전·같은 VPC**에 만든다.
+리전이 다르면 보안 그룹으로 연결할 수 없다 — 흔한 실수다.
 
 **테이블은 만들지 않는다.** 첫 기동 때 Flyway가 만든다.
+
+생성 후 **엔드포인트**를 복사해 둔다(`.env.prod`의 `DB_URL`에 들어간다).
+생성에는 5~15분 걸린다.
 
 ### 1-2. EC2
 
