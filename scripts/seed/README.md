@@ -6,18 +6,49 @@ SQL로 밀어 넣으면 규칙을 어긴 데이터가 들어가도 모른 채 �
 
 여러 번 돌려도 안전하다. 이미 있는 것은 건너뛴다.
 
+**어드민 계정을 쓰지 않는다.** 시드를 돌리자고 권한이 큰 계정을 새로 만들지 않는다.
+그래서 어드민이 필요한 두 가지는 스크립트 밖에 있다.
+
+| | 어떻게 |
+|---|---|
+| 연주자 계정·프로필·사진 | 스크립트 (일반 USER로 가입) |
+| **인증 연주자 부여** | 어드민이 화면에서, 또는 아래 SQL |
+| 공연 4건 | 스크립트 (인증된 뒤) |
+| **공지 3건** | 어드민이 화면에서 (문안은 `data.json`) |
+
 ---
 
-## 먼저: 어드민 만들기
+## 실행
 
-**코드에 `Role.ADMIN`을 부여하는 경로가 없다.** 회원가입은 전부 USER이고 승격
-API도 없다. 그래서 첫 어드민은 DB에서 직접 만들어야 한다. 공지 등록과 인증 연주자
-승인이 모두 어드민 전용이므로, 이걸 하지 않으면 서비스에 공지를 올릴 수 없다.
-(구조적인 해결은 `docs/TODO-BACKLOG.md`의 "어드민 부트스트랩" 항목.)
+```bash
+PERFORMER_PW=<연주자 계정에 쓸 비밀번호> \
+PERFORMER_CONSENTED=1 \
+node scripts/seed/seed.mjs
+```
 
-1. 사이트에서 **직접 회원가입**한다: <https://attacca.site/signup>
-   — 비밀번호는 본인만 알아야 하므로 대신 만들어 주지 않는다.
-2. EC2에서 그 계정을 ADMIN으로 올린다.
+* `--base http://localhost:8080` 으로 대상 변경 (기본 `https://attacca.site`)
+* `--dry` 로 쓰기 없이 확인만
+
+### `PERFORMER_CONSENTED` 는 왜 있나
+
+가입에는 약관·개인정보 동의가 필수다(DOMAIN-MEMBER-STATUTE §3.4). 스크립트가
+체크를 대신 넣으면 **본인이 하지 않은 동의가 기록으로 남는다.** 동의 기록의 존재
+이유가 "이 사람이 동의했다"고 말할 수 있게 하는 것인데, 그걸 스크립트가 지어내면
+기능 자체가 무의미해진다.
+
+그래서 **실제 당사자에게 확인받았을 때만** 이 값을 넘긴다. 확인을 못 받았다면
+본인이 직접 가입하게 하는 편이 맞다.
+
+---
+
+## 인증 연주자 부여
+
+스크립트는 확인만 하고 멈춘다. 둘 중 하나로 부여한 뒤 다시 돌리면 이어서 진행한다.
+
+**화면에서 (권장)** — 어드민으로 로그인해 인증 연주자 관리에서 직접 부여.
+
+**SQL로** — 어드민 API가 만드는 것과 같은 행을 넣는다.
+`verification_application` 에 `APPROVED` 행이 있으면 인증된 것으로 본다.
 
 ```bash
 ssh attacca
@@ -25,44 +56,32 @@ cd ~/attacca && set -a && . ./.env.prod && set +a
 H=$(echo "$DB_URL" | sed -E 's#jdbc:mysql://([^:/]+).*#\1#')
 D=$(echo "$DB_URL" | sed -E 's#.*/([^?]+).*#\1#')
 docker run --rm -e MYSQL_PWD="$DB_PASSWORD" mysql:8.4 \
-  mysql -h "$H" -u "$DB_USERNAME" "$D" \
-  -e "UPDATE member SET role='ADMIN' WHERE login_id='<가입한 loginId>';
-      SELECT id, login_id, role FROM member;"
+  mysql -h "$H" -u "$DB_USERNAME" "$D" -e "
+    INSERT INTO verification_application
+      (created_at, updated_at, member_id, statement, status, decision_reason, decided_by, decided_at)
+    SELECT NOW(6), NOW(6), m.id, NULL, 'APPROVED', '<부여 사유>', a.id, NOW(6)
+    FROM member m, member a
+    WHERE m.login_id='<연주자 loginId>' AND a.login_id='<어드민 loginId>';"
 ```
 
-3. **다시 로그인해야 반영된다.** access 토큰(30분)에 role이 박혀 있어서,
-   기존 토큰으로는 계속 USER로 취급된다. refresh로 재발급해도 되는데,
-   재발급은 role을 DB에서 다시 읽으므로 그쪽이 더 빠르다
-   (`docs/DOMAIN-COMMON-STATUTE.md` §4.1).
-
----
-
-## 실행
-
-```bash
-ADMIN_ID=<어드민 loginId> ADMIN_PW=<비밀번호> \
-PERFORMER_PW=<인증연주자 계정에 쓸 비밀번호> \
-node scripts/seed/seed.mjs
-```
-
-* `--base http://localhost:8080` 으로 대상 변경 (기본 `https://attacca.site`)
-* `--dry` 로 쓰기 없이 확인만
+`decided_by` 에 어드민의 회원 id를 넣는 것은 "누가 승인했는가"가 이 열의 의미이기
+때문이다. 어드민이 실제로 결정한 것이 아니라면 넣지 말고 화면에서 직접 할 것.
 
 ---
 
 ## 무엇이 들어가는가
 
-`data.json`에 있다. 실제 공연 자료(`resource/`)에서 옮겼고, **지난 공연은
+`data.json` 에 있다. 실제 공연 자료(`resource/`)에서 옮겼고, **지난 공연은
 실제 날짜 그대로** 넣는다.
 
-* 인증 연주자 1명 — 프로필·악기·소개·프로필 사진
+* 연주자 1명 — 프로필·악기·소개·프로필 사진
 * 공연 4건 — 정음피아노앙상블 제4회 정기연주회 / 모차르트의 밤 /
   TWO PIANO OPERA / 제40회 영아티스트 콘서트
-* 공지 3건
+* 공지 3건 문안 (스크립트는 넣지 않는다)
 
 ### 일부러 넣지 않은 것
 
-`resource/`에 있지만 **의도적으로 제외한 이미지**가 있다.
+`resource/` 에 있지만 **의도적으로 제외한 이미지**가 있다.
 
 * **제40회 영아티스트 콘서트 포스터** — 미성년자 13명 이상의 얼굴 사진이 있고,
   주최도 다른 단체(음악교육신문)다. 공연 정보(제목·일시·장소)와 본인 연주 곡목만 넣는다.
@@ -78,4 +97,5 @@ node scripts/seed/seed.mjs
 ## 지우려면
 
 시드는 API로 넣으므로 화면에서 지우거나, 급하면 DB에서 지운다.
-`deleted_at`을 쓰는 소프트 삭제라 목록에서만 사라진다.
+`deleted_at` 을 쓰는 소프트 삭제라 목록에서만 사라진다.
+연주자 계정 자체는 프로필에서 탈퇴하면 된다.
