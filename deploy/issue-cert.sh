@@ -26,7 +26,12 @@ set -a; . ./.env.prod; set +a
 : "${SERVER_NAME:?.env.prod 에 SERVER_NAME=<도메인> 이 필요하다}"
 : "${CERTBOT_EMAIL:?.env.prod 에 CERTBOT_EMAIL=<만료 알림 받을 메일> 이 필요하다}"
 
-mkdir -p deploy/certbot/www deploy/certbot/conf
+# 도커가 마운트 대상 디렉터리를 먼저 만들면 root 소유가 되어 여기서 막힌다.
+# 그럴 때만 sudo로 만들고 소유권을 돌려받는다.
+if ! mkdir -p deploy/certbot/www deploy/certbot/conf 2>/dev/null; then
+  sudo mkdir -p deploy/certbot/www deploy/certbot/conf
+  sudo chown -R "$(id -u):$(id -g)" deploy/certbot
+fi
 
 echo "도메인: $SERVER_NAME"
 
@@ -42,26 +47,40 @@ if [ "$here" != "$resolved" ]; then
   exit 1
 fi
 
+# www 도 같은 서버를 가리키면 함께 받는다. 나중에 추가하려면 재발급인데
+# 진짜 발급은 도메인당 주 5회 제한이라 처음에 한 번에 받는 편이 낫다.
+DOMAINS=("$SERVER_NAME")
+www_resolved=$(getent hosts "www.$SERVER_NAME" | awk '{print $1}' | head -1)
+if [ "$www_resolved" = "$here" ]; then
+  DOMAINS+=("www.$SERVER_NAME")
+  echo "  www.$SERVER_NAME 도 이 서버를 가리킨다 — 함께 발급한다"
+else
+  echo "  www.$SERVER_NAME 는 건너뛴다(가리키는 곳: ${www_resolved:-없음})"
+fi
+
 # --- 2. 챌린지 경로가 실제로 서빙되는지 ---------------------------------------
 # certbot을 부르기 전에 우리가 직접 파일을 놓고 밖에서 받아 본다.
 token="attacca-precheck-$$"
-echo ok > "deploy/certbot/www/$token"
 mkdir -p deploy/certbot/www/.well-known/acme-challenge
-mv "deploy/certbot/www/$token" "deploy/certbot/www/.well-known/acme-challenge/$token"
-if ! curl -fsS --max-time 10 "http://$SERVER_NAME/.well-known/acme-challenge/$token" | grep -q ok; then
-  echo "오류: http://$SERVER_NAME/.well-known/acme-challenge/ 가 서빙되지 않는다." >&2
-  echo "  nginx에 해당 location이 있고 webroot가 마운트됐는지 확인할 것." >&2
-  rm -f "deploy/certbot/www/.well-known/acme-challenge/$token"
-  exit 1
-fi
+echo ok > "deploy/certbot/www/.well-known/acme-challenge/$token"
+for d in "${DOMAINS[@]}"; do
+  if ! curl -fsS --max-time 10 "http://$d/.well-known/acme-challenge/$token" | grep -q ok; then
+    echo "오류: http://$d/.well-known/acme-challenge/ 가 서빙되지 않는다." >&2
+    echo "  nginx에 해당 location이 있고 webroot가 마운트됐는지 확인할 것." >&2
+    rm -f "deploy/certbot/www/.well-known/acme-challenge/$token"
+    exit 1
+  fi
+  echo "  $d 챌린지 경로 확인"
+done
 rm -f "deploy/certbot/www/.well-known/acme-challenge/$token"
-echo "  챌린지 경로 확인 완료"
 
 # --- 3. 발급 -----------------------------------------------------------------
 [ -n "$STAGING" ] && echo "  (스테이징 — 브라우저가 신뢰하지 않는 연습용 인증서다)"
+d_args=()
+for d in "${DOMAINS[@]}"; do d_args+=(-d "$d"); done
 ./deploy/dc.sh --profile tools run --rm certbot certonly \
   --webroot -w /var/www/certbot \
-  -d "$SERVER_NAME" \
+  "${d_args[@]}" \
   --email "$CERTBOT_EMAIL" \
   --agree-tos --no-eff-email --non-interactive \
   $STAGING
