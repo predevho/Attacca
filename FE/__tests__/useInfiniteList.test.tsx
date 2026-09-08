@@ -39,12 +39,8 @@ describe('useInfiniteList', () => {
     // 건너뛴다. 이 시점에 이미 최신이어야 한다.
     await act(async () => { (globalThis as unknown as { __io: { trigger: () => void } }).__io.trigger(); });
 
-    // 타임아웃을 넉넉히 준다. 이 테스트는 2026-09-08 CI에서 한 번 깨졌는데
-    // 파일 전체가 1124ms였고 기본 타임아웃이 1000ms였다. 러너(2 vCPU)에서
-    // 71개 파일을 병렬로 돌리다 워커가 굶은 것과 구분이 되지 않았다.
-    // 로컬에서는 재현되지 않았다.
-    expect(await screen.findByText('item-2', {}, { timeout: 5000 })).toBeInTheDocument();
+    expect(await screen.findByText('item-2')).toBeInTheDocument();
     expect(fetchPage).toHaveBeenLastCalledWith(3);
-    await waitFor(() => expect(screen.getByText('hasMore:false')).toBeInTheDocument(), { timeout: 5000 });
+    await waitFor(() => expect(screen.getByText('hasMore:false')).toBeInTheDocument());
   });
 });

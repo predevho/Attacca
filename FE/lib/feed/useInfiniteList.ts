@@ -19,20 +19,30 @@ export function useInfiniteList<T extends { id: number }>(
   const [error, setError] = useState<string | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  // 최신 값을 옵저버 콜백에서 읽기 위한 ref(재구독 없이).
-  const stateRef = useRef({ isLoading, nextCursor, loaded });
-  useEffect(() => {
-    stateRef.current = { isLoading, nextCursor, loaded };
-  });
+  // 옵저버 콜백이 읽을 최신 값(재구독 없이).
+  //
+  // ⚠️ 이 갱신을 `useEffect`에 두면 안 된다. IntersectionObserver 콜백은 브라우저
+  // 이벤트라 커밋과 패시브 이펙트 flush 사이에 끼어들 수 있고, 그때 콜백은
+  // `loaded:false / nextCursor:null`인 낡은 값을 읽어 다음 페이지 로드를 건너뛴다.
+  // 한 번 건너뛰면 다시 트리거될 일이 없어 **목록이 그대로 멈춘다.**
+  // 2026-09-08 CI에서 5초를 기다려도 두 번째 로드가 오지 않는 것으로 확인했다.
+  //
+  // 그래서 렌더나 이펙트 타이밍에 기대지 않고, 상태를 바꾸는 바로 그 자리에서
+  // 함께 갱신한다. (렌더 중 ref 쓰기는 eslint `react-hooks/refs`가 막는다.)
+  const stateRef = useRef({ isLoading: false, nextCursor: null as number | null, loaded: false });
 
   const load = useCallback(async (cursor: number | null, isFirst: boolean) => {
+    stateRef.current.isLoading = true;
     setIsLoading(true);
     const page = await fetchPage(cursor);
+    stateRef.current.isLoading = false;
     setIsLoading(false);
     if (!page) { setError('목록을 불러오지 못했습니다.'); return; }
     setError(null);
+    stateRef.current.nextCursor = page.nextCursor;
     setNextCursor(page.nextCursor);
     setItems((prev) => (isFirst ? page.items : mergeCursorPage({ items: prev, nextCursor: cursor }, page).items));
+    stateRef.current.loaded = true;
     setLoaded(true);
   }, [fetchPage]);
 
