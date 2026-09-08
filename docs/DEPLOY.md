@@ -381,6 +381,16 @@ sudo systemctl disable --now attacca-update.timer   # 자동 배포 중단
   * **업로드 파일**(`be-uploads` 볼륨) — **정리 장치가 없다.** 29GB 디스크에
     무한히 쌓이며, 지우는 기능도 용량 제한도 없다. 지금은 0건이라 문제가 아니지만
     실사용이 붙으면 S3 전환이나 정리 정책이 필요하다(S3는 현재 기동 불가 — 백로그).
+* **업로드 디렉터리 권한** — BE는 uid 10001로 돈다. `be-uploads` 볼륨이 root 소유면
+  앱이 한 글자도 못 쓰고 업로드가 통째로 실패한다(500 `FILE_UPLOAD_FAILED`).
+  2026-09-09까지 운영이 이 상태였다 — 아무도 올린 적이 없어 가려져 있었다.
+  이미지에서는 고쳤지만(`BE/Dockerfile`), **이미 만들어진 볼륨은 한 번 손으로 고쳐야 한다.**
+
+  ```bash
+  docker run --rm -v attacca_be-uploads:/u alpine chown -R 10001:10001 /u
+  ```
+
+  확인: `docker exec <be> sh -c 'touch /app/uploads/.probe && echo ok'`
 * **롤백할 때는 타이머를 멈춰라.** `IMAGE_TAG=<sha>`로 되돌린 컨테이너 자체는
   타이머가 건드리지 않지만(그 태그는 움직이지 않는다), **다음 푸시가 오면
   그대로 굴러간다.** 원인을 잡을 때까지는 `sudo systemctl stop attacca-update.timer`.
