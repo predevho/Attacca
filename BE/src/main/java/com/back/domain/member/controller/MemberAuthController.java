@@ -1,6 +1,7 @@
 package com.back.domain.member.controller;
 
 import com.back.domain.member.dto.LoginRequest;
+import jakarta.validation.Valid;
 import com.back.domain.member.dto.OAuthLoginRequest;
 import com.back.domain.member.dto.SignupRequest;
 import com.back.domain.member.dto.SignupResponse;
@@ -28,17 +29,17 @@ public class MemberAuthController {
     private final MemberOAuthService memberOAuthService;
 
     @PostMapping("/signup")
-    public ApiResponse<SignupResponse> signup(@RequestBody SignupRequest request) {
+    public ApiResponse<SignupResponse> signup(@Valid @RequestBody SignupRequest request) {
         return ApiResponse.success(memberService.signup(request));
     }
 
     @PostMapping("/login")
-    public ApiResponse<TokenPairResponse> login(@RequestBody LoginRequest request) {
+    public ApiResponse<TokenPairResponse> login(@Valid @RequestBody LoginRequest request) {
         return ApiResponse.success(memberService.login(request));
     }
 
     @PostMapping("/oauth/kakao")
-    public ApiResponse<TokenPairResponse> kakaoLogin(@RequestBody OAuthLoginRequest request) {
+    public ApiResponse<TokenPairResponse> kakaoLogin(@Valid @RequestBody OAuthLoginRequest request) {
         return ApiResponse.success(
                 memberOAuthService.oauthLogin(OAuthProvider.KAKAO, request.code(), request.redirectUri()));
     }

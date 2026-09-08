@@ -47,10 +47,10 @@ class MemberAuthControllerTest {
     @Test
     void signup_duplicateLoginId_returns409() throws Exception {
         mockMvc.perform(post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON)
-                        .content(json(new SignupRequest("dup", "raw-password", "a@attacca.com", "닉A"))))
+                        .content(json(new SignupRequest("dupuser", "raw-password", "a@attacca.com", "닉A"))))
                 .andExpect(status().isOk());
         mockMvc.perform(post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON)
-                        .content(json(new SignupRequest("dup", "raw-password", "b@attacca.com", "닉B"))))
+                        .content(json(new SignupRequest("dupuser", "raw-password", "b@attacca.com", "닉B"))))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error.resultCode").value("409-03"));
     }

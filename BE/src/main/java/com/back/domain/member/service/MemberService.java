@@ -33,13 +33,16 @@ public class MemberService {
         if (memberRepository.existsByEmail(request.email())) {
             throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
-        if (memberRepository.existsByNickname(request.nickname())) {
+        // MySQL 기본 collation은 후행 공백을 무시한다. 다듬지 않고 저장하면
+        // "홍길동"과 "홍길동 "이 같은 값으로 비교돼 유니크 제약이 의도와 다르게 걸린다.
+        String nickname = request.nickname().trim();
+        if (memberRepository.existsByNickname(nickname)) {
             throw new BusinessException(ErrorCode.NICKNAME_ALREADY_EXISTS);
         }
 
         String encodedPassword = passwordEncoder.encode(request.password());
         Member member = memberRepository.save(
-                Member.createLocal(request.loginId(), encodedPassword, request.email(), request.nickname()));
+                Member.createLocal(request.loginId(), encodedPassword, request.email(), nickname));
         return SignupResponse.from(member);
     }
 
