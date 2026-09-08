@@ -127,3 +127,14 @@ jobs:
             NEXT_PUBLIC_BE_WS_URL=${{ vars.NEXT_PUBLIC_BE_WS_URL }}
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,scope=${{ matrix.name }},mode=max
+
+      # 커밋마다 :<sha> 태그가 생기는데 지우는 장치가 없으면 무한히 쌓인다.
+      # 최근 10개만 남긴다 — 되짚거나 롤백할 만한 범위는 그 정도면 충분하고,
+      # :latest 는 항상 최신이라 삭제 대상에 들지 않는다.
+      - uses: actions/delete-package-versions@v5
+        continue-on-error: true   # 정리에 실패했다고 배포를 막지는 않는다
+        with:
+          package-name: attacca-${{ matrix.name }}
+          package-type: container
+          min-versions-to-keep: 10
+          delete-only-untagged-versions: false

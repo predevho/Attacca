@@ -114,6 +114,14 @@ main() {
   # 29GB 디스크가 찬다.
   docker image prune -f >/dev/null
 
+  # 위 prune은 **태그 없는** 이미지만 지운다. 롤백할 때 받아 둔 `:<sha>` 이미지는
+  # 태그가 있어 남으므로, 롤백을 할 때마다 274MB짜리가 하나씩 영구히 쌓인다.
+  # 쓰이지 않는 attacca 이미지 중 :latest 가 아닌 것을 정리한다.
+  # 사용 중이면 docker가 거부하므로(롤백해 둔 상태) 그대로 남는다 — 그게 맞다.
+  docker images --format '{{.Repository}}:{{.Tag}}' \
+    | grep -E '^ghcr\.io/.*/attacca-(be|fe):' | grep -v ':latest$' \
+    | while read -r img; do docker rmi "$img" >/dev/null 2>&1 || true; done
+
   echo "반영 완료: $(docker inspect --format '{{.Config.Image}}' "$be_cid")"
 }
 
