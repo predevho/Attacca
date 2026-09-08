@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# 새 이미지가 올라왔으면 받아서 컨테이너를 교체한다. systemd 타이머가 2분마다 부른다.
+# 새 이미지나 새 설정이 올라왔으면 받아서 반영한다. systemd 타이머가 2분마다 부른다.
 #
 #   설치:  sudo ./deploy/install-updater.sh
 #   로그:  journalctl -u attacca-update -n 50
@@ -10,24 +10,98 @@
 # 열거나(22번 전체 개방) AWS SSM/OIDC를 붙여야 한다. 서버가 스스로 확인하면
 # 인바운드 포트를 하나도 열지 않고, GitHub에 서버 자격증명을 두지 않아도 된다.
 # 대가는 최대 2분의 배포 지연이다.
+#
+# ⚠️ 전체를 main()으로 감싼 이유: 이 스크립트는 git pull로 자기 자신을 갱신한다.
+#    bash는 스크립트를 조금씩 읽어 가며 실행하므로, 실행 도중 파일이 바뀌면
+#    엉뚱한 위치를 읽어 깨진다. 함수로 감싸면 호출 전에 전부 파싱된다.
+#    (새 내용은 이번 실행이 아니라 다음 주기부터 적용된다.)
 
 set -euo pipefail
-cd "$(dirname "$0")/.."
 
-DC=./deploy/dc.sh
+main() {
+  cd "$(dirname "$0")/.."
+  local DC=./deploy/dc.sh
+  local repo_changed=0 nginx_changed=0
 
-$DC pull --quiet 2>&1 | grep -v '^$' || true
+  # --- 1. 저장소 따라가기 ---------------------------------------------------
+  # compose 파일·nginx 설정·이 스크립트 자신이 저장소에 있다. 안 당겨오면
+  # 인프라 변경만 영영 수동으로 남는다.
+  #
+  # fast-forward만 받는다. 서버에서 급히 손본 게 있으면 조용히 덮지 않고 넘어간다 —
+  # 그걸 날리는 게 제일 나쁘다.
+  if [ -n "$(git status --porcelain)" ]; then
+    echo "경고: 작업 트리가 깨끗하지 않다. git pull을 건너뛴다."
+  else
+    local before_head after_head
+    before_head=$(git rev-parse HEAD)
+    git fetch --quiet origin main || echo "경고: git fetch 실패."
+    if git merge --ff-only --quiet origin/main 2>/dev/null; then
+      after_head=$(git rev-parse HEAD)
+      if [ "$before_head" != "$after_head" ]; then
+        repo_changed=1
+        echo "저장소 갱신: $(git log --oneline -1)"
+        # nginx 설정은 파일 마운트라 compose가 변화를 모른다. 직접 reload해야 한다.
+        git diff --name-only "$before_head" "$after_head" | grep -q '^deploy/nginx' \
+          && nginx_changed=1
+      fi
+    else
+      echo "경고: fast-forward가 안 된다(로컬 커밋?). git pull을 건너뛴다."
+    fi
+  fi
 
-# 배포가 필요한가? "태그가 바뀌었나"가 아니라 **지금 돌고 있는 컨테이너가
-# 제 이미지를 쓰고 있나**를 본다.
+  # --- 2. 이미지 받기 -------------------------------------------------------
+  $DC pull --quiet 2>&1 | grep -v '^$' || true
+
+  # --- 3. 배포가 필요한가 ---------------------------------------------------
+  if [ "$repo_changed" -eq 0 ] && ! needs_deploy "$DC"; then
+    exit 0
+  fi
+
+  echo "반영 시작."
+  # --no-build: 서버에서는 절대 굽지 않는다. GHCR에서 못 받으면 그대로 실패하는 편이
+  # 낫다 — t3.micro에서 조용히 빌드가 시작되면 스왑을 긁으며 서비스까지 느려진다.
+  $DC up -d --no-build
+
+  if [ "$nginx_changed" -eq 1 ]; then
+    echo "nginx 설정이 바뀌었다 — reload."
+    $DC exec -T nginx nginx -t && $DC exec -T nginx nginx -s reload
+  fi
+
+  # --- 4. 실제로 떴는지 -----------------------------------------------------
+  # 컨테이너 이름을 박아 두면 디렉터리명이 바뀔 때 조용히 깨지므로 compose에게 묻는다.
+  local be_cid status=unknown
+  be_cid=$($DC ps -q be)
+  for _ in $(seq 1 40); do
+    status=$(docker inspect --format '{{.State.Health.Status}}' "$be_cid" 2>/dev/null || echo unknown)
+    [ "$status" = "healthy" ] && break
+    sleep 5
+  done
+  if [ "$status" != "healthy" ]; then
+    echo "경고: BE가 healthy가 되지 않았다(status=$status)."
+    echo "  되돌리려면 타이머를 멈추고 직전 sha로 고정할 것:"
+    echo "    sudo systemctl stop attacca-update.timer"
+    echo "    IMAGE_TAG=<직전 커밋 sha> ./deploy/dc.sh up -d --no-build"
+    exit 1
+  fi
+
+  # --- 5. 정리 --------------------------------------------------------------
+  # 교체로 참조를 잃은 옛 이미지를 지운다. 안 지우면 배포마다 한 벌(약 1GB)씩 쌓여
+  # 29GB 디스크가 찬다.
+  docker image prune -f >/dev/null
+
+  echo "반영 완료: $(docker inspect --format '{{.Config.Image}}' "$be_cid")"
+}
+
+# "태그가 바뀌었나"가 아니라 **지금 돌고 있는 컨테이너가 제 이미지를 쓰고 있나**를 본다.
 #
 # 태그 변화만 보면 직전 실행이 중간에 실패했을 때(BE가 healthy가 안 돼 exit 1)
 # 다음 실행에서 태그는 이미 새것이라 아무것도 안 하고 반쯤 적용된 상태로 방치된다.
 #
-# 이 비교는 `IMAGE_TAG=<sha>`로 되돌려 둔 상태도 지켜 준다 — 그 컨테이너는
+# 이 비교는 `IMAGE_TAG=<sha>`로 되돌려 둔 상태를 지켜 준다 — 그 컨테이너는
 # `:<sha>`로 만들어졌고 그 태그는 움직이지 않으므로 드리프트로 잡히지 않는다.
 # (그래도 다음 푸시 때 굴러가는 걸 막으려면 타이머를 멈춰야 한다. docs/DEPLOY.md)
 needs_deploy() {
+  local DC=$1 svc cid running ref wanted
   for svc in $($DC config --services); do
     cid=$($DC ps -q "$svc" 2>/dev/null || true)
     if [ -z "$cid" ]; then
@@ -45,35 +119,4 @@ needs_deploy() {
   return 1
 }
 
-if ! needs_deploy; then
-  exit 0
-fi
-
-echo "새 이미지 감지 — 컨테이너를 교체한다."
-# --no-build: 서버에서는 절대 굽지 않는다. GHCR에서 못 받으면 그대로 실패하는 편이
-# 낫다 — t3.micro에서 조용히 빌드가 시작되면 스왑을 긁으며 서비스까지 느려진다.
-$DC up -d --no-build
-
-# nginx는 업스트림을 요청마다 다시 해석하므로(deploy/nginx.conf의 resolver)
-# 컨테이너가 새 IP를 받아도 재시작이 필요 없다.
-
-# BE가 실제로 떴는지 확인한다. 컨테이너 이름을 박아 두면 디렉터리명이 바뀔 때
-# 조용히 깨지므로 compose에게 물어본다.
-be_cid=$($DC ps -q be)
-status=unknown
-for _ in $(seq 1 40); do
-  status=$(docker inspect --format '{{.State.Health.Status}}' "$be_cid" 2>/dev/null || echo unknown)
-  [ "$status" = "healthy" ] && break
-  sleep 5
-done
-if [ "$status" != "healthy" ]; then
-  echo "경고: BE가 healthy가 되지 않았다(status=$status). 롤백은 수동이다 —"
-  echo "  IMAGE_TAG=<직전 커밋 sha> ./deploy/dc.sh up -d --no-build"
-  exit 1
-fi
-
-# 교체로 참조를 잃은 옛 이미지를 지운다. 안 지우면 배포마다 한 벌(약 1GB)씩 쌓여
-# 29GB 디스크가 찬다.
-docker image prune -f >/dev/null
-
-echo "배포 완료: $(docker inspect --format '{{.Config.Image}}' "$be_cid")"
+main "$@"
