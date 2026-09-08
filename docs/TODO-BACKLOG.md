@@ -87,6 +87,12 @@
 * [ ] FEED/PERFORMANCE: `clamp(size)`·`isAdmin(Authentication)`가 여러 컨트롤러에 중복 — 공용 헬퍼로 추출. (2026-07-17/07-22 리뷰 식별)
 * [ ] FEED: `VerificationApplicationRepository.findApprovedMemberIds`의 JPQL이 enum을 FQN 리터럴로 사용 → `@Param`으로 파라미터 바인딩 정리(리네임 취약). 해당 테스트의 인라인 `java.util.Set`도 import로. (2026-07-17)
 
+* [ ] **FE `useInfiniteList` 플레이키 테스트 — 원인 미확정** (2026-09-08). CI에서 `sentinel 교차 시 다음 페이지를…`가 한 번 깨졌다(로컬 358/358 통과, 바로 다음 CI 실행은 변경 없이 통과). 파일 전체 1124ms / `findByText` 기본 타임아웃 1000ms라 **단언이 1초를 못 기다린 것**까지만 확실하다. 우선 타임아웃을 5초로 늘려 덮어 뒀다.
+  * 구분되지 않은 두 가설: (1) 러너(2 vCPU)에서 71개 파일 병렬 중 워커가 굶었다 (2) 훅이 `stateRef`를 `useEffect`로 갱신해, 옵저버 콜백이 커밋과 패시브 이펙트 flush 사이에 끼어들면 `loaded:false/nextCursor:null`인 낡은 값을 읽고 다음 로드를 건너뛴다.
+  * (2)라면 **실제 브라우저에서도 첫 페인트 직후 sentinel이 보이는 화면에서 목록이 멈출 수 있다.** 재현을 못 해 손대지 않았다(로컬 20회 반복·부하 실험·MutationObserver로 커밋 직후 교차시키기 모두 재현 실패).
+  * 렌더 중 `stateRef.current` 갱신은 **불가**하다 — eslint `react-hooks/refs`가 에러로 막는다. 고친다면 옵저버 이펙트의 deps에 `[load, isLoading, nextCursor, loaded]`를 넣어 상태가 바뀔 때마다 재구독하는 쪽이다(ref 자체가 사라진다. 다만 sentinel이 계속 보이면 연속 로드가 되므로 동작 변화 검토 필요).
+  * 다시 깨지면 이 기록부터 볼 것.
+
 ## BE 공통 (도메인 확장 전후로 필요)
 
 * [x] ~~CORS 설정~~ — BFF 채택으로 브라우저 경로는 same-origin이라 불필요. 모바일 앱 등 BE 직접 호출 소비처가 생기면 재도입 검토. (2026-07-15 결정)
