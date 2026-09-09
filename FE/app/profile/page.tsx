@@ -4,6 +4,11 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getBff, putBff, putBffForm, deleteBff } from '@/lib/api';
+import {
+  validatePasswordChange,
+  hasError as hasPwError,
+  type PasswordChangeForm,
+} from '@/lib/auth/passwordChangeValidation';
 import { AuthorBadge } from '@/components/feed/AuthorBadge';
 import type { Me } from '@/lib/feed/types';
 
@@ -18,6 +23,14 @@ export default function ProfilePage() {
   const [me, setMe] = useState<Me | null>(null);
   const [options, setOptions] = useState<Option[]>([]);
   const [editing, setEditing] = useState(false);
+  const EMPTY_PW: PasswordChangeForm = {
+    currentPassword: '', newPassword: '', newPasswordConfirm: '',
+  };
+  const [pwForm, setPwForm] = useState<PasswordChangeForm>(EMPTY_PW);
+  const [pwTouched, setPwTouched] = useState<Partial<Record<keyof PasswordChangeForm, boolean>>>({});
+  const [pwPending, setPwPending] = useState(false);
+  const [pwError, setPwError] = useState<string | null>(null);
+  const [pwDone, setPwDone] = useState(false);
   const [withdrawing, setWithdrawing] = useState(false);
   const [confirmText, setConfirmText] = useState('');
   const [withdrawPending, setWithdrawPending] = useState(false);
@@ -86,6 +99,31 @@ export default function ProfilePage() {
 
   if (!profile) return <main className="mx-auto mt-24 max-w-md px-4">불러오는 중...</main>;
 
+  const pwErrors = validatePasswordChange(pwForm);
+
+  async function changePassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (hasPwError(pwErrors)) {
+      setPwTouched({ currentPassword: true, newPassword: true, newPasswordConfirm: true });
+      return;
+    }
+    setPwPending(true);
+    setPwError(null);
+    // 확인란은 서버로 보내지 않는다 — 서버가 확인할 것이 없다.
+    const res = await putBff('/api/bff/members/me/password', {
+      currentPassword: pwForm.currentPassword,
+      newPassword: pwForm.newPassword,
+    });
+    setPwPending(false);
+    if (res.ok) {
+      setPwForm(EMPTY_PW);
+      setPwTouched({});
+      setPwDone(true);
+    } else {
+      setPwError(res.message ?? '비밀번호를 바꾸지 못했습니다.');
+    }
+  }
+
   // 확인 문구를 그대로 입력해야 눌린다. 되돌릴 수 없는 동작이라
   // 실수로 누르는 경로를 만들지 않는다.
   async function withdraw() {
@@ -103,6 +141,28 @@ export default function ProfilePage() {
     } else {
       setWithdrawError(res.message ?? '탈퇴에 실패했습니다.');
     }
+  }
+
+  function pwField(key: keyof PasswordChangeForm, label: string, hint?: string) {
+    const msg = pwTouched[key] ? pwErrors[key] : undefined;
+    return (
+      <label className="flex flex-col gap-1 text-sm">{label}
+        <input
+          type="password"
+          value={pwForm[key]}
+          onChange={(e) => { setPwForm({ ...pwForm, [key]: e.target.value }); setPwDone(false); }}
+          onBlur={() => setPwTouched((t) => ({ ...t, [key]: true }))}
+          aria-invalid={msg ? true : undefined}
+          aria-describedby={msg ? `${key}-error` : undefined}
+          className={msg
+            ? 'rounded border border-danger px-3 py-2'
+            : 'rounded border border-line px-3 py-2'}
+        />
+        {msg
+          ? <span id={`${key}-error`} role="alert" className="text-xs text-danger">{msg}</span>
+          : hint && <span className="text-xs text-ink-faint">{hint}</span>}
+      </label>
+    );
   }
 
   return (
@@ -173,7 +233,30 @@ export default function ProfilePage() {
         </section>
       )}
 
-      <section className="mt-16 border-t border-line pt-6">
+      <section className="mt-12 border-t border-line pt-6">
+        <h2 className="text-sm font-medium text-ink-muted">비밀번호 변경</h2>
+        <p className="mt-2 text-sm text-ink-muted">
+          바꾸면 <b>다른 기기의 로그인이 모두 끊깁니다.</b> 이 화면은 그대로 쓸 수 있습니다.
+        </p>
+
+        <form onSubmit={changePassword} noValidate className="mt-4 flex max-w-sm flex-col gap-3">
+          {pwField('currentPassword', '현재 비밀번호')}
+          {pwField('newPassword', '새 비밀번호', '8자 이상 64자 이하')}
+          {pwField('newPasswordConfirm', '새 비밀번호 확인')}
+          {pwError && <p role="alert" className="text-sm text-danger">{pwError}</p>}
+          {pwDone && (
+            <p role="status" className="text-sm text-success">
+              비밀번호를 바꿨습니다. 다른 기기는 다시 로그인해야 합니다.
+            </p>
+          )}
+          <button type="submit" disabled={pwPending}
+            className="w-fit rounded bg-brand px-4 py-2 text-sm text-on-brand disabled:opacity-50">
+            비밀번호 변경
+          </button>
+        </form>
+      </section>
+
+      <section className="mt-12 border-t border-line pt-6">
         <h2 className="text-sm font-medium text-ink-muted">회원 탈퇴</h2>
         <p className="mt-2 text-sm">
           탈퇴하면 아이디·이메일·닉네임·프로필이 지워집니다. <b>되돌릴 수 없습니다.</b>

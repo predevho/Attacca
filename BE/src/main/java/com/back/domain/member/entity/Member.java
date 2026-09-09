@@ -48,7 +48,7 @@ public class Member extends BaseEntity {
     @Column(nullable = false)
     private Role role;
 
-    /** 탈퇴 시각. 채워지면 로그인·재발급이 막힌다. (DOMAIN-MEMBER-STATUTE §3.5) */
+    /** 탈퇴 시각. 채워지면 로그인·재발급이 막힌다. (DOMAIN-MEMBER-STATUTE §3.6) */
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
@@ -68,6 +68,14 @@ public class Member extends BaseEntity {
     /** 소셜 전용 회원 생성. loginId/password 없음. */
     public static Member createSocial(String email, String nickname) {
         return new Member(null, null, email, nickname, Role.USER);
+    }
+
+    /**
+     * 비밀번호를 바꾼다. 이미 해시된 값을 받는다 — 엔티티는 인코더를 모른다.
+     * (DOMAIN-MEMBER-STATUTE §3.5)
+     */
+    public void changePassword(String encodedPassword) {
+        this.password = encodedPassword;
     }
 
     /**

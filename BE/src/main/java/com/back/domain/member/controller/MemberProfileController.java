@@ -10,6 +10,8 @@ import com.back.global.common.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.back.domain.member.dto.ChangePasswordRequest;
+import com.back.domain.member.dto.TokenPairResponse;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -29,6 +31,7 @@ public class MemberProfileController {
 
     private final MemberProfileService memberProfileService;
     private final com.back.domain.member.service.MemberWithdrawService memberWithdrawService;
+    private final com.back.domain.member.service.MemberPasswordService memberPasswordService;
 
     @GetMapping("/me")
     public ApiResponse<MemberIdentityResponse> getMyIdentity(@AuthenticationPrincipal Long memberId) {
@@ -53,7 +56,17 @@ public class MemberProfileController {
     }
 
     /**
-     * 회원 탈퇴. 되돌릴 수 없다. (DOMAIN-MEMBER-STATUTE §3.5)
+     * 비밀번호 변경. 성공하면 다른 기기의 refresh 는 모두 끊기고,
+     * 부른 본인만 새 토큰 쌍을 받는다. (DOMAIN-MEMBER-STATUTE §3.5)
+     */
+    @PutMapping("/me/password")
+    public ApiResponse<TokenPairResponse> changePassword(@AuthenticationPrincipal Long memberId,
+            @Valid @RequestBody ChangePasswordRequest request) {
+        return ApiResponse.success(memberPasswordService.change(memberId, request));
+    }
+
+    /**
+     * 회원 탈퇴. 되돌릴 수 없다. (DOMAIN-MEMBER-STATUTE §3.6)
      *
      * <p>이미 발급된 access 토큰은 만료(30분)까지 살아 있다. 로그아웃과 같은 절충으로,
      * refresh 를 모두 철회해 재발급을 막는 것으로 끊는다.

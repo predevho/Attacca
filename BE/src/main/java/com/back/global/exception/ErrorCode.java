@@ -77,6 +77,9 @@ public enum ErrorCode {
     NOT_ROOM_PARTICIPANT("403-03", HttpStatus.FORBIDDEN, "채팅방 참여자만 접근할 수 있습니다."),
     CHAT_INVALID_PARTICIPANTS("400-03", HttpStatus.BAD_REQUEST, "채팅 참여자 구성이 올바르지 않습니다."),
     CONSENT_REQUIRED("400-04", HttpStatus.BAD_REQUEST, "이용약관과 개인정보 수집·이용에 동의해야 가입할 수 있습니다."),
+    CURRENT_PASSWORD_MISMATCH("400-05", HttpStatus.BAD_REQUEST, "현재 비밀번호가 일치하지 않습니다."),
+    PASSWORD_UNCHANGED("400-06", HttpStatus.BAD_REQUEST, "지금과 다른 비밀번호를 입력해 주세요."),
+    PASSWORD_NOT_SET("400-07", HttpStatus.BAD_REQUEST, "소셜 로그인 전용 계정은 비밀번호를 바꿀 수 없습니다."),
 
     // --- NOTICE(공지·소식·운영 일정) ---
     NOTICE_NOT_FOUND("404-12", HttpStatus.NOT_FOUND, "공지를 찾을 수 없습니다.");

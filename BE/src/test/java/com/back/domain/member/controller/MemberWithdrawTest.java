@@ -23,7 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 회원 탈퇴 (DOMAIN-MEMBER-STATUTE §3.5).
+ * 회원 탈퇴 (DOMAIN-MEMBER-STATUTE §3.6).
  *
  * <p>핵심은 <b>사람은 지우고 글은 남긴다</b>는 것과, 지웠다면 실제로 못 돌아온다는 것이다.
  */

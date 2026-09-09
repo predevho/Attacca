@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 회원 탈퇴. (DOMAIN-MEMBER-STATUTE §3.5)
+ * 회원 탈퇴. (DOMAIN-MEMBER-STATUTE §3.6)
  *
  * <p><b>사람은 지우고 글은 남긴다.</b> 작성물까지 지우면 남의 글타래가 무너진다.
  * 작성자 표시는 "탈퇴한 회원"이 된다.
