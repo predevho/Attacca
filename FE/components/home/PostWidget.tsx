@@ -36,13 +36,13 @@ export function PostWidget({
             className={
               sort === tab.key
                 ? 'rounded-full bg-brand px-3 py-1 text-sm text-on-brand'
-                : 'rounded-full bg-surface-muted px-3 py-1 text-sm text-ink-muted'
+                : 'rounded-full bg-surface-muted px-3 py-1 text-sm text-ink-muted transition-colors hover:text-ink'
             }
           >
             {tab.label}
           </button>
         ))}
-        <Link href="/feed" className="ml-auto text-sm text-ink-muted">
+        <Link href="/feed" className="ml-auto text-sm text-ink-muted transition-colors hover:text-ink">
           피드 전체보기 →
         </Link>
       </div>
@@ -64,7 +64,8 @@ export function PostWidget({
           <li key={post.id} className="border-t border-line">
             <Link
               href={`/feed/${post.id}`}
-              className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3"
+              // 목록 행은 누를 수 있다는 신호가 전혀 없었다. 배경으로 알린다.
+              className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 transition-colors hover:bg-surface-muted"
             >
               <span className="min-w-0 flex-1 truncate">{post.content}</span>
               <span className="flex shrink-0 items-center gap-1 text-sm text-ink-muted">

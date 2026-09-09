@@ -139,7 +139,8 @@ export function MonthCalendar({
             return (
               <li key={`${entry.kind}-${entry.id}`} className="border-t border-line">
                 {entry.href ? (
-                  <Link href={entry.href} className="flex items-start gap-2.5 px-4 py-3">
+                  <Link href={entry.href}
+                    className="flex items-start gap-2.5 px-4 py-3 transition-colors hover:bg-surface-muted">
                     {row}
                   </Link>
                 ) : (

@@ -64,3 +64,20 @@ describe.each(['light', 'dark'] as const)('색 대비 (%s)', (theme) => {
     expect(contrast(t['on-brand'], t.brand)).toBeGreaterThanOrEqual(AA);
   });
 });
+
+/** 어둠막은 테마가 아니라 사진 위에 얹히므로 라이트/다크로 나누지 않는다. */
+describe('히어로 어둠막', () => {
+  const t = tokens('light');
+
+  it('순백 사진 위에서도 글자가 AA를 넘는다', () => {
+    // 글이 얹히는 구간의 알파는 0.7 이상으로 유지한다(HeroCarousel의 via-scrim/70).
+    const over = blend(t.scrim, '#ffffff', 0.7);
+    const r = contrast(t['on-scrim'], over);
+    expect(r, `on-scrim on 70% scrim over white = ${r.toFixed(2)}:1`).toBeGreaterThanOrEqual(AA);
+  });
+
+  it('가장 옅은 구간(0.7)이 기준선이다 — 더 내리면 실패한다', () => {
+    const weaker = blend(t.scrim, '#ffffff', 0.5);
+    expect(contrast(t['on-scrim'], weaker)).toBeLessThan(AA);
+  });
+});

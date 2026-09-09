@@ -21,6 +21,14 @@
   --danger: #dc2626;
   --warn: #b45309;
   --success: #15803d;
+
+  /*
+   * 사진 위에 글자를 얹기 위한 어둠막. 라이트/다크가 같은 값이다 —
+   * 뒤에 있는 것이 페이지 배경이 아니라 사진이라 테마와 무관하게 같은 처리가 필요하다.
+   * 히어로는 75% 알파로 쓰는데, 순백 사진 위에서도 on-scrim이 7.9:1이라 안전하다.
+   */
+  --scrim: #14110c;
+  --on-scrim: #faf7f0;
 }
 
 /*
@@ -43,6 +51,7 @@
     --on-brand: #16211c;
     --header: #8fb0ce;
     --on-header: #16211c;
+    /* scrim/on-scrim은 사진 위 값이라 다크에서도 그대로 둔다. */
     --danger: #f87171;
     --warn: #fbbf24;
     --success: #4ade80;
@@ -60,6 +69,8 @@
   --color-brand: var(--brand);
   --color-brand-strong: var(--brand-strong);
   --color-on-brand: var(--on-brand);
+  --color-scrim: var(--scrim);
+  --color-on-scrim: var(--on-scrim);
   --color-header: var(--header);
   --color-on-header: var(--on-header);
   --color-danger: var(--danger);
