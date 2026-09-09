@@ -36,3 +36,6 @@ export type SpringPage<T> = { content: T[]; number: number; totalPages: number; 
 export type MemberHit = { id: number; nickname: string; verified: boolean };
 
 export type NewChatFormValues = { memberId: string };
+
+/** 그룹 만들기 폼 값. title 은 비어도 된다(참여자 이름으로 표시). */
+export type GroupFormValues = { memberIds: number[]; title: string };

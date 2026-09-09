@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getBff, postBff } from '@/lib/api';
+import { getBff, postBff, deleteBff } from '@/lib/api';
+import { MemberSearchInput } from '@/components/chat/MemberSearchInput';
 import { createChatSocket } from '@/lib/chat/stompClient';
 import { mergeMessages, sortByIdAsc, prependOlder, shouldStickToBottom } from '@/lib/chat/logic';
 import { MessageBubble } from '@/components/chat/MessageBubble';
@@ -27,6 +28,8 @@ export default function ChatRoomPage() {
   // 더 불러올 과거가 있으면 커서, 없으면 null. BE 이력은 최신→과거라 이 값이 "위쪽" 커서다.
   const [olderCursor, setOlderCursor] = useState<number | null>(null);
   const [loadingOlder, setLoadingOlder] = useState(false);
+  const [inviting, setInviting] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   const socketRef = useRef<ReturnType<typeof createChatSocket> | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   // 다음 렌더에서 바닥으로 내릴지. 새 메시지를 받은 순간의 스크롤 위치로 판단해 둔다.
@@ -118,10 +121,26 @@ export default function ChatRoomPage() {
     socketRef.current?.send(roomId, content);
   }
 
+  async function invite(memberId: number) {
+    const r = await postBff<RoomDetail>(`/api/bff/chat/rooms/${roomId}/participants`, { memberIds: [memberId] });
+    // BE가 갱신된 방을 돌려주므로 참여자 목록이 바로 반영된다. 이미 있는 사람이면 no-op(멱등).
+    if (r.ok && r.data) { setRoom(r.data as RoomDetail); setInviting(false); }
+    else setActionError(r.message ?? '초대하지 못했습니다.');
+  }
+
+  async function leave() {
+    // 되돌릴 수 없다(다시 들어오려면 누군가 초대해야 한다).
+    if (!window.confirm('이 방에서 나갑니다. 다시 들어오려면 초대를 받아야 합니다.')) return;
+    const r = await deleteBff(`/api/bff/chat/rooms/${roomId}/participants/me`);
+    if (r.ok) router.push('/chat');
+    else setActionError(r.message ?? '나가지 못했습니다.');
+  }
+
   if (notFound) {
     return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-ink-muted">없거나 접근할 수 없는 방입니다.</main>;
   }
 
+  const isGroup = room?.type === 'GROUP';
   // DIRECT 방은 title이 없으므로 본인을 제외한 참여자 닉네임으로 헤더를 만든다.
   const headerName = room?.title
     ?? room?.participants.filter((p) => p.id !== me?.id).map((p) => p.nickname).join(', ')
@@ -132,7 +151,36 @@ export default function ChatRoomPage() {
       <div className="mb-2 flex items-center gap-2">
         <button type="button" onClick={() => router.push('/chat')} className="text-sm text-ink-muted">← 채팅</button>
         <h1 className="font-semibold">{headerName}</h1>
+        {/*
+          초대·나가기는 GROUP 방에만 둔다. DIRECT에 사람을 더하면 1:1의 의미가 깨지고
+          BE도 400으로 막는다(DOMAIN-CHAT-STATUTE §139). 방장은 없다 — 참여자 누구나 초대한다.
+        */}
+        {isGroup && (
+          <div className="ml-auto flex gap-2">
+            <button type="button" onClick={() => { setActionError(null); setInviting((v) => !v); }}
+              className="text-xs text-ink-faint">초대</button>
+            <button type="button" onClick={leave} className="text-xs text-ink-faint">나가기</button>
+          </div>
+        )}
       </div>
+
+      {isGroup && room && (
+        <div role="group" aria-label="참여자" className="mb-2 flex flex-wrap gap-1.5">
+          {room.participants.map((p) => (
+            <span key={p.id} className="rounded-full bg-surface-muted px-2.5 py-1 text-xs text-ink-muted">
+              {p.nickname}{p.id === me?.id ? ' (나)' : ''}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {inviting && (
+        <div className="mb-2 rounded border border-line p-3">
+          <MemberSearchInput onPick={(m) => invite(m.id)} clearOnPick />
+        </div>
+      )}
+
+      {actionError && <p role="alert" className="mb-2 text-sm text-danger">{actionError}</p>}
       {connError && <p className="mb-2 rounded bg-surface-muted px-3 py-1 text-xs text-warn">실시간 연결이 끊겼습니다. 재연결 중…</p>}
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto">

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 
 const push = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
@@ -39,8 +39,10 @@ describe('ChatListPage', () => {
     render(<ChatListPage />);
     await screen.findByText('홍길동');
 
-    fireEvent.change(screen.getByRole('searchbox', { name: '닉네임으로 회원 찾기' }), { target: { value: '하윤' } });
-    fireEvent.click(await screen.findByRole('button', { name: /정하윤/ }));
+    // 화면에 검색창이 둘이다(1:1 시작 / 그룹 만들기) — 1:1 쪽으로 좁힌다.
+    const direct = screen.getByRole('group', { name: '새 대화 시작' });
+    fireEvent.change(within(direct).getByRole('searchbox', { name: '닉네임으로 회원 찾기' }), { target: { value: '하윤' } });
+    fireEvent.click(await within(direct).findByRole('button', { name: /정하윤/ }));
 
     await waitFor(() => expect(postBff).toHaveBeenCalledWith('/api/bff/chat/rooms', { type: 'DIRECT', participantIds: [7] }));
     await waitFor(() => expect(push).toHaveBeenCalledWith('/chat/5'));

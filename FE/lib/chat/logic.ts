@@ -1,5 +1,5 @@
 import type { CursorPage } from '@/lib/feed/types';
-import type { ChatMessage, NewChatFormValues, RoomSummary, SpringPage } from '@/lib/chat/types';
+import type { ChatMessage, GroupFormValues, NewChatFormValues, RoomSummary, SpringPage } from '@/lib/chat/types';
 
 /** 방 목록 Spring Page(오프셋)를 커서 페이지로 변환 → useInfiniteList 재사용. */
 export function toRoomCursorPage(page: SpringPage<RoomSummary>): CursorPage<RoomSummary> {
@@ -68,4 +68,24 @@ export function shouldStickToBottom(
   threshold = 80,
 ): boolean {
   return el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
+}
+
+/**
+ * 그룹 폼 검증. BE는 나 혼자인 방도 허용하지만(STATUTE §124) 화면은 한 명 이상을 요구한다 —
+ * 아무도 없는 방을 만들면 다음에 뭘 해야 할지 알 수 없다.
+ */
+export function validateGroup(v: GroupFormValues): string | null {
+  if (v.memberIds.length === 0) return '한 명 이상 담아 주세요.';
+  return null;
+}
+
+/**
+ * 폼 값 → GROUP 방 생성 요청.
+ * 제목이 공백뿐이면 아예 빼서 보낸다 — 빈 문자열을 보내면 "이름 없는 방"이 아니라 "이름이 빈 방"이 된다.
+ */
+export function toCreateGroupRequest(v: GroupFormValues) {
+  const title = v.title.trim();
+  return title
+    ? { type: 'GROUP' as const, participantIds: v.memberIds, title }
+    : { type: 'GROUP' as const, participantIds: v.memberIds };
 }

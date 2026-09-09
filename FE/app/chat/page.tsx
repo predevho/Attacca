@@ -4,11 +4,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getBff, postBff } from '@/lib/api';
 import { useInfiniteList } from '@/lib/feed/useInfiniteList';
-import { toRoomCursorPage, toCreateDirectRequest } from '@/lib/chat/logic';
+import { toRoomCursorPage, toCreateDirectRequest, toCreateGroupRequest } from '@/lib/chat/logic';
 import { RoomListItem } from '@/components/chat/RoomListItem';
 import { NewChatForm } from '@/components/chat/NewChatForm';
+import { NewGroupForm } from '@/components/chat/NewGroupForm';
 import type { CursorPage } from '@/lib/feed/types';
-import type { NewChatFormValues, RoomDetail, RoomSummary, SpringPage } from '@/lib/chat/types';
+import type { GroupFormValues, NewChatFormValues, RoomDetail, RoomSummary, SpringPage } from '@/lib/chat/types';
 
 function RoomList() {
   const router = useRouter();
@@ -53,12 +54,24 @@ export default function ChatListPage() {
     else setError(r.message ?? '대화를 시작하지 못했습니다.');
   }
 
+  async function createGroup(v: GroupFormValues) {
+    setSubmitting(true);
+    setError(null);
+    const r = await postBff<RoomDetail>('/api/bff/chat/rooms', toCreateGroupRequest(v));
+    setSubmitting(false);
+    if (r.ok && r.data) router.push(`/chat/${r.data.id}`);
+    else setError(r.message ?? '그룹을 만들지 못했습니다.');
+  }
+
   if (!ready) return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-ink-faint">불러오는 중...</main>;
 
   return (
     <main className="mx-auto mt-8 max-w-xl px-4">
       <h1 className="mb-4 text-2xl font-bold">채팅</h1>
-      <div className="mb-4"><NewChatForm submitting={submitting} onStart={startChat} /></div>
+      <div className="mb-4 flex flex-col gap-3">
+        <NewChatForm submitting={submitting} onStart={startChat} />
+        <NewGroupForm submitting={submitting} onCreate={createGroup} />
+      </div>
       {error && <p className="mb-3 text-sm text-danger">{error}</p>}
       <RoomList />
     </main>

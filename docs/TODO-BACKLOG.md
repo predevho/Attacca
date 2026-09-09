@@ -34,7 +34,7 @@
 * [ ] FE 인증연주자: 어드민 목록·회원 상태의 "회원측 PENDING 신청 취소"는 BE 엔드포인트 없어 미구현 — 필요 시 BE 추가 후 FE 반영.
 ## 채팅 FE 후속 (2026-08-12 MVP 범위 밖)
 
-* [ ] FE 채팅: 그룹 방 생성/초대/퇴장 UI(BE는 `POST /rooms`(GROUP)·`POST /rooms/{id}/participants`·`DELETE /participants/me` 제공).
+* [x] ~~FE 채팅: 그룹 방 생성/초대/퇴장 UI~~ — 2026-09-09 해소. 목록 화면에 «그룹 만들기»(닉네임 검색으로 여러 명 담기 + 선택 이름), 대화창에 참여자 칩·초대·나가기를 붙였다. 초대·나가기는 **GROUP 방에만** 둔다(DIRECT는 STATUTE §139로 BE도 400). 나가기는 되돌릴 수 없어 확인을 묻는다. BE는 나 혼자인 방도 허용하지만 화면은 한 명 이상을 요구한다 — 아무도 없는 방은 다음에 뭘 할지 알 수 없다.
 * [ ] FE 채팅: 타이핑 표시(STOMP `/typing` 프레임 수신·표시), presence(`ParticipantView.online`) 표시.
 * [x] ~~FE 채팅: 회원 검색/디렉터리~~ — 2026-09-09 해소. BE `GET /api/members/search?q=`(MEMBER 소유, STATUTE §3.2.1) 신설 + 화면을 닉네임 검색·선택으로 교체. 회원 목록을 여는 경로라 인증 필수·표시정보만 응답·2자 미만은 빈 목록·본인/탈퇴 회원 제외를 규칙으로 못박고 테스트했다.
 * [ ] FE 채팅: WS 토큰 만료 완전 처리 — 현재는 대화창 진입 시 REST 선행 reissue에 의존. access 만료 중 재연결 시 ws-token이 stale일 수 있음(전용 단수명 WS 티켓 BE 도입 검토).
