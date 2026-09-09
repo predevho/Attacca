@@ -94,8 +94,12 @@ export default function ProfilePage() {
     const res = await deleteBff('/api/bff/members/me');
     setWithdrawPending(false);
     if (res.ok) {
-      router.push('/');
-      router.refresh();
+      // 전체 새로고침으로 나간다. `router.push` 로 나가면 클라이언트 상태가 살아 있어,
+      // 헤더가 들고 있던 신원 때문에 **방금 계정을 지운 사람에게 '로그아웃' 메뉴가
+      // 계속 보인다**(2026-09-09 로컬에서 확인). 헤더는 신원을 마운트 때 한 번만 읽고
+      // 경로가 바뀌어도 다시 읽지 않는다. `router.refresh()` 는 서버 컴포넌트만
+      // 새로 그리므로 이 상태를 지우지 못한다.
+      window.location.assign('/');
     } else {
       setWithdrawError(res.message ?? '탈퇴에 실패했습니다.');
     }
