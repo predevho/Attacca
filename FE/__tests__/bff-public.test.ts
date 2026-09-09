@@ -25,7 +25,7 @@ function pageBody<T>(content: T[]) {
 
 describe('BFF 공개 라우트', () => {
   it('공지 목록은 쿼리를 BE 공개 경로로 전달한다', async () => {
-    const f = vi.fn(async () => beJson(pageBody([])));
+    const f = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => beJson(pageBody([])));
     vi.stubGlobal('fetch', f);
     const { GET } = await import('@/app/api/bff/public/notices/route');
 
@@ -38,7 +38,7 @@ describe('BFF 공개 라우트', () => {
   });
 
   it('공연 목록도 마찬가지다', async () => {
-    const f = vi.fn(async () => beJson(pageBody([])));
+    const f = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => beJson(pageBody([])));
     vi.stubGlobal('fetch', f);
     const { GET } = await import('@/app/api/bff/public/performances/route');
 
@@ -48,7 +48,7 @@ describe('BFF 공개 라우트', () => {
   });
 
   it('게시글 목록은 sort를 전달한다', async () => {
-    const f = vi.fn(async () => beJson(pageBody([])));
+    const f = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => beJson(pageBody([])));
     vi.stubGlobal('fetch', f);
     const { GET } = await import('@/app/api/bff/public/feed/posts/route');
 

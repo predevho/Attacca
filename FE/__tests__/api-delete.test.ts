@@ -5,7 +5,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe('deleteBff', () => {
   it('DELETE 메서드로 호출하고 BffResult를 반환한다', async () => {
-    const fetchMock = vi.fn(async () => new Response(
+    const fetchMock = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => new Response(
       JSON.stringify({ ok: true, data: null, message: null }),
       { headers: { 'content-type': 'application/json' } }));
     vi.stubGlobal('fetch', fetchMock);

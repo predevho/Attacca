@@ -9,7 +9,7 @@ function json(body: unknown, status = 200) {
 
 describe('client api', () => {
   it('postBff는 상대경로 /api/bff/*를 POST한다', async () => {
-    const fetchMock = vi.fn(async () => json({ ok: true, message: null }));
+    const fetchMock = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => json({ ok: true, message: null }));
     vi.stubGlobal('fetch', fetchMock);
 
     const res = await postBff('/api/bff/login', { loginId: 'u', password: 'p' });

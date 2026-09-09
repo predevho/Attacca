@@ -18,7 +18,7 @@ function beJson(body: unknown, status = 200) {
 
 describe('BFF 프로필 라우트', () => {
   it('PUT /api/bff/me/profile → BE로 JSON 통과', async () => {
-    const fetchMock = vi.fn(async () => beJson(
+    const fetchMock = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => beJson(
       { success: true, data: { instruments: ['VIOLIN'], bio: 'hi', profileImageUrl: null }, error: null }));
     vi.stubGlobal('fetch', fetchMock);
     const { PUT } = await import('@/app/api/bff/me/profile/route');
@@ -49,7 +49,7 @@ describe('BFF 프로필 라우트', () => {
   });
 
   it('PUT /api/bff/me/profile/image → file 파트를 BE로 멀티파트 전달', async () => {
-    const fetchMock = vi.fn(async () => beJson(
+    const fetchMock = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => beJson(
       { success: true, data: { profileImageUrl: 'http://x/img.png' }, error: null }));
     vi.stubGlobal('fetch', fetchMock);
     const { PUT } = await import('@/app/api/bff/me/profile/image/route');

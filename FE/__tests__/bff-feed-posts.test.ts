@@ -18,7 +18,7 @@ function beJson(body: unknown, status = 200) {
 
 describe('BFF 피드 게시글 라우트', () => {
   it('GET 목록은 cursor/size 쿼리를 BE로 전달한다', async () => {
-    const fetchMock = vi.fn(async () => beJson({ success: true, data: { items: [], nextCursor: null }, error: null }));
+    const fetchMock = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => beJson({ success: true, data: { items: [], nextCursor: null }, error: null }));
     vi.stubGlobal('fetch', fetchMock);
     const { GET } = await import('@/app/api/bff/feed/posts/route');
 
@@ -31,7 +31,7 @@ describe('BFF 피드 게시글 라우트', () => {
   });
 
   it('POST 작성은 본문을 BE로 전달한다', async () => {
-    const fetchMock = vi.fn(async () => beJson({ success: true, data: { id: 1 }, error: null }));
+    const fetchMock = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => beJson({ success: true, data: { id: 1 }, error: null }));
     vi.stubGlobal('fetch', fetchMock);
     const { POST } = await import('@/app/api/bff/feed/posts/route');
 
@@ -45,7 +45,7 @@ describe('BFF 피드 게시글 라우트', () => {
   });
 
   it('DELETE 단건은 BE 단건 경로로 프록시한다', async () => {
-    const fetchMock = vi.fn(async () => beJson({ success: true, data: null, error: null }));
+    const fetchMock = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => beJson({ success: true, data: null, error: null }));
     vi.stubGlobal('fetch', fetchMock);
     const { DELETE } = await import('@/app/api/bff/feed/posts/[id]/route');
 

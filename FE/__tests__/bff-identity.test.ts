@@ -18,7 +18,7 @@ function beJson(body: unknown, status = 200) {
 
 describe('BFF 신원 라우트', () => {
   it('GET → BE /api/members/me로 프록시하고 신원을 반환', async () => {
-    const fetchMock = vi.fn(async () => beJson(
+    const fetchMock = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => beJson(
       { success: true, data: { id: 7, nickname: '유저', role: 'USER', verified: false }, error: null }));
     vi.stubGlobal('fetch', fetchMock);
     const { GET } = await import('@/app/api/bff/me/identity/route');

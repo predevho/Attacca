@@ -17,7 +17,7 @@ function beJson(body: unknown, status = 200) {
 
 describe('BFF 인증 연주자 회원 라우트', () => {
   it('POST 신청은 본문을 BE로 전달', async () => {
-    const f = vi.fn(async () => beJson({ success: true, data: { id: 1 }, error: null }));
+    const f = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => beJson({ success: true, data: { id: 1 }, error: null }));
     vi.stubGlobal('fetch', f);
     const { POST } = await import('@/app/api/bff/verified-performers/applications/route');
     const res = await POST(new Request('http://x', { method: 'POST', body: JSON.stringify({ statement: 's' }) }));
@@ -27,7 +27,7 @@ describe('BFF 인증 연주자 회원 라우트', () => {
   });
 
   it('GET 내 상태는 BE me 경로', async () => {
-    const f = vi.fn(async () => beJson({ success: true, data: null, error: null }));
+    const f = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => beJson({ success: true, data: null, error: null }));
     vi.stubGlobal('fetch', f);
     const { GET } = await import('@/app/api/bff/verified-performers/applications/me/route');
     await GET();

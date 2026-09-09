@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "check:colors": "node scripts/check-color-tokens.mjs"
+    "check:colors": "node scripts/check-color-tokens.mjs",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@stomp/stompjs": "^7.3.0",

@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { okFetch } from './helpers/fetchMock';
 
 const jar: Record<string, string> = { access_token: 'A' };
 const cookieStore = {
@@ -14,11 +15,10 @@ afterEach(() => vi.unstubAllGlobals());
 function beJson(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 }
-const okFetch = () => vi.fn(async () => beJson({ success: true, data: null, error: null }));
 
 describe('BFF 채팅 라우트', () => {
   it('GET 방 목록은 page 쿼리 전달', async () => {
-    const f = vi.fn(async () => beJson({ success: true, data: { content: [], number: 0, totalPages: 0, last: true }, error: null }));
+    const f = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => beJson({ success: true, data: { content: [], number: 0, totalPages: 0, last: true }, error: null }));
     vi.stubGlobal('fetch', f);
     const { GET } = await import('@/app/api/bff/chat/rooms/route');
     await GET(new Request('http://x/api/bff/chat/rooms?page=1'));
@@ -28,7 +28,7 @@ describe('BFF 채팅 라우트', () => {
   });
 
   it('POST 방 생성은 본문 전달', async () => {
-    const f = vi.fn(async () => beJson({ success: true, data: { id: 3 }, error: null }));
+    const f = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => beJson({ success: true, data: { id: 3 }, error: null }));
     vi.stubGlobal('fetch', f);
     const { POST } = await import('@/app/api/bff/chat/rooms/route');
     await POST(new Request('http://x', { method: 'POST', body: JSON.stringify({ type: 'DIRECT', participantIds: [7] }) }));
@@ -44,7 +44,7 @@ describe('BFF 채팅 라우트', () => {
   });
 
   it('GET 이력은 cursor/size 쿼리 전달', async () => {
-    const f = vi.fn(async () => beJson({ success: true, data: { items: [], nextCursor: null }, error: null }));
+    const f = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => beJson({ success: true, data: { items: [], nextCursor: null }, error: null }));
     vi.stubGlobal('fetch', f);
     const { GET } = await import('@/app/api/bff/chat/rooms/[id]/messages/route');
     await GET(new Request('http://x/api/bff/chat/rooms/3/messages?cursor=10&size=20'), { params: Promise.resolve({ id: '3' }) });

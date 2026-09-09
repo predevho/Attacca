@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { okFetch } from './helpers/fetchMock';
 
 const jar: Record<string, string> = { access_token: 'A' };
 const cookieStore = {
@@ -14,11 +15,10 @@ afterEach(() => vi.unstubAllGlobals());
 function beJson(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 }
-const okFetch = () => vi.fn(async () => beJson({ success: true, data: null, error: null }));
 
 describe('BFF 인증 연주자 어드민 라우트', () => {
   it('GET 목록은 status/page 쿼리 전달', async () => {
-    const f = vi.fn(async () => beJson({ success: true, data: { content: [], number: 0, totalPages: 0, last: true }, error: null }));
+    const f = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => beJson({ success: true, data: { content: [], number: 0, totalPages: 0, last: true }, error: null }));
     vi.stubGlobal('fetch', f);
     const { GET } = await import('@/app/api/bff/admin/verified-performers/applications/route');
     await GET(new Request('http://x/api/bff/admin/verified-performers/applications?status=APPROVED&page=1'));

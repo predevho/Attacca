@@ -9,7 +9,7 @@ function json(body: unknown) {
 
 describe('client put helpers', () => {
   it('putBff는 상대경로를 JSON PUT한다', async () => {
-    const fetchMock = vi.fn(async () => json({ ok: true, message: null }));
+    const fetchMock = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => json({ ok: true, message: null }));
     vi.stubGlobal('fetch', fetchMock);
 
     const res = await putBff('/api/bff/me/profile', { instruments: ['VIOLIN'], bio: 'hi' });
@@ -23,7 +23,7 @@ describe('client put helpers', () => {
   });
 
   it('putBffForm은 FormData를 content-type 없이 PUT한다', async () => {
-    const fetchMock = vi.fn(async () => json({ ok: true, data: { profileImageUrl: 'u' }, message: null }));
+    const fetchMock = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => json({ ok: true, data: { profileImageUrl: 'u' }, message: null }));
     vi.stubGlobal('fetch', fetchMock);
     const fd = new FormData();
     fd.append('file', new Blob(['x'], { type: 'image/png' }), 'a.png');

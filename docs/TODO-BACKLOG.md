@@ -66,7 +66,7 @@
 
 * [ ] FE: BFF 라우트 status 폴백 일괄 수정 — 모든 BFF 라우트가 `{ status: res.status || 200 }`을 써서 BE 연결 실패(`beFetch` status 0)를 HTTP 200으로 응답한다. 현재 클라이언트는 바디의 `ok`로 판단해 무해하나, status 기준 소비처가 생기면 오작동. `res.status || 502`(또는 `=== 0 ? 502`)로 login/signup/logout/me/oauth·프로필 등 전체를 한 번에 정리. (2026-07-16 프로필 리뷰에서 식별) *(신규 피드 라우트는 `proxyAuthed` 헬퍼로 이미 502 처리 — 기존 인증/프로필 라우트만 남음)*
 
-* [ ] FE: 타입 검사(`tsc --noEmit`)가 CI에 없다 — CI는 `npm test` · `eslint` · `check:colors` · `build`만 돌린다. `next build`는 앱 코드만 컴파일하므로 `__tests__/**`의 타입 오류를 아무도 보지 못한다. 2026-09-09 기준 **약 100건**이 쌓여 있다(대부분 픽스처가 타입 정의보다 뒤처진 것). 오류를 먼저 정리한 뒤 `npm run typecheck`를 CI에 추가해야 한다 — 지금 넣으면 CI가 곧바로 빨개진다.
+* [x] ~~FE: 타입 검사(`tsc --noEmit`)가 CI에 없다~~ — 2026-09-09 해소. 오류 100건 중 **97건이 한 원인**이었다: fetch 목을 `vi.fn(async () => ...)`로 인자 없이 선언해 호출 시그니처가 `() => ...`로 추론되고 `mock.calls`가 빈 튜플이 됐다. 6개 파일에 복붙돼 있던 `okFetch` 헬퍼를 `__tests__/helpers/fetchMock.ts`로 모으고 시그니처를 붙여 일괄 해소. `npm run typecheck` 신설 + CI에 `npm test`보다 앞에 배치(컴파일 안 되는 코드로 테스트를 돌릴 이유가 없다). `_` 접두 인자를 미사용 경고에서 제외하도록 eslint 설정 추가 — 안 하면 시그니처를 지우는 쪽으로 몰린다.
 
 ## 피드 FE 후속 (2026-08-02 최종 리뷰 이연 Minor)
 

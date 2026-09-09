@@ -27,7 +27,7 @@ describe('BFF 로그아웃', () => {
     // 쿠키만 지우면 탈취된 refresh가 만료까지 유효하다 — 그래서 BE 호출이 필요하다.
     jar[ACCESS_COOKIE] = 'a';
     jar[REFRESH_COOKIE] = 'r';
-    const f = vi.fn(async () => beJson({ success: true, data: null, error: null }));
+    const f = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => beJson({ success: true, data: null, error: null }));
     vi.stubGlobal('fetch', f);
     const { POST } = await import('@/app/api/bff/logout/route');
 

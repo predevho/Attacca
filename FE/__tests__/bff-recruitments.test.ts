@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { okFetch } from './helpers/fetchMock';
 
 const jar: Record<string, string> = { access_token: 'A' };
 const cookieStore = {
@@ -14,11 +15,10 @@ afterEach(() => vi.unstubAllGlobals());
 function beJson(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 }
-const okFetch = () => vi.fn(async () => beJson({ success: true, data: null, error: null }));
 
 describe('BFF 구인 공고 라우트', () => {
   it('GET 목록은 scope/instrument/page 쿼리를 BE로 전달', async () => {
-    const f = vi.fn(async () => beJson({ success: true, data: { content: [], number: 0, totalPages: 0, last: true }, error: null }));
+    const f = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => beJson({ success: true, data: { content: [], number: 0, totalPages: 0, last: true }, error: null }));
     vi.stubGlobal('fetch', f);
     const { GET } = await import('@/app/api/bff/recruitments/route');
     const res = await GET(new Request('http://x/api/bff/recruitments?scope=CLOSED&instrument=PIANO&page=1'));
@@ -31,7 +31,7 @@ describe('BFF 구인 공고 라우트', () => {
   });
 
   it('POST 등록은 본문을 BE로 전달', async () => {
-    const f = vi.fn(async () => beJson({ success: true, data: { id: 1 }, error: null }));
+    const f = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => beJson({ success: true, data: { id: 1 }, error: null }));
     vi.stubGlobal('fetch', f);
     const { POST } = await import('@/app/api/bff/recruitments/route');
     const res = await POST(new Request('http://x', { method: 'POST', body: JSON.stringify({ title: '구인' }) }));

@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { okFetch } from './helpers/fetchMock';
 
 const jar: Record<string, string> = { access_token: 'A' };
 const cookieStore = {
@@ -14,7 +15,6 @@ afterEach(() => vi.unstubAllGlobals());
 function beJson(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 }
-const okFetch = () => vi.fn(async () => beJson({ success: true, data: null, error: null }));
 
 describe('BFF 구인 지원 라우트', () => {
   it('POST 지원은 공고별 applications 경로에 본문 전달', async () => {
@@ -26,7 +26,7 @@ describe('BFF 구인 지원 라우트', () => {
   });
 
   it('GET 지원자 목록은 page 쿼리 전달', async () => {
-    const f = vi.fn(async () => beJson({ success: true, data: { content: [], number: 0, totalPages: 0, last: true }, error: null }));
+    const f = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => beJson({ success: true, data: { content: [], number: 0, totalPages: 0, last: true }, error: null }));
     vi.stubGlobal('fetch', f);
     const { GET } = await import('@/app/api/bff/recruitments/[id]/applications/route');
     await GET(new Request('http://x/api/bff/recruitments/7/applications?page=1'), { params: Promise.resolve({ id: '7' }) });
@@ -36,7 +36,7 @@ describe('BFF 구인 지원 라우트', () => {
   });
 
   it('GET 내 지원은 BE applications/me 경로', async () => {
-    const f = vi.fn(async () => beJson({ success: true, data: { content: [], number: 0, totalPages: 0, last: true }, error: null }));
+    const f = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => beJson({ success: true, data: { content: [], number: 0, totalPages: 0, last: true }, error: null }));
     vi.stubGlobal('fetch', f);
     const { GET } = await import('@/app/api/bff/recruitments/applications/me/route');
     await GET(new Request('http://x/api/bff/recruitments/applications/me?page=0'));

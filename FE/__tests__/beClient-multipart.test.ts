@@ -11,7 +11,7 @@ function ok() {
 
 describe('beFetch content-type', () => {
   it('JSON body면 application/json을 붙인다', async () => {
-    const fetchMock = vi.fn(async () => ok());
+    const fetchMock = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => ok());
     vi.stubGlobal('fetch', fetchMock);
 
     await beFetch('/x', { method: 'POST', body: JSON.stringify({ a: 1 }) });
@@ -21,7 +21,7 @@ describe('beFetch content-type', () => {
   });
 
   it('FormData body면 content-type을 붙이지 않는다(boundary 자동)', async () => {
-    const fetchMock = vi.fn(async () => ok());
+    const fetchMock = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => ok());
     vi.stubGlobal('fetch', fetchMock);
     const fd = new FormData();
     fd.append('file', new Blob(['x'], { type: 'image/png' }), 'a.png');

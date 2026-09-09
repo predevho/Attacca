@@ -23,7 +23,7 @@ function json(body: unknown, status: number) {
 describe('authedBeFetch', () => {
   it('access가 유효하면 Bearer로 호출하고 결과를 반환한다', async () => {
     const store = fakeStore('good-access', 'refresh');
-    const fetchMock = vi.fn(async () => json({ success: true, data: { hi: 1 }, error: null }, 200));
+    const fetchMock = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => json({ success: true, data: { hi: 1 }, error: null }, 200));
     vi.stubGlobal('fetch', fetchMock);
 
     const res = await authedBeFetch(store, '/api/members/me/profile');

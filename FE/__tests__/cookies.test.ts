@@ -21,7 +21,7 @@ describe('cookies', () => {
     const opts = (store.set as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][2];
     expect(opts).toMatchObject({ httpOnly: true, sameSite: 'lax', path: '/', maxAge: 1800 });
     const refreshOpts = (store.set as unknown as { mock: { calls: unknown[][] } }).mock.calls[1][2];
-    expect(refreshOpts.maxAge).toBe(1209600);
+    expect(refreshOpts).toMatchObject({ maxAge: 1209600 });
   });
 
   it('두 쿠키를 모두 삭제한다', () => {

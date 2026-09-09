@@ -65,6 +65,8 @@ jobs:
           cache-dependency-path: FE/package-lock.json
       - run: npm ci
         working-directory: FE
+      - run: npm run typecheck
+        working-directory: FE
       - run: npm test
         working-directory: FE
       - run: npx eslint

@@ -22,7 +22,7 @@ describe('buildAuthorizeUrl', () => {
 
 describe('exchangeCode', () => {
   it('BE /api/auth/oauth/kakao로 code와 redirectUri를 POST한다', async () => {
-    const fetchMock = vi.fn(async () => new Response(
+    const fetchMock = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => new Response(
       JSON.stringify({ success: true, data: { accessToken: 'A', refreshToken: 'R' }, error: null }),
       { status: 200, headers: { 'content-type': 'application/json' } }));
     vi.stubGlobal('fetch', fetchMock);

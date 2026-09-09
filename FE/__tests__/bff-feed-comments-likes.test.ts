@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { okFetch as ok } from './helpers/fetchMock';
 
 const jar: Record<string, string> = { access_token: 'A' };
 const cookieStore = {
@@ -15,7 +16,6 @@ afterEach(() => vi.unstubAllGlobals());
 function beJson(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 }
-const ok = () => vi.fn(async () => beJson({ success: true, data: null, error: null }));
 
 describe('BFF 피드 좋아요/댓글 라우트', () => {
   it('게시글 좋아요 POST → BE like 경로', async () => {
@@ -34,7 +34,7 @@ describe('BFF 피드 좋아요/댓글 라우트', () => {
   });
 
   it('댓글 목록 GET은 cursor 쿼리를 전달한다', async () => {
-    const f = vi.fn(async () => beJson({ success: true, data: { items: [], nextCursor: null }, error: null }));
+    const f = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => beJson({ success: true, data: { items: [], nextCursor: null }, error: null }));
     vi.stubGlobal('fetch', f);
     const { GET } = await import('@/app/api/bff/feed/posts/[id]/comments/route');
     await GET(new Request('http://x/api/bff/feed/posts/5/comments?cursor=3&size=20'), { params: Promise.resolve({ id: '5' }) });

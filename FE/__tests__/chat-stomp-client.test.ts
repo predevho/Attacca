@@ -4,7 +4,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const activate = vi.fn();
 const deactivate = vi.fn();
 const publish = vi.fn();
-const subscribe = vi.fn(() => ({ unsubscribe: vi.fn() }));
+// 인자를 선언해야 subscribe.mock.calls[0][0](목적지)·[1](콜백)이 타입을 갖는다.
+const subscribe = vi.fn((_destination: string, _cb: unknown) => ({ unsubscribe: vi.fn() }));
 let lastConfig: Record<string, unknown> = {};
 let lastClient: MockClient | null = null;
 /**
