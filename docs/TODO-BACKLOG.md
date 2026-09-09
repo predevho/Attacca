@@ -66,6 +66,8 @@
 
 * [ ] FE: BFF 라우트 status 폴백 일괄 수정 — 모든 BFF 라우트가 `{ status: res.status || 200 }`을 써서 BE 연결 실패(`beFetch` status 0)를 HTTP 200으로 응답한다. 현재 클라이언트는 바디의 `ok`로 판단해 무해하나, status 기준 소비처가 생기면 오작동. `res.status || 502`(또는 `=== 0 ? 502`)로 login/signup/logout/me/oauth·프로필 등 전체를 한 번에 정리. (2026-07-16 프로필 리뷰에서 식별) *(신규 피드 라우트는 `proxyAuthed` 헬퍼로 이미 502 처리 — 기존 인증/프로필 라우트만 남음)*
 
+* [ ] FE: 타입 검사(`tsc --noEmit`)가 CI에 없다 — CI는 `npm test` · `eslint` · `check:colors` · `build`만 돌린다. `next build`는 앱 코드만 컴파일하므로 `__tests__/**`의 타입 오류를 아무도 보지 못한다. 2026-09-09 기준 **약 100건**이 쌓여 있다(대부분 픽스처가 타입 정의보다 뒤처진 것). 오류를 먼저 정리한 뒤 `npm run typecheck`를 CI에 추가해야 한다 — 지금 넣으면 CI가 곧바로 빨개진다.
+
 ## 피드 FE 후속 (2026-08-02 최종 리뷰 이연 Minor)
 
 * [ ] FE 접근성(a11y) — 모바일 이식 목표와 연계: `LikeButton`(하트+숫자만, 접근명 없음)·`ComposeForm` textarea(placeholder만, label 없음)에 접근명 부여, `PostCard`의 `<article onClick>`을 키보드 도달 가능하게(role/tabIndex/onKeyDown). 스펙 참조 코드에서 그대로 내려온 갭.
