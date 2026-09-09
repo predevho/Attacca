@@ -38,7 +38,13 @@ export function ApplicationReviewItem({
   return (
     <li className="flex flex-col gap-2 rounded border border-line bg-surface p-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">회원 #{application.memberId}</span>
+        {/* 닉네임 없이 번호만 보이면 어드민이 누구를 승인하는지 모른 채 눌러야 한다. */}
+        <span className="text-sm font-medium">
+          {application.applicant
+            ? <>{application.applicant.nickname}
+                <span className="ml-1 text-xs font-normal text-ink-muted">#{application.memberId}</span></>
+            : <>회원 #{application.memberId}</>}
+        </span>
         <span className="text-xs text-ink-muted">{statusLabel(application.status)}</span>
       </div>
       <p className="whitespace-pre-wrap text-sm text-ink-muted">{application.statement}</p>

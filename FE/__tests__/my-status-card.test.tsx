@@ -4,7 +4,7 @@ import { MyStatusCard } from '@/components/verification/MyStatusCard';
 import type { Application } from '@/lib/verification/types';
 
 const app: Application = {
-  id: 1, memberId: 2, statement: '5년 활동', evidenceUrls: ['http://a'],
+  id: 1, memberId: 2, applicant: { id: 2, nickname: '신청자', verified: false }, statement: '5년 활동', evidenceUrls: ['http://a'],
   status: 'PENDING', decisionReason: null, decidedBy: null, decidedAt: null, createdAt: '2026-08-01T00:00',
 };
 

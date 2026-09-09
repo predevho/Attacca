@@ -3,6 +3,8 @@ export type VerificationStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'REVOKED'
 export type Application = {
   id: number;
   memberId: number;
+  /** 어드민 심사 목록에서만 채워진다. 탈퇴 등으로 표시정보가 없으면 null. */
+  applicant: { id: number; nickname: string; verified: boolean } | null;
   statement: string;
   evidenceUrls: string[];
   status: VerificationStatus;

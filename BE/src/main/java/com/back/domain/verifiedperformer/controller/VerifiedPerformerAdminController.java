@@ -5,6 +5,7 @@ import com.back.domain.verifiedperformer.dto.DecisionReasonRequest;
 import com.back.domain.verifiedperformer.dto.DecisionRequest;
 import com.back.domain.verifiedperformer.dto.GrantRequest;
 import com.back.domain.verifiedperformer.entity.VerificationStatus;
+import com.back.domain.verifiedperformer.service.VerificationReviewService;
 import com.back.domain.verifiedperformer.service.VerifiedPerformerService;
 import com.back.global.common.ApiResponse;
 import jakarta.validation.Valid;
@@ -30,11 +31,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class VerifiedPerformerAdminController {
 
     private final VerifiedPerformerService verifiedPerformerService;
+    private final VerificationReviewService verificationReviewService;
 
     @GetMapping("/applications")
     public ApiResponse<Page<ApplicationResponse>> applications(
             @RequestParam(defaultValue = "PENDING") VerificationStatus status, Pageable pageable) {
-        return ApiResponse.success(verifiedPerformerService.getApplications(status, pageable));
+        return ApiResponse.success(verificationReviewService.getApplications(status, pageable));
     }
 
     @PostMapping("/applications/{id}/approve")

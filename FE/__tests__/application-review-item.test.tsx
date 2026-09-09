@@ -4,16 +4,17 @@ import { ApplicationReviewItem } from '@/components/verification/ApplicationRevi
 import type { Application } from '@/lib/verification/types';
 
 const pending: Application = {
-  id: 1, memberId: 5, statement: '5년 활동', evidenceUrls: ['http://a'],
+  id: 1, memberId: 5, applicant: { id: 5, nickname: '신청자', verified: false }, statement: '5년 활동', evidenceUrls: ['http://a'],
   status: 'PENDING', decisionReason: null, decidedBy: null, decidedAt: null, createdAt: '2026-08-01T00:00',
 };
 
 function handlers() { return { onApprove: vi.fn(), onReject: vi.fn(), onRevoke: vi.fn() }; }
 
 describe('ApplicationReviewItem', () => {
-  it('회원 id·사유 표시', () => {
+  it('신청자·사유 표시', () => {
     render(<ApplicationReviewItem application={pending} {...handlers()} />);
-    expect(screen.getByText(/회원 #5/)).toBeInTheDocument();
+    expect(screen.getByText('신청자')).toBeInTheDocument();
+    expect(screen.getByText('#5')).toBeInTheDocument(); // 번호는 보조로 남긴다
     expect(screen.getByText('5년 활동')).toBeInTheDocument();
   });
 
@@ -58,5 +59,16 @@ describe('ApplicationReviewItem', () => {
     expect(screen.queryByRole('button', { name: '승인' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '거절' })).not.toBeInTheDocument();
     expect(screen.getByText('부족')).toBeInTheDocument();
+  });
+
+  it('신청자를 번호가 아니라 닉네임으로 보여준다', () => {
+    // "회원 #9"만 보이면 어드민이 누구를 승인하는지 모른 채 눌러야 한다(2026-09-09 확인).
+    render(<ApplicationReviewItem application={pending} {...handlers()} />);
+    expect(screen.getByText('신청자')).toBeInTheDocument();
+  });
+
+  it('표시정보가 없으면 회원 번호로 되돌아간다', () => {
+    render(<ApplicationReviewItem application={{ ...pending, applicant: null }} {...handlers()} />);
+    expect(screen.getByText(/회원 #/)).toBeInTheDocument();
   });
 });

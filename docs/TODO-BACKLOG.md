@@ -29,7 +29,7 @@
 
 ## 인증 연주자 FE 후속 (2026-08-12 범위 밖으로 남긴 Minor)
 
-* [ ] BE+FE: 어드민 신청 목록에 회원 표시정보(닉네임) 노출 — 현재 응답은 `memberId`만 → FE가 "회원 #{id}"로만 표시. BE에 표시정보 확장(예: `MemberQueryService.findDisplaysByIds` 협력) 후 FE 반영.
+* [x] ~~BE+FE: 어드민 신청 목록에 회원 표시정보(닉네임) 노출~~ — 2026-09-09 해소. **순환 참조 때문에 단순 협력이 불가능했다** — `MemberQueryService`가 인증 뱃지를 채우려고 이미 `VerifiedPerformerService`를 주입받고 있어, 반대 방향을 더하면 기동이 안 된다. 컨트롤러에서 합치는 것도 "도메인 간 협력은 서비스 계층으로만"(ARCHITECTURE-STATUTE §63)에 어긋나 `VerificationReviewService`(두 서비스를 아래에 두는 조합 전용 읽기 서비스)를 신설했다. 표시정보가 없으면(탈퇴 등) 화면이 회원 번호로 되돌아간다. 원문:  — 현재 응답은 `memberId`만 → FE가 "회원 #{id}"로만 표시. BE에 표시정보 확장(예: `MemberQueryService.findDisplaysByIds` 협력) 후 FE 반영.
 * [ ] FE 인증연주자: 증빙 링크 URL 형식 검증(현재는 개수/공백만 검증, 형식 미검증).
 * [ ] FE 인증연주자: 어드민 목록·회원 상태의 "회원측 PENDING 신청 취소"는 BE 엔드포인트 없어 미구현 — 필요 시 BE 추가 후 FE 반영.
 ## 채팅 FE 후속 (2026-08-12 MVP 범위 밖)

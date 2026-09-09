@@ -139,4 +139,32 @@ class PerformanceControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.posterImageUrl").isNotEmpty());
     }
+
+    /**
+     * 티켓 링크는 화면에서 `<a href>`로 그려지고, 공연 상세는 **비로그인 공개 화면**이다.
+     * `javascript:`가 저장되면 링크를 누른 방문자의 브라우저에서 스크립트가 돈다(저장형 XSS).
+     */
+    @Test
+    void 티켓_링크는_http_스킴만_받는다() throws Exception {
+        for (String bad : new String[] {"javascript:alert(1)", "data:text/html,<script>x</script>", "  javascript:alert(1)"}) {
+            mockMvc.perform(post("/api/performances")
+                            .header("Authorization", verifiedBearer)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""
+                                    {"title":"t","performedAt":"2026-12-24T19:30:00","venue":"홀","ticketUrl":"%s"}
+                                    """.formatted(bad)))
+                    .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Test
+    void 티켓_링크가_https면_통과한다() throws Exception {
+        mockMvc.perform(post("/api/performances")
+                        .header("Authorization", verifiedBearer)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"t","performedAt":"2026-12-24T19:30:00","venue":"홀","ticketUrl":"https://example.com/t"}
+                                """))
+                .andExpect(status().isOk());
+    }
 }

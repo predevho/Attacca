@@ -8,6 +8,7 @@ import { AuthorBadge } from '@/components/feed/AuthorBadge';
 import { formatDateTime } from '@/lib/performance/logic';
 import type { Me } from '@/lib/feed/types';
 import type { Performance } from '@/lib/performance/types';
+import { isHttpUrl } from '@/lib/url';
 
 export default function PerformanceDetailPage() {
   const router = useRouter();
@@ -87,7 +88,17 @@ export default function PerformanceDetailPage() {
         {performance.description && <div><dt className="text-ink-muted">소개</dt><dd className="whitespace-pre-wrap">{performance.description}</dd></div>}
         {performance.program && <div><dt className="text-ink-muted">프로그램</dt><dd className="whitespace-pre-wrap">{performance.program}</dd></div>}
         {performance.ticketInfo && <div><dt className="text-ink-muted">관람료</dt><dd>{performance.ticketInfo}</dd></div>}
-        {performance.ticketUrl && <div><dt className="text-ink-muted">티켓</dt><dd><a href={performance.ticketUrl} className="text-brand-strong" target="_blank" rel="noreferrer">예매 링크</a></dd></div>}
+        {performance.ticketUrl && (
+          <div>
+            <dt className="text-ink-muted">티켓</dt>
+            {/* http(s)가 아니면 링크로 만들지 않는다. 규칙이 생기기 전 저장된 값이 있을 수 있다. */}
+            <dd>
+              {isHttpUrl(performance.ticketUrl)
+                ? <a href={performance.ticketUrl} className="text-brand-strong" target="_blank" rel="noreferrer">예매 링크</a>
+                : <span className="text-ink-muted">{performance.ticketUrl}</span>}
+            </dd>
+          </div>
+        )}
       </dl>
     </main>
   );

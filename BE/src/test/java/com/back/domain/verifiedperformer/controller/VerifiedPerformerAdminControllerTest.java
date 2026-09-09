@@ -140,4 +140,20 @@ class VerifiedPerformerAdminControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value(VerificationStatus.REVOKED.name()));
     }
+
+    /**
+     * 심사 목록은 신청자가 누구인지 보여줘야 한다.
+     * 닉네임 없이 memberId만 내려주면 어드민은 "회원 #9"만 보고 승인/거절을 눌러야 한다.
+     */
+    @Test
+    void 심사_목록은_신청자_표시정보를_담는다() throws Exception {
+        newPendingApplicationId();
+
+        mockMvc.perform(get("/api/admin/verified-performers/applications")
+                        .header("Authorization", adminBearer))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].memberId").value(memberId))
+                .andExpect(jsonPath("$.data.content[0].applicant.nickname").value("신청자"))
+                .andExpect(jsonPath("$.data.content[0].applicant.verified").value(false));
+    }
 }
