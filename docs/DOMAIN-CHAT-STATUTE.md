@@ -130,6 +130,12 @@ com.back.global.websocket        # WebSocket 인프라(도메인 아님)
 | 초대(추가) `POST /rooms/{id}/participants` | 그 방의 **활성 참여자 누구나**(GROUP만) | 비참여자 `NOT_ROOM_PARTICIPANT`(403-03) |
 | 퇴장 `DELETE /rooms/{id}/participants/me` | 본인 | — |
 
+* **1:1 상대 고르기(2026-09-09)**: 화면은 회원 id를 입력받지 않는다 — 사용자가 알 수 없는 값이다.
+  MEMBER의 `GET /api/members/search?q=`(DOMAIN-MEMBER-STATUTE §3.2.1)로 닉네임을 찾아 고른다.
+  이 도메인은 검색 결과의 `id`만 받아 `participantIds`에 넣는다(회원 데이터는 MEMBER가 소유).
+* **이력 화면 규칙(2026-09-09)**: 이력은 커서 페이징이므로 화면이 "이전 메시지 더 보기"를 제공한다.
+  과거를 앞에 붙일 때 **스크롤 위치를 보정**한다(보정하지 않으면 읽던 자리가 아래로 밀린다).
+  새 메시지는 **이미 바닥 근처일 때만** 따라 내려간다 — 이전 대화를 읽는 중에 화면이 튀면 안 된다.
 * 초대는 GROUP 방에만 허용한다. DIRECT 방에 참여자를 추가하는 요청은 `CHAT_INVALID_PARTICIPANTS`(400-03)로 거절(1:1의 의미 보존).
 * 초대 시 이미 활성 참여자면 no-op(멱등). 과거 퇴장자(`leftAt` 존재)를 다시 초대하면 `rejoin()`.
 * 방장 권한·강제 퇴장(kick)은 두지 않는다(CONSTITUTION §2 평평한 모델).

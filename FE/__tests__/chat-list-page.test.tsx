@@ -17,6 +17,9 @@ beforeEach(() => {
   getBff.mockImplementation((p: string) => {
     if (p.startsWith('/api/bff/me/identity')) return Promise.resolve({ ok: true, data: { id: 9, nickname: 'Me', role: 'USER', verified: false } });
     if (p.startsWith('/api/bff/chat/rooms')) return Promise.resolve({ ok: true, data: page });
+    if (p.startsWith('/api/bff/members/search')) {
+      return Promise.resolve({ ok: true, data: [{ id: 7, nickname: '정하윤', verified: false }] });
+    }
     return Promise.resolve({ ok: false, message: 'x' });
   });
 });
@@ -31,12 +34,14 @@ describe('ChatListPage', () => {
     fireEvent.click(await screen.findByText('홍길동'));
     expect(push).toHaveBeenCalledWith('/chat/1');
   });
-  it('새 대화 성공 시 생성된 방으로 push', async () => {
+  it('닉네임으로 찾아 고르면 그 회원과의 방으로 push', async () => {
     postBff.mockResolvedValue({ ok: true, data: { id: 5, type: 'DIRECT', title: null, participants: [], createdAt: '' } });
     render(<ChatListPage />);
     await screen.findByText('홍길동');
-    fireEvent.change(screen.getByLabelText('회원 id'), { target: { value: '7' } });
-    fireEvent.click(screen.getByRole('button', { name: '대화 시작' }));
+
+    fireEvent.change(screen.getByRole('searchbox', { name: '닉네임으로 회원 찾기' }), { target: { value: '하윤' } });
+    fireEvent.click(await screen.findByRole('button', { name: /정하윤/ }));
+
     await waitFor(() => expect(postBff).toHaveBeenCalledWith('/api/bff/chat/rooms', { type: 'DIRECT', participantIds: [7] }));
     await waitFor(() => expect(push).toHaveBeenCalledWith('/chat/5'));
   });

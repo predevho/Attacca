@@ -32,4 +32,7 @@ export type ChatMessage = {
 /** 방 목록은 Spring 오프셋 페이지. */
 export type SpringPage<T> = { content: T[]; number: number; totalPages: number; last: boolean };
 
+/** 회원 검색 결과 한 건. BE MemberDisplay 와 1:1. */
+export type MemberHit = { id: number; nickname: string; verified: boolean };
+
 export type NewChatFormValues = { memberId: string };

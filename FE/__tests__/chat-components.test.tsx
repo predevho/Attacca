@@ -1,7 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { RoomListItem } from '@/components/chat/RoomListItem';
-import { NewChatForm } from '@/components/chat/NewChatForm';
 import { MessageBubble } from '@/components/chat/MessageBubble';
 import { MessageComposer } from '@/components/chat/MessageComposer';
 import type { RoomSummary, ChatMessage } from '@/lib/chat/types';
@@ -31,22 +30,7 @@ describe('RoomListItem', () => {
   });
 });
 
-describe('NewChatForm', () => {
-  it('빈 id면 onStart 미호출 + 에러', () => {
-    const onStart = vi.fn();
-    render(<NewChatForm submitting={false} onStart={onStart} />);
-    fireEvent.click(screen.getByRole('button', { name: '대화 시작' }));
-    expect(onStart).not.toHaveBeenCalled();
-    expect(screen.getByText(/회원/)).toBeInTheDocument();
-  });
-  it('유효 입력이면 onStart(values)', () => {
-    const onStart = vi.fn();
-    render(<NewChatForm submitting={false} onStart={onStart} />);
-    fireEvent.change(screen.getByLabelText('회원 id'), { target: { value: '7' } });
-    fireEvent.click(screen.getByRole('button', { name: '대화 시작' }));
-    expect(onStart).toHaveBeenCalledWith({ memberId: '7' });
-  });
-});
+// NewChatForm 은 회원 id 입력에서 닉네임 검색으로 바뀌었다 → __tests__/member-search.test.tsx
 
 describe('MessageBubble', () => {
   const m: ChatMessage = { id: 1, roomId: 1, sender: { id: 2, nickname: '홍길동', verified: false }, content: '안녕', createdAt: '2026-08-01T09:05:00' };

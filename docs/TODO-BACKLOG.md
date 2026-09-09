@@ -36,10 +36,10 @@
 
 * [ ] FE 채팅: 그룹 방 생성/초대/퇴장 UI(BE는 `POST /rooms`(GROUP)·`POST /rooms/{id}/participants`·`DELETE /participants/me` 제공).
 * [ ] FE 채팅: 타이핑 표시(STOMP `/typing` 프레임 수신·표시), presence(`ParticipantView.online`) 표시.
-* [ ] FE 채팅: 회원 검색/디렉터리 — 현재 1:1 시작이 회원 id 입력. 닉네임 검색 API(BE 신규) 후 개선.
+* [x] ~~FE 채팅: 회원 검색/디렉터리~~ — 2026-09-09 해소. BE `GET /api/members/search?q=`(MEMBER 소유, STATUTE §3.2.1) 신설 + 화면을 닉네임 검색·선택으로 교체. 회원 목록을 여는 경로라 인증 필수·표시정보만 응답·2자 미만은 빈 목록·본인/탈퇴 회원 제외를 규칙으로 못박고 테스트했다.
 * [ ] FE 채팅: WS 토큰 만료 완전 처리 — 현재는 대화창 진입 시 REST 선행 reissue에 의존. access 만료 중 재연결 시 ws-token이 stale일 수 있음(전용 단수명 WS 티켓 BE 도입 검토).
 * [ ] FE 채팅: 대화창 `markRead`를 `setMessages` 업데이터 내부에서 호출 — StrictMode 이중호출 시 중복 read POST(BE 멱등이라 무해). 별도 effect로 분리 검토.
-* [ ] FE 채팅: 이력 "이전 메시지 더 보기"(현재 첫 페이지만 로드, `nextCursor` 미사용) + 새 메시지 도착 시 스크롤 하단 고정.
+* [x] ~~FE 채팅: 이력 더 보기 + 스크롤 하단 고정~~ — 2026-09-09 해소. `nextCursor`를 써서 과거를 앞에 붙이고(중복 제거·오름차순 유지) **스크롤 위치를 보정**한다. 새 메시지는 이미 바닥 근처일 때만 따라간다(`shouldStickToBottom`).
 * [ ] 배포 시 `NEXT_PUBLIC_BE_WS_URL`을 실제 BE WS 주소(wss)로 설정 + Nginx WebSocket 프록시.
 
 ## 기능

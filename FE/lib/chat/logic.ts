@@ -26,6 +26,14 @@ export function formatTime(iso: string): string {
   return `${hh}:${mm}`;
 }
 
+/** 검색어 최소 길이. BE(STATUTE §3.2.1)와 같은 값 — 미만이면 아예 요청하지 않는다. */
+export const MIN_SEARCH_LENGTH = 2;
+
+/** 회원 검색 URL. 닉네임에 공백·특수문자가 들어갈 수 있어 반드시 인코딩한다. */
+export function searchUrl(query: string): string {
+  return `/api/bff/members/search?q=${encodeURIComponent(query.trim())}`;
+}
+
 /** 새 대화 폼 검증(회원 id 양의 정수). */
 export function validateNewChat(v: NewChatFormValues): string | null {
   const n = Number(v.memberId);
@@ -36,4 +44,28 @@ export function validateNewChat(v: NewChatFormValues): string | null {
 /** 폼 값 → DIRECT 방 생성 요청. */
 export function toCreateDirectRequest(v: NewChatFormValues) {
   return { type: 'DIRECT' as const, participantIds: [Number(v.memberId)] };
+}
+
+/**
+ * 과거 메시지를 목록 앞에 붙인다. BE 이력은 최신→과거 순이므로 그대로 붙이면 순서가 뒤집힌다.
+ * 커서 경계에서 같은 메시지가 겹쳐 올 수 있어 id 기준으로 한 번만 남긴다.
+ */
+export function prependOlder(current: ChatMessage[], older: ChatMessage[]): ChatMessage[] {
+  if (older.length === 0) return current;
+  const byId = new Map<number, ChatMessage>();
+  for (const m of [...older, ...current]) byId.set(m.id, m);
+  return sortByIdAsc([...byId.values()]);
+}
+
+/**
+ * 새 메시지가 왔을 때 바닥으로 따라 내려갈지.
+ *
+ * 이전 대화를 읽고 있는 중에 화면이 튀면 방해가 되므로, **이미 바닥 근처일 때만** 따라간다.
+ * 스크롤 값이 픽셀 단위로 딱 떨어지지 않아 여유(threshold)를 둔다.
+ */
+export function shouldStickToBottom(
+  el: { scrollTop: number; clientHeight: number; scrollHeight: number },
+  threshold = 80,
+): boolean {
+  return el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
 }
