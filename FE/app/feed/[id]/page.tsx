@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getBff, postBff, putBff, deleteBff } from '@/lib/api';
 import { useInfiniteList } from '@/lib/feed/useInfiniteList';
-import { toggleLike, canEdit, canDelete } from '@/lib/feed/logic';
+import { toggleLike, canEdit, canDelete, withCommentDelta } from '@/lib/feed/logic';
 import { AuthorBadge } from '@/components/feed/AuthorBadge';
 import { LikeButton } from '@/components/feed/LikeButton';
 import { ComposeForm } from '@/components/feed/ComposeForm';
@@ -40,7 +40,7 @@ export default function FeedDetailPage() {
     return r.ok ? (r.data as CursorPage<Comment>) : null;
   }, [postId]);
 
-  const { items: comments, setItems: setComments, isLoading, hasMore, sentinelRef } =
+  const { items: comments, setItems: setComments, isLoading, loaded, hasMore, sentinelRef } =
     useInfiniteList<Comment>(fetchComments);
 
   async function likePost() {
@@ -64,15 +64,19 @@ export default function FeedDetailPage() {
 
   async function addComment(content: string): Promise<boolean> {
     const r = await postBff<Comment>(`/api/bff/feed/posts/${postId}/comments`, { content });
-    if (r.ok) setComments((prev) => [...prev, r.data as Comment]);
-    else setError(r.message ?? '댓글 작성에 실패했습니다.');
+    if (r.ok) {
+      setComments((prev) => [...prev, r.data as Comment]);
+      setPost((prev) => (prev ? withCommentDelta(prev, 1) : prev));
+    } else setError(r.message ?? '댓글 작성에 실패했습니다.');
     return r.ok;
   }
 
   async function deleteComment(c: Comment) {
     const r = await deleteBff(`/api/bff/feed/comments/${c.id}`);
-    if (r.ok) setComments((prev) => prev.filter((x) => x.id !== c.id));
-    else setError('댓글 삭제에 실패했습니다.');
+    if (r.ok) {
+      setComments((prev) => prev.filter((x) => x.id !== c.id));
+      setPost((prev) => (prev ? withCommentDelta(prev, -1) : prev));
+    } else setError('댓글 삭제에 실패했습니다.');
   }
 
   async function saveEdit() {
@@ -141,7 +145,7 @@ export default function FeedDetailPage() {
         </div>
         {isLoading && <p className="py-3 text-center text-sm text-ink-faint">불러오는 중...</p>}
         {hasMore && <div ref={sentinelRef} className="h-8" />}
-        {!hasMore && comments.length === 0 && !isLoading && (
+        {loaded && comments.length === 0 && (
           <p className="py-4 text-center text-sm text-ink-faint">첫 댓글을 남겨보세요.</p>
         )}
       </section>

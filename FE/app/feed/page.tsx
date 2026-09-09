@@ -24,7 +24,7 @@ export default function FeedPage() {
     return r.ok ? (r.data as CursorPage<Post>) : null;
   }, []);
 
-  const { items, setItems, isLoading, error, hasMore, sentinelRef } = useInfiniteList<Post>(fetchPage);
+  const { items, setItems, isLoading, error, loaded, hasMore, sentinelRef } = useInfiniteList<Post>(fetchPage);
 
   async function createPost(content: string): Promise<boolean> {
     const r = await postBff<Post>('/api/bff/feed/posts', { content });
@@ -58,7 +58,7 @@ export default function FeedPage() {
 
       {isLoading && <p className="py-4 text-center text-sm text-ink-faint">불러오는 중...</p>}
       {hasMore && <div ref={sentinelRef} className="h-8" />}
-      {!hasMore && items.length === 0 && !isLoading && (
+      {loaded && items.length === 0 && (
         <p className="py-8 text-center text-sm text-ink-faint">아직 게시글이 없습니다.</p>
       )}
     </main>

@@ -16,6 +16,8 @@ export function useInfiniteList<T extends { id: number }>(
   const [nextCursor, setNextCursor] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 첫 페이지가 도착했는지. 목록 화면이 빈 상태를 언제 보여줄지 판단하는 데 쓴다.
+  const [loaded, setLoaded] = useState(false);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
   // 옵저버 콜백이 읽을 최신 값(재구독 없이).
@@ -42,6 +44,7 @@ export function useInfiniteList<T extends { id: number }>(
     setNextCursor(page.nextCursor);
     setItems((prev) => (isFirst ? page.items : mergeCursorPage({ items: prev, nextCursor: cursor }, page).items));
     stateRef.current.loaded = true;
+    setLoaded(true);
   }, [fetchPage]);
 
   // 첫 로드(마운트 1회)
@@ -79,5 +82,5 @@ export function useInfiniteList<T extends { id: number }>(
     observerRef.current = obs;
   }, []);
 
-  return { items, setItems, isLoading, error, hasMore: nextCursor !== null, sentinelRef };
+  return { items, setItems, isLoading, error, loaded, hasMore: nextCursor !== null, sentinelRef };
 }

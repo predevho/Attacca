@@ -8,6 +8,7 @@ import { toCursorPage } from '@/lib/recruitment/logic';
 import { PostingCard } from '@/components/recruitment/PostingCard';
 import type { CursorPage } from '@/lib/feed/types';
 import type { InstrumentOption, Posting, RecruitmentScope, SpringPage } from '@/lib/recruitment/types';
+import { toLabelMap, type InstrumentLabels } from '@/lib/recruitment/instruments';
 
 const TABS: { key: RecruitmentScope; label: string }[] = [
   { key: 'OPEN', label: '모집중' },
@@ -15,7 +16,10 @@ const TABS: { key: RecruitmentScope; label: string }[] = [
   { key: 'ALL', label: '전체' },
 ];
 
-function ScopeList({ scope, instrument }: { scope: RecruitmentScope; instrument: string }) {
+function ScopeList(
+  { scope, instrument, instrumentLabels }:
+  { scope: RecruitmentScope; instrument: string; instrumentLabels: InstrumentLabels },
+) {
   const router = useRouter();
   const fetchPage = useCallback(async (cursor: number | null): Promise<CursorPage<Posting> | null> => {
     const pageNum = cursor ?? 0;
@@ -24,19 +28,20 @@ function ScopeList({ scope, instrument }: { scope: RecruitmentScope; instrument:
     return r.ok ? toCursorPage(r.data as SpringPage<Posting>) : null;
   }, [scope, instrument]);
 
-  const { items, isLoading, error, hasMore, sentinelRef } = useInfiniteList<Posting>(fetchPage);
+  const { items, isLoading, error, loaded, hasMore, sentinelRef } = useInfiniteList<Posting>(fetchPage);
 
   return (
     <>
       {error && <p className="mb-4 text-sm text-danger">{error}</p>}
       <div className="flex flex-col gap-4">
         {items.map((p) => (
-          <PostingCard key={p.id} posting={p} onOpen={() => router.push(`/recruitments/${p.id}`)} />
+          <PostingCard key={p.id} posting={p} instrumentLabels={instrumentLabels}
+            onOpen={() => router.push(`/recruitments/${p.id}`)} />
         ))}
       </div>
       {isLoading && <p className="py-4 text-center text-sm text-ink-faint">불러오는 중...</p>}
       {hasMore && <div ref={sentinelRef} className="h-8" />}
-      {!hasMore && items.length === 0 && !isLoading && (
+      {loaded && items.length === 0 && (
         <p className="py-8 text-center text-sm text-ink-faint">등록된 공고가 없습니다.</p>
       )}
     </>
@@ -84,7 +89,8 @@ export default function RecruitmentsPage() {
         </select>
       </div>
 
-      <ScopeList key={`${scope}:${instrument}`} scope={scope} instrument={instrument} />
+      <ScopeList key={`${scope}:${instrument}`} scope={scope} instrument={instrument}
+        instrumentLabels={toLabelMap(options)} />
 
       <div className="mt-6 text-center">
         <button type="button" onClick={() => router.push('/recruitments/applications/me')}

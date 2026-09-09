@@ -1,8 +1,12 @@
 import { AuthorBadge } from '@/components/feed/AuthorBadge';
 import { formatDeadline } from '@/lib/recruitment/logic';
+import { instrumentText, type InstrumentLabels } from '@/lib/recruitment/instruments';
 import type { Posting } from '@/lib/recruitment/types';
 
-export function PostingCard({ posting, onOpen }: { posting: Posting; onOpen: () => void }) {
+export function PostingCard(
+  { posting, onOpen, instrumentLabels = {} }:
+  { posting: Posting; onOpen: () => void; instrumentLabels?: InstrumentLabels },
+) {
   return (
     <article className="relative rounded-lg border border-line bg-surface p-4">
       <div className="flex items-start justify-between gap-2">
@@ -20,7 +24,7 @@ export function PostingCard({ posting, onOpen }: { posting: Posting; onOpen: () 
       </div>
       <div className="mt-1 text-sm text-ink-muted"><AuthorBadge author={posting.author} /></div>
       <p className="mt-1 text-sm text-ink-muted">
-        {posting.instruments.join(', ')}
+        {instrumentText(posting.instruments, instrumentLabels)}
         {posting.location ? ` · ${posting.location}` : ''}
         {` · 마감 ${formatDeadline(posting.deadline)}`}
       </p>

@@ -32,7 +32,7 @@ function ReviewList({
     return r.ok ? toCursorPage(r.data as SpringPage<Application>) : null;
   }, [status]);
 
-  const { items, isLoading, error, hasMore, sentinelRef } = useInfiniteList<Application>(fetchPage);
+  const { items, isLoading, error, loaded, hasMore, sentinelRef } = useInfiniteList<Application>(fetchPage);
 
   return (
     <>
@@ -44,7 +44,7 @@ function ReviewList({
       </ul>
       {isLoading && <p className="py-4 text-center text-sm text-ink-faint">불러오는 중...</p>}
       {hasMore && <div ref={sentinelRef} className="h-8" />}
-      {!hasMore && items.length === 0 && !isLoading && (
+      {loaded && items.length === 0 && (
         <p className="py-8 text-center text-sm text-ink-faint">해당 상태의 신청이 없습니다.</p>
       )}
     </>

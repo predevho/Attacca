@@ -17,7 +17,7 @@ function RoomList() {
     const r = await getBff<SpringPage<RoomSummary>>(`/api/bff/chat/rooms?page=${pageNum}`);
     return r.ok ? toRoomCursorPage(r.data as SpringPage<RoomSummary>) : null;
   }, []);
-  const { items, isLoading, error, hasMore, sentinelRef } = useInfiniteList<RoomSummary>(fetchPage);
+  const { items, isLoading, error, loaded, hasMore, sentinelRef } = useInfiniteList<RoomSummary>(fetchPage);
   return (
     <>
       {error && <p className="mb-4 text-sm text-danger">{error}</p>}
@@ -26,7 +26,7 @@ function RoomList() {
       </div>
       {isLoading && <p className="py-4 text-center text-sm text-ink-faint">불러오는 중...</p>}
       {hasMore && <div ref={sentinelRef} className="h-8" />}
-      {!hasMore && items.length === 0 && !isLoading && (
+      {loaded && items.length === 0 && (
         <p className="py-8 text-center text-sm text-ink-faint">대화가 없습니다. 새 대화를 시작해 보세요.</p>
       )}
     </>

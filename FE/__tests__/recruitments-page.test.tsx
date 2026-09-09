@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 
 const push = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
@@ -33,6 +33,16 @@ describe('RecruitmentsPage', () => {
     render(<RecruitmentsPage />);
     fireEvent.click(await screen.findByText('공고1'));
     expect(push).toHaveBeenCalledWith('/recruitments/1');
+  });
+
+  it('카드의 모집 파트를 enum명이 아니라 한글 라벨로 보여준다', async () => {
+    // 예전에는 "PIANO"가 그대로 노출됐다. 옵션은 이미 화면이 받아오고 있었는데 카드에 안 내려줬다.
+    render(<RecruitmentsPage />);
+    await screen.findByText('공고1');
+    // 필터 <select>에도 "피아노"가 있으므로 카드 안으로 좁힌다.
+    const card = screen.getByRole('article');
+    expect(within(card).getByText(/피아노/)).toBeInTheDocument();
+    expect(within(card).queryByText(/PIANO/)).not.toBeInTheDocument();
   });
 
   it('악기 필터 선택 시 instrument 쿼리로 재조회', async () => {

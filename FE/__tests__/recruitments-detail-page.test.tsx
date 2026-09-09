@@ -19,6 +19,7 @@ const posting = { id: 7, author: { id: 9, nickname: '작성자', verified: false
 function mockGet(meId: number, extra: (p: string) => unknown = () => ({ ok: false, message: 'x' })) {
   getBff.mockImplementation((p: string) => {
     if (p.startsWith('/api/bff/me/identity')) return Promise.resolve({ ok: true, data: { id: meId, nickname: 'X', role: 'USER', verified: false } });
+    if (p.startsWith('/api/bff/profile-options')) return Promise.resolve({ ok: true, data: { instruments: [{ code: 'PIANO', label: '피아노' }] } });
     if (p === '/api/bff/recruitments/7') return Promise.resolve({ ok: true, data: posting });
     return Promise.resolve(extra(p));
   });
@@ -94,5 +95,27 @@ describe('RecruitmentDetailPage', () => {
     });
     render(<RecruitmentDetailPage />);
     expect(await screen.findByText('삭제되었거나 없는 공고입니다.')).toBeInTheDocument();
+  });
+
+  it('모집 파트를 한글 라벨로 보여준다', async () => {
+    mockGet(2);
+    render(<RecruitmentDetailPage />);
+    expect(await screen.findByText('피아노')).toBeInTheDocument();
+    expect(screen.queryByText('PIANO')).not.toBeInTheDocument();
+  });
+
+  it('마감 버튼을 연타해도 요청은 한 번만 나간다', async () => {
+    mockGet(9); // 작성자
+    // 응답을 붙잡아 두고 그 사이에 다시 누른다 — 실제 연타가 일어나는 창이다.
+    let release!: (v: unknown) => void;
+    postBff.mockReturnValue(new Promise((r) => { release = r; }));
+    render(<RecruitmentDetailPage />);
+    const close = await screen.findByRole('button', { name: '마감' });
+    fireEvent.click(close);
+    const pendingBtn = await screen.findByRole('button', { name: '마감 중...' });
+    fireEvent.click(pendingBtn);
+    fireEvent.click(pendingBtn);
+    expect(postBff).toHaveBeenCalledTimes(1);
+    release({ ok: true, data: null });
   });
 });

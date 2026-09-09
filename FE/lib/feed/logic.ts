@@ -1,4 +1,4 @@
-import type { CursorPage, Likeable, Me } from '@/lib/feed/types';
+import type { CursorPage, Likeable, Me, Post } from '@/lib/feed/types';
 
 /** 다음 커서 페이지를 기존 목록 뒤에 붙인다. id 기준 중복은 제거(경합·재요청 방어). */
 export function mergeCursorPage<T extends { id: number }>(prev: CursorPage<T>, page: CursorPage<T>): CursorPage<T> {
@@ -37,4 +37,15 @@ export function canDelete(me: Me | null, authorId: number | undefined): boolean 
   // 어드민은 남의 글도 지울 수 있지만, 대상이 누구인지 모르면(공개 응답) 판단할 수 없다.
   if (authorId == null) return false;
   return me.id === authorId || me.role === 'ADMIN';
+}
+
+/**
+ * 댓글 수를 낙관적으로 증감한 게시글을 돌려준다.
+ *
+ * 상세에서 댓글을 달거나 지워도 게시글의 `commentCount`는 그대로여서, 새로고침 전까지
+ * 화면의 숫자가 실제와 어긋났다(목록으로 돌아가도 마찬가지). 서버 값을 다시 받아오는
+ * 대신 여기서 맞춘다 — 요청 한 번을 아끼려는 게 아니라, 방금 한 행동이 즉시 보여야 해서다.
+ */
+export function withCommentDelta(post: Post, delta: number): Post {
+  return { ...post, commentCount: Math.max(0, post.commentCount + delta) };
 }
