@@ -1,6 +1,5 @@
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { authedBeFetch } from '@/lib/server/session';
+import { proxyAuthed } from '@/lib/server/bffProxy';
 
 export async function PUT(request: Request) {
   const incoming = await request.formData();
@@ -9,12 +8,10 @@ export async function PUT(request: Request) {
     return NextResponse.json({ ok: false, message: '이미지 파일이 필요합니다.' }, { status: 400 });
   }
 
+  // 들어온 폼을 그대로 넘기지 않고 file 하나만 다시 담는다 — 클라이언트가 끼워 넣은
+  // 다른 필드가 BE로 흘러가지 않게.
   const forward = new FormData();
   forward.append('file', file, (file as File).name ?? 'upload');
 
-  const res = await authedBeFetch(await cookies(), '/api/members/me/profile/image', {
-    method: 'PUT',
-    body: forward,
-  });
-  return NextResponse.json({ ok: res.ok, data: res.data, message: res.message }, { status: res.status || 200 });
+  return proxyAuthed('/api/members/me/profile/image', { method: 'PUT', body: forward });
 }

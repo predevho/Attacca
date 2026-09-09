@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 import { proxyAuthed } from '@/lib/server/bffProxy';
+import type { IdParams } from '@/lib/server/routeParams';
 
-type Ctx = { params: Promise<{ id: string }> };
-
-export async function PUT(request: Request, { params }: Ctx) {
+export async function PUT(request: Request, { params }: IdParams) {
   const { id } = await params;
   const incoming = await request.formData();
   const file = incoming.get('file');

@@ -1,11 +1,14 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-// 쿠키 이름을 여기서 하드코딩하는 이유: lib/server/cookies.ts는 'server-only'라 edge 런타임인
-// 미들웨어에서 import할 수 없다. 이름이 바뀌면 두 곳을 함께 고칠 것(access_token).
-const ACCESS_COOKIE = 'access_token';
+import { ACCESS_COOKIE } from '@/lib/server/cookies';
+
+// 예전 middleware.ts는 edge 런타임이라 'server-only'인 cookies.ts를 import할 수 없어
+// 쿠키 이름을 여기에 하드코딩해 두 곳이 어긋날 위험을 안고 있었다.
+// proxy는 nodejs 런타임이라 그 제약이 사라져 정본을 그대로 쓴다.
 
 /**
- * 인증 필요 라우트 보호. access 쿠키의 '존재'만 검사한다(서명 검증은 BE가 실제 호출 시 수행).
+ * 인증 필요 라우트 보호. (Next 16에서 middleware 파일 규약이 deprecated되어 proxy로 옮겼다.
+ * proxy는 nodejs 런타임 고정이며 runtime 설정을 받지 않는다.) access 쿠키의 '존재'만 검사한다(서명 검증은 BE가 실제 호출 시 수행).
  * 만료된 access여도 통과시키고, 데이터 호출 단계에서 reissue가 처리한다 —
  * FE에 JWT 시크릿을 두지 않기 위함. 어드민 라우트의 역할(ROLE_ADMIN) 확인은
  * 쿠키만으로 불가하므로 페이지 클라이언트에서 신원 조회로 2차 게이트한다.
@@ -14,7 +17,7 @@ const ACCESS_COOKIE = 'access_token';
  * "홈에서 공연 카드 클릭 → 로그인 → 원래 그 공연"이 주 동선이 됐기 때문이다.
  * (이전에는 로그인 후 항상 /feed로 떨어져 방금 보려던 것을 다시 찾아야 했다.)
  */
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const hasAccess = req.cookies.has(ACCESS_COOKIE);
   if (!hasAccess) {
     const loginUrl = new URL('/login', req.url);

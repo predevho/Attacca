@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// middleware.ts가 next/server를 import하므로 목으로 대체한다.
+// proxy.ts가 next/server를 import하므로 목으로 대체한다.
 const redirect = vi.fn((url: URL) => ({ url }));
 const next = vi.fn(() => ({ next: true }));
 vi.mock('next/server', () => ({
@@ -10,9 +10,9 @@ vi.mock('next/server', () => ({
   },
 }));
 
-import { config, middleware } from '@/middleware';
+import { config, proxy } from '@/proxy';
 
-type FakeRequest = Parameters<typeof middleware>[0];
+type FakeRequest = Parameters<typeof proxy>[0];
 
 function request(pathname: string, search = '', hasCookie = false): FakeRequest {
   return {
@@ -43,7 +43,7 @@ const PROTECTED_ROUTES = [
  */
 const PROTECTED_PERFORMANCE_ROUTES = ['/performances/new', '/performances/:id/edit'];
 
-describe('middleware matcher', () => {
+describe('proxy matcher', () => {
   it('보호 대상 화면을 하나도 빠뜨리지 않는다', () => {
     for (const route of PROTECTED_ROUTES) {
       expect(config.matcher).toContain(`${route}/:path*`);
@@ -74,7 +74,7 @@ describe('middleware matcher', () => {
 
 describe('로그인 후 원래 경로로 되돌리기', () => {
   it('쿠키가 없으면 원래 경로를 next로 달아 로그인으로 보낸다', () => {
-    middleware(request('/performances/12/edit'));
+    proxy(request('/performances/12/edit'));
 
     const url = redirect.mock.calls[0][0];
     expect(url.pathname).toBe('/login');
@@ -82,13 +82,13 @@ describe('로그인 후 원래 경로로 되돌리기', () => {
   });
 
   it('쿼리스트링까지 함께 보존한다', () => {
-    middleware(request('/recruitments', '?scope=OPEN'));
+    proxy(request('/recruitments', '?scope=OPEN'));
 
     expect(redirect.mock.calls[0][0].searchParams.get('next')).toBe('/recruitments?scope=OPEN');
   });
 
   it('쿠키가 있으면 그대로 통과시킨다', () => {
-    middleware(request('/feed', '', true));
+    proxy(request('/feed', '', true));
 
     expect(redirect).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalled();

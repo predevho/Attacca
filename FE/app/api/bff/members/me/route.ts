@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
-import { NextResponse } from 'next/server';
 import { authedBeFetch } from '@/lib/server/session';
 import { clearAuthCookies } from '@/lib/server/cookies';
+import { bffResultJson } from '@/lib/server/bffProxy';
 
 /**
  * 회원 탈퇴. 되돌릴 수 없다. (DOMAIN-MEMBER-STATUTE §3.6)
@@ -13,5 +13,5 @@ export async function DELETE() {
   const store = await cookies();
   const res = await authedBeFetch(store, '/api/members/me', { method: 'DELETE' });
   if (res.ok) clearAuthCookies(store);
-  return NextResponse.json({ ok: res.ok, message: res.message }, { status: res.status || 200 });
+  return bffResultJson(res);
 }

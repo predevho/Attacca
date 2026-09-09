@@ -1,8 +1,3 @@
-import { cookies } from 'next/headers';
-import { NextResponse } from 'next/server';
-import { authedBeFetch } from '@/lib/server/session';
+import { proxyAuthed } from '@/lib/server/bffProxy';
 
-export async function GET() {
-  const res = await authedBeFetch(await cookies(), '/api/members/profile-options');
-  return NextResponse.json({ ok: res.ok, data: res.data, message: res.message }, { status: res.status || 200 });
-}
+export const GET = () => proxyAuthed('/api/members/profile-options');

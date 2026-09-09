@@ -1,28 +1,17 @@
-import { cookies } from 'next/headers';
-import { NextResponse } from 'next/server';
-import { authedBeFetch } from '@/lib/server/session';
+import { proxyAuthed } from '@/lib/server/bffProxy';
+import type { IdParams } from '@/lib/server/routeParams';
 
-type Ctx = { params: Promise<{ id: string }> };
+const path = (id: string) => `/api/admin/notices/${encodeURIComponent(id)}`;
 
-export async function GET(_request: Request, { params }: Ctx) {
-  const { id } = await params;
-  const res = await authedBeFetch(await cookies(), `/api/admin/notices/${encodeURIComponent(id)}`);
-  return NextResponse.json({ ok: res.ok, data: res.data, message: res.message },
-    { status: res.status || 200 });
+export async function GET(_request: Request, { params }: IdParams) {
+  return proxyAuthed(path((await params).id));
 }
 
-export async function PUT(request: Request, { params }: Ctx) {
+export async function PUT(request: Request, { params }: IdParams) {
   const { id } = await params;
-  const body = await request.text();
-  const res = await authedBeFetch(await cookies(),
-    `/api/admin/notices/${encodeURIComponent(id)}`, { method: 'PUT', body });
-  return NextResponse.json({ ok: res.ok, data: res.data, message: res.message },
-    { status: res.status || 200 });
+  return proxyAuthed(path(id), { method: 'PUT', body: await request.text() });
 }
 
-export async function DELETE(_request: Request, { params }: Ctx) {
-  const { id } = await params;
-  const res = await authedBeFetch(await cookies(),
-    `/api/admin/notices/${encodeURIComponent(id)}`, { method: 'DELETE' });
-  return NextResponse.json({ ok: res.ok, message: res.message }, { status: res.status || 200 });
+export async function DELETE(_request: Request, { params }: IdParams) {
+  return proxyAuthed(path((await params).id), { method: 'DELETE' });
 }

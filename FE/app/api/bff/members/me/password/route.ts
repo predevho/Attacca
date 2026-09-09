@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
-import { NextResponse } from 'next/server';
 import { authedBeFetch } from '@/lib/server/session';
 import { setAuthCookies } from '@/lib/server/cookies';
+import { bffResultJson } from '@/lib/server/bffProxy';
 
 /**
  * 비밀번호 변경. (DOMAIN-MEMBER-STATUTE §3.5)
@@ -19,5 +19,5 @@ export async function PUT(request: Request) {
     const { accessToken, refreshToken } = res.data as { accessToken: string; refreshToken: string };
     setAuthCookies(store, accessToken, refreshToken);
   }
-  return NextResponse.json({ ok: res.ok, message: res.message }, { status: res.status || 200 });
+  return bffResultJson(res);
 }

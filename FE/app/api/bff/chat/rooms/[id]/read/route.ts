@@ -1,8 +1,7 @@
 import { proxyAuthed } from '@/lib/server/bffProxy';
+import type { IdParams } from '@/lib/server/routeParams';
 
-type Ctx = { params: Promise<{ id: string }> };
-
-export async function POST(request: Request, { params }: Ctx) {
+export async function POST(request: Request, { params }: IdParams) {
   const { id } = await params;
   const body = await request.text();
   return proxyAuthed(`/api/chat/rooms/${id}/read`, { method: 'POST', body });

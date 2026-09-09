@@ -1,8 +1,7 @@
 import { proxyAuthed } from '@/lib/server/bffProxy';
+import type { AidParams } from '@/lib/server/routeParams';
 
-type Ctx = { params: Promise<{ aid: string }> };
-
-export async function POST(_request: Request, { params }: Ctx) {
+export async function POST(_request: Request, { params }: AidParams) {
   const { aid } = await params;
   return proxyAuthed(`/api/recruitments/applications/${aid}/reject`, { method: 'POST' });
 }

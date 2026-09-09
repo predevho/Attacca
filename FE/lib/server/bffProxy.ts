@@ -1,8 +1,19 @@
 import 'server-only';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { beFetch } from '@/lib/server/beClient';
+import { beFetch, type BeResult } from '@/lib/server/beClient';
 import { authedBeFetch } from '@/lib/server/session';
+
+/**
+ * BE 결과를 BFF 응답으로 만든다. **data 는 싣지 않는다.**
+ *
+ * 로그인·비밀번호 변경 응답의 `data`에는 access/refresh 토큰이 들어 있다. 그대로 내보내면
+ * 브라우저 JS가 토큰을 만지게 되어 BFF 3계층 격리(토큰은 httpOnly 쿠키에만)가 무너진다.
+ * 쿠키를 직접 손대는 라우트들이 응답을 스스로 만들던 것을 여기로 모으되, 그 성질은 유지한다.
+ */
+export function bffResultJson(res: BeResult): NextResponse {
+  return NextResponse.json({ ok: res.ok, message: res.message }, { status: res.status || 502 });
+}
 
 /**
  * 인증이 필요한 BE 호출을 same-origin BFF 응답으로 감싼다.

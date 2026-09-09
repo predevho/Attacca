@@ -64,7 +64,7 @@
 
 ## FE 공통 (정리)
 
-* [ ] FE: BFF 라우트 status 폴백 일괄 수정 — 모든 BFF 라우트가 `{ status: res.status || 200 }`을 써서 BE 연결 실패(`beFetch` status 0)를 HTTP 200으로 응답한다. 현재 클라이언트는 바디의 `ok`로 판단해 무해하나, status 기준 소비처가 생기면 오작동. `res.status || 502`(또는 `=== 0 ? 502`)로 login/signup/logout/me/oauth·프로필 등 전체를 한 번에 정리. (2026-07-16 프로필 리뷰에서 식별) *(신규 피드 라우트는 `proxyAuthed` 헬퍼로 이미 502 처리 — 기존 인증/프로필 라우트만 남음)*
+* [x] ~~FE: BFF 라우트 status 폴백~~ — 2026-09-09 해소. 12개 라우트가 `res.status || 200`이라 **BE 연결 실패가 HTTP 200으로 나가고 있었다**(테스트로 12건 전부 재현). 순수 패스스루 8개는 `proxyAuthed`로 흡수하고, 쿠키를 함께 손대는 4개(login·signup·탈퇴·비밀번호)는 `bffResultJson` 헬퍼로 응답 생성만 모았다. **`bffResultJson`은 일부러 `data`를 싣지 않는다** — 로그인·비밀번호 변경 응답의 data에는 토큰이 들어 있어 그대로 내보내면 BFF 3계층 격리가 깨진다. 그 성질을 지키는 테스트도 함께 넣었다. 원문:  — 모든 BFF 라우트가 `{ status: res.status || 200 }`을 써서 BE 연결 실패(`beFetch` status 0)를 HTTP 200으로 응답한다. 현재 클라이언트는 바디의 `ok`로 판단해 무해하나, status 기준 소비처가 생기면 오작동. `res.status || 502`(또는 `=== 0 ? 502`)로 login/signup/logout/me/oauth·프로필 등 전체를 한 번에 정리. (2026-07-16 프로필 리뷰에서 식별) *(신규 피드 라우트는 `proxyAuthed` 헬퍼로 이미 502 처리 — 기존 인증/프로필 라우트만 남음)*
 
 * [x] ~~FE: 타입 검사(`tsc --noEmit`)가 CI에 없다~~ — 2026-09-09 해소. 오류 100건 중 **97건이 한 원인**이었다: fetch 목을 `vi.fn(async () => ...)`로 인자 없이 선언해 호출 시그니처가 `() => ...`로 추론되고 `mock.calls`가 빈 튜플이 됐다. 6개 파일에 복붙돼 있던 `okFetch` 헬퍼를 `__tests__/helpers/fetchMock.ts`로 모으고 시그니처를 붙여 일괄 해소. `npm run typecheck` 신설 + CI에 `npm test`보다 앞에 배치(컴파일 안 되는 코드로 테스트를 돌릴 이유가 없다). `_` 접두 인자를 미사용 경고에서 제외하도록 eslint 설정 추가 — 안 하면 시그니처를 지우는 쪽으로 몰린다.
 
@@ -72,7 +72,7 @@
 
 * [x] ~~FE 접근성(a11y): `LikeButton`·`ComposeForm`·`PostCard`~~ — 2026-09-09 해소. LikeButton은 하트가 aria-hidden이라 이름이 숫자뿐이었다 → `aria-label="좋아요 N개"`(눌림은 aria-pressed). textarea는 placeholder만 있어 접근명이 없었다 → `aria-label` + 글자수를 `aria-describedby`로 연결. 카드는 stretched-link(제목/본문을 감싼 real button + `after:inset-0`)로 바꿔 heading을 살리면서 탭 정지 하나로 카드 전체가 열리게 했다. 원문: (하트+숫자만, 접근명 없음)·`ComposeForm` textarea(placeholder만, label 없음)에 접근명 부여, `PostCard`의 `<article onClick>`을 키보드 도달 가능하게(role/tabIndex/onKeyDown). 스펙 참조 코드에서 그대로 내려온 갭.
 * [x] ~~FE 피드: `commentCount` 드리프트~~ — 2026-09-09 해소. `withCommentDelta`로 상세에서 댓글 작성·삭제 시 게시글 수를 함께 증감(0 아래로 내려가지 않음). 원문:  — 상세에서 댓글 작성/삭제 시 게시글 카드의 댓글 수가 새로고침 전까지 드리프트(현재 미갱신). 목록/상세 상태에 반영.
-* [ ] FE: BFF 동적 라우트의 `type Ctx = { params: Promise<{ id: string }> }` 중복(피드 라우트 5+개) → `lib/server` 공용 타입으로 추출.
+* [x] ~~FE: BFF 동적 라우트 `Ctx` 타입 중복~~ — 2026-09-09 해소. 20곳에 복붙돼 있던 것을 `lib/server/routeParams.ts`의 `IdParams`/`AidParams`로 통합. 원문: `type Ctx = { params: Promise<{ id: string }> }` 중복(피드 라우트 5+개) → `lib/server` 공용 타입으로 추출.
 * [ ] BE: `MemberProfileService.getMyIdentity`/`getMyProfile`가 `isVerified`+member 조회를 각각 중복 — 3번째 신원 인접 엔드포인트가 생기면 공용 헬퍼로 추출 검토.
 
 ## 공연 FE 후속 (2026-08-02 최종 리뷰 이연)
@@ -119,7 +119,7 @@
 
 * [ ] 공연 목록 기본 탭이 '다가오는'이라 지금은 비어 보인다 — 지난 공연만 있어서 방문자가 처음 보는 화면이 "등록된 공연이 없습니다"다. 데이터 문제(예정 공연 없음)라 기본 탭을 바꾸는 것은 미봉책일 수 있다. 후보: 빈 상태에서 "지난 공연 보기"를 안내 / 실제 예정 공연 확보 / 홈에 지난 공연 구획.
 
-* [ ] Next.js 16이 `middleware.ts` 를 `proxy.ts` 로 바꾸라고 경고한다(로컬 기동 로그). 지금은 동작하지만 언젠가 깨진다.
+* [x] ~~Next.js 16 `middleware.ts` → `proxy.ts`~~ — 2026-09-09 해소. 파일·export·테스트를 함께 옮겼고 기동 경고가 사라진 것을 확인. 원문: Next.js 16이 `middleware.ts` 를 `proxy.ts` 로 바꾸라고 경고한다(로컬 기동 로그). 지금은 동작하지만 언젠가 깨진다.
 * [ ] 헤더가 신원을 마운트 때 한 번만 읽는다 — 경로가 바뀌어도 다시 읽지 않아 상태 변화(탈퇴·인증 승인 등)가 즉시 반영되지 않는다. 탈퇴는 전체 새로고침으로 우회했지만 근본은 남아 있다.
 
 * [ ] **의도한 철회와 재사용 감지를 구분한다** (2026-09-09 확인). 비밀번호 변경·전 기기 로그아웃처럼 **우리가 일부러 철회한** 뒤에는 옛 refresh가 도는 것이 예상된 일인데, 지금은 화이트리스트에 없다는 이유로 탈취로 간주해 전 기기를 날린다. 그러면 비밀번호를 방금 바꾼 본인의 새 세션까지 끊긴다.
@@ -178,7 +178,7 @@
 
 ## 기타 (추후)
 
-* [ ] FE: middleware → proxy 마이그레이션 검토 — Next 16.2에서 'middleware' 파일 규약이 deprecated(경고만, 현재 정상 동작). proxy는 edge가 아닌 nodejs 런타임이라 'server-only' import 제약이 사라질 수 있어 쿠키 이름 하드코딩 재검토 대상. (2026-07-15 발견)
+* [x] ~~FE: middleware → proxy 마이그레이션~~ — 2026-09-09 해소. 지목한 대로 **쿠키 이름 하드코딩이 사라졌다** — proxy는 nodejs 런타임이라 `server-only`인 `lib/server/cookies.ts`의 `ACCESS_COOKIE`를 직접 import한다(예전에는 edge라 못 해서 이름을 양쪽에 적어 두고 있었다). 원문:  — Next 16.2에서 'middleware' 파일 규약이 deprecated(경고만, 현재 정상 동작). proxy는 edge가 아닌 nodejs 런타임이라 'server-only' import 제약이 사라질 수 있어 쿠키 이름 하드코딩 재검토 대상. (2026-07-15 발견)
 
 ## 실환경 스모크 검증에서 새로 확인한 항목 (2026-08-18)
 

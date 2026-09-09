@@ -1,8 +1,7 @@
 import { proxyAuthed } from '@/lib/server/bffProxy';
+import type { IdParams } from '@/lib/server/routeParams';
 
-type Ctx = { params: Promise<{ id: string }> };
-
-export async function POST(_request: Request, { params }: Ctx) {
+export async function POST(_request: Request, { params }: IdParams) {
   const { id } = await params;
   return proxyAuthed(`/api/recruitments/${id}/close`, { method: 'POST' });
 }
