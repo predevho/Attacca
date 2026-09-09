@@ -138,4 +138,28 @@ class RecruitmentApplicationControllerTest {
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.error.resultCode").value("403-01"));
     }
+
+    @Test
+    void 지원_응답에_공고_제목이_함께_온다() throws Exception {
+        // 제목이 없으면 '내 지원 현황'에서 "공고 #1"로만 보인다 —
+        // 지원이 여러 건이면 뭐가 뭔지 알 수 없다(2026-09-09 화면에서 확인).
+        String postingId = createPosting();
+        apply(postingId);
+
+        mockMvc.perform(get("/api/recruitments/applications/me")
+                        .header("Authorization", applicantBearer))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].postingTitle").value("첼로 구함"));
+    }
+
+    @Test
+    void 작성자가_보는_지원자_목록에도_공고_제목이_온다() throws Exception {
+        String postingId = createPosting();
+        apply(postingId);
+
+        mockMvc.perform(get("/api/recruitments/" + postingId + "/applications")
+                        .header("Authorization", authorBearer))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].postingTitle").value("첼로 구함"));
+    }
 }

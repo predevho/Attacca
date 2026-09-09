@@ -11,8 +11,13 @@ export function ApplicationCard({
   return (
     <article className="rounded border border-line bg-surface p-4">
       <div className="flex items-center justify-between">
-        <button type="button" onClick={onOpen} className="text-sm text-brand-strong underline">
-          공고 #{application.postingId} 보기
+        {/*
+          제목이 없으면 "공고 #1"로만 보여 지원이 여러 건일 때 구분이 안 됐다.
+          삭제된 공고는 제목이 오지 않으므로 그때만 번호로 떨어진다.
+        */}
+        <button type="button" onClick={onOpen}
+          className="truncate text-left text-sm text-brand-strong underline">
+          {application.postingTitle ?? `공고 #${application.postingId} (삭제됨)`}
         </button>
         <span className="text-xs text-ink-muted">{applicationStatusLabel(application.status)}</span>
       </div>

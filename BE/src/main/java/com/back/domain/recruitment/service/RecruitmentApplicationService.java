@@ -120,13 +120,25 @@ public class RecruitmentApplicationService {
         MemberDisplay applicant = memberQueryService
                 .findDisplaysByIds(Set.of(application.getApplicantId()))
                 .get(application.getApplicantId());
-        return RecruitmentApplicationResponse.of(application, applicant);
+        return RecruitmentApplicationResponse.of(application, applicant,
+                postingTitles(Set.of(application.getPostingId())).get(application.getPostingId()));
     }
 
     private Page<RecruitmentApplicationResponse> toResponsePage(Page<RecruitmentApplication> page) {
         Set<Long> applicantIds = page.getContent().stream()
                 .map(RecruitmentApplication::getApplicantId).collect(Collectors.toSet());
         Map<Long, MemberDisplay> applicants = memberQueryService.findDisplaysByIds(applicantIds);
-        return page.map(a -> RecruitmentApplicationResponse.of(a, applicants.get(a.getApplicantId())));
+
+        Set<Long> postingIds = page.getContent().stream()
+                .map(RecruitmentApplication::getPostingId).collect(Collectors.toSet());
+        Map<Long, String> titles = postingTitles(postingIds);
+
+        return page.map(a -> RecruitmentApplicationResponse.of(a,
+                applicants.get(a.getApplicantId()), titles.get(a.getPostingId())));
+    }
+
+    /** 삭제된 공고는 결과에 없고, 그 지원의 제목은 null 이 된다. */
+    private Map<Long, String> postingTitles(Set<Long> postingIds) {
+        return postingService.findTitlesByIds(postingIds);
     }
 }

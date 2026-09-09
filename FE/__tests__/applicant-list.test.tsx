@@ -4,8 +4,8 @@ import { ApplicantList } from '@/components/recruitment/ApplicantList';
 import type { Application } from '@/lib/recruitment/types';
 
 const apps: Application[] = [
-  { id: 1, postingId: 7, applicant: { id: 2, nickname: '지원자1', verified: false }, message: '잘 부탁드립니다', status: 'PENDING', createdAt: '', updatedAt: '' },
-  { id: 2, postingId: 7, applicant: { id: 3, nickname: '지원자2', verified: true }, message: '경력 5년', status: 'ACCEPTED', createdAt: '', updatedAt: '' },
+  { id: 1, postingId: 7, postingTitle: '첼로 구함', applicant: { id: 2, nickname: '지원자1', verified: false }, message: '잘 부탁드립니다', status: 'PENDING', createdAt: '', updatedAt: '' },
+  { id: 2, postingId: 7, postingTitle: '첼로 구함', applicant: { id: 3, nickname: '지원자2', verified: true }, message: '경력 5년', status: 'ACCEPTED', createdAt: '', updatedAt: '' },
 ];
 
 describe('ApplicantList', () => {

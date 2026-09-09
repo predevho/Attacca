@@ -33,6 +33,8 @@ export type PostingFormValues = {
 
 export type Application = {
   id: number;
+  /** 어느 공고에 지원했는지. 삭제된 공고를 가리키면 null 이다. */
+  postingTitle: string | null;
   postingId: number;
   applicant: Author;
   message: string;

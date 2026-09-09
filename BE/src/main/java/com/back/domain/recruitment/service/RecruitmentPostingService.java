@@ -88,6 +88,20 @@ public class RecruitmentPostingService {
         posting.delete();
     }
 
+    /**
+     * 공고 제목을 한 번에 읽는다. 지원 목록이 "어느 공고인지"를 보여주는 데 쓴다.
+     * 지원마다 공고를 따로 읽으면 N+1 이 된다 — MemberQueryService.findDisplaysByIds 와 같은 배치 패턴.
+     * 삭제된 공고는 결과에 없다(호출부에서 null 로 다룬다).
+     */
+    @Transactional(readOnly = true)
+    public Map<Long, String> findTitlesByIds(Set<Long> postingIds) {
+        if (postingIds.isEmpty()) {
+            return Map.of();
+        }
+        return postingRepository.findAllById(postingIds).stream()
+                .collect(Collectors.toMap(RecruitmentPosting::getId, RecruitmentPosting::getTitle));
+    }
+
     /** 미삭제 공고 조회. 지원 서비스(Task 6)에서 재사용한다. 없으면 RECRUITMENT_NOT_FOUND. */
     @Transactional(readOnly = true)
     public RecruitmentPosting findActive(Long id) {
