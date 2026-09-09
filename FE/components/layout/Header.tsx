@@ -85,8 +85,15 @@ export function Header() {
                   <span className="rounded-full bg-on-header px-1.5 py-0.5 text-[10px] font-semibold text-header">인증</span>
                 )}
               </Link>
+              {/*
+                어드민 화면이 둘이 되면서 링크를 나눴다. 하나로 묶으려면 어드민 홈이
+                필요한데, 화면 둘에 허브를 따로 두는 것은 과하다.
+              */}
               {me.role === 'ADMIN' && (
-                <Link href="/admin/verified-performers" className="opacity-75">어드민</Link>
+                <>
+                  <Link href="/admin/notices" className="opacity-75">공지</Link>
+                  <Link href="/admin/verified-performers" className="opacity-75">인증심사</Link>
+                </>
               )}
               <button type="button" onClick={onLogout} className="opacity-75">로그아웃</button>
             </>
