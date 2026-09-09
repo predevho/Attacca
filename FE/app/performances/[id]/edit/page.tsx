@@ -76,7 +76,7 @@ export default function EditPerformancePage() {
       <div className="mb-4 flex items-center gap-4">
         {performance.posterImageUrl
           ? <img src={performance.posterImageUrl} alt="" className="h-24 w-16 rounded object-cover" />
-          : <div className="flex h-24 w-16 items-center justify-center rounded bg-surface-muted text-[10px] text-ink-muted">포스터 없음</div>}
+          : <div className="flex h-24 w-16 items-center justify-center rounded bg-surface-muted text-xs text-ink-muted">포스터 없음</div>}
         <label className="cursor-pointer rounded border border-line px-3 py-1.5 text-sm">
           {uploading ? '업로드 중...' : '포스터 변경'}
           <input type="file" accept="image/*" className="hidden" onChange={onPoster} disabled={uploading} />

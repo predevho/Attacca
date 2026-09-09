@@ -54,10 +54,11 @@ export default function NewPerformancePage() {
     <main className="mx-auto mt-8 max-w-xl px-4">
       <h1 className="mb-4 text-2xl font-bold">공연 등록</h1>
       {error && <p className="mb-4 text-sm text-danger">{error}</p>}
-      <div className="mb-4 flex flex-col gap-1 text-sm">
+      {/* label로 감싸야 파일 입력에 접근명이 생긴다(수정 화면과 같은 방식). */}
+      <label className="mb-4 flex flex-col gap-1 text-sm">
         <span className="text-ink-muted">포스터 (선택)</span>
         <input type="file" accept="image/*" onChange={(e) => setPoster(e.target.files?.[0] ?? null)} />
-      </div>
+      </label>
       <PerformanceForm submitting={submitting} submitLabel="등록" onSubmit={submit} />
     </main>
   );

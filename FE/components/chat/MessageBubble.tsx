@@ -8,7 +8,7 @@ export function MessageBubble({ message, mine }: { message: ChatMessage; mine: b
       <div className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${mine ? 'bg-brand text-on-brand' : 'bg-surface-muted text-ink'}`}>
         <p className="whitespace-pre-wrap break-words">{message.content}</p>
       </div>
-      <span className="mt-0.5 text-[10px] text-ink-faint">{formatTime(message.createdAt)}</span>
+      <span className="mt-0.5 text-xs text-ink-faint">{formatTime(message.createdAt)}</span>
     </div>
   );
 }

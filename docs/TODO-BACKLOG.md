@@ -23,7 +23,7 @@
 * [ ] FE 구인: 상세 페이지 지원자 목록이 첫 페이지(최대 20명)만 로드 — 20명 초과 시 페이지네이션/더보기 필요. 현재는 명시적으로 첫 페이지만.
 * [ ] FE 구인: PostingCard/상세의 악기 표시가 enum명(PIANO 등) 그대로 — profile-options의 label 맵을 넘겨 한글 라벨로 변환. 목록 성능 위해 이번엔 단순화.
 * [ ] FE 구인: 상세 지원 여부 사전판정이 없어 이미 지원한 공고도 "지원하기"가 보임(제출 시 409로 안내). 필요하면 /applications/me 교차조회로 선제 비활성화 검토.
-* [ ] FE 구인 a11y: 목록 PostingCard의 `<article onClick>` 키보드 도달 불가(피드/공연 카드와 동일 갭) — role/tabIndex/onKeyDown. 모바일 이식과 연계.
+* [x] ~~FE 구인 a11y: PostingCard 키보드 도달~~ — 2026-09-09 해소. 피드·공연 카드와 같은 방식으로 통일. 원문: (피드/공연 카드와 동일 갭) — role/tabIndex/onKeyDown. 모바일 이식과 연계.
 * [ ] FE 구인: 상세 지원 실패(409) 에러가 페이지 상단(`<dl>` 위)에 뜨는데 `ApplyPanel`은 하단이라 스크롤해야 보임 — 에러를 액션 지점(패널) 근처에 렌더하거나 토스트로. (최종 리뷰 Minor)
 * [ ] FE 구인: 마감/수락/거절 버튼에 진행 중 비활성화·중복클릭 가드 없음(지원 제출만 submitting으로 막힘) — 연타 시 중복 요청 가능. (최종 리뷰 Minor)
 
@@ -70,7 +70,7 @@
 
 ## 피드 FE 후속 (2026-08-02 최종 리뷰 이연 Minor)
 
-* [ ] FE 접근성(a11y) — 모바일 이식 목표와 연계: `LikeButton`(하트+숫자만, 접근명 없음)·`ComposeForm` textarea(placeholder만, label 없음)에 접근명 부여, `PostCard`의 `<article onClick>`을 키보드 도달 가능하게(role/tabIndex/onKeyDown). 스펙 참조 코드에서 그대로 내려온 갭.
+* [x] ~~FE 접근성(a11y): `LikeButton`·`ComposeForm`·`PostCard`~~ — 2026-09-09 해소. LikeButton은 하트가 aria-hidden이라 이름이 숫자뿐이었다 → `aria-label="좋아요 N개"`(눌림은 aria-pressed). textarea는 placeholder만 있어 접근명이 없었다 → `aria-label` + 글자수를 `aria-describedby`로 연결. 카드는 stretched-link(제목/본문을 감싼 real button + `after:inset-0`)로 바꿔 heading을 살리면서 탭 정지 하나로 카드 전체가 열리게 했다. 원문: (하트+숫자만, 접근명 없음)·`ComposeForm` textarea(placeholder만, label 없음)에 접근명 부여, `PostCard`의 `<article onClick>`을 키보드 도달 가능하게(role/tabIndex/onKeyDown). 스펙 참조 코드에서 그대로 내려온 갭.
 * [ ] FE 피드: `commentCount` 낙관적 증감 — 상세에서 댓글 작성/삭제 시 게시글 카드의 댓글 수가 새로고침 전까지 드리프트(현재 미갱신). 목록/상세 상태에 반영.
 * [ ] FE: BFF 동적 라우트의 `type Ctx = { params: Promise<{ id: string }> }` 중복(피드 라우트 5+개) → `lib/server` 공용 타입으로 추출.
 * [ ] BE: `MemberProfileService.getMyIdentity`/`getMyProfile`가 `isVerified`+member 조회를 각각 중복 — 3번째 신원 인접 엔드포인트가 생기면 공용 헬퍼로 추출 검토.
@@ -78,7 +78,7 @@
 ## 공연 FE 후속 (2026-08-02 최종 리뷰 이연)
 
 * [x] ~~FE(전역): 신원 조회에 네트워크 레벨 fetch reject용 `.catch` 없음~~ — 2026-09-08 해소. 개별 호출부가 아니라 **`lib/api.ts`의 공용 `request()`에서 한 번에** 흡수한다(fetch reject → `{ok:false, message:'서버에 연결할 수 없습니다.'}`). 모든 호출부가 이미 `ok===false`를 다루고 있어 반환 모양은 그대로다. 원문: `getBff('/api/bff/me/identity')` 등 신원 조회에 네트워크 레벨 fetch reject용 `.catch` 없음 — 정상 경로는 middleware 쿠키 보장으로 동작하나, fetch 자체가 reject하면 unhandled rejection + 페이지가 "불러오는 중…"에 영구 정지. 피드+공연 8+개 호출부 공통 → `getBff`/`beClient` 레벨 또는 공용 훅으로 **한 번에** 처리(개별 페이지 말고). (opus 최종 리뷰 Important, 비블로커)
-* [ ] FE 공연 a11y: `/performances/new`의 포스터 `<input type=file>`에 접근명 없음(다른 폼 필드는 aria-label 있음). edit 페이지는 `<label>` 래핑으로 회피 — new도 동일 처리.
+* [x] ~~FE 공연 a11y: 포스터 입력 접근명~~ — 2026-09-09 해소. 수정 화면과 같이 `<label>`로 감쌌다. 원문:  `<input type=file>`에 접근명 없음(다른 폼 필드는 aria-label 있음). edit 페이지는 `<label>` 래핑으로 회피 — new도 동일 처리.
 * [ ] FE 목록 empty-state 1프레임 flash: `/performances`(및 피드)에서 첫 렌더 시 `isLoading` 세팅 전 "등록된 공연이 없습니다"가 한 프레임 노출 → 훅의 `loaded` 플래그로 게이팅하면 해소.
 * [ ] FE 공연: 삭제 확인(confirm) 없음 — 상세에서 삭제 1클릭 즉시 실행(BE soft delete라 서버측 복구 가능). 피드와 동일 정책이나 확인 다이얼로그 검토 여지.
 * [ ] FE 공연 테스트 갭: ADMIN 비주최자 삭제버튼 페이지레벨 미테스트(canDelete 단위테스트는 있음), 포스터 즉시업로드 성공 후 `<img>` 재렌더 미단언.
@@ -231,10 +231,12 @@
 * [ ] 홈 후속: 공지 상세 화면(`/notices/[id]`)이 없어 달력의 공지 항목은 클릭할 수 없다. 캐러셀의 공지 슬라이드도 CTA가 없다.
 * [ ] 홈 후속: 히어로 이미지가 없을 때 "이미지 없음" 회색 박스가 그대로 보인다 — 포스터 없는 공연이 많으면 밋밋하다. 타이포 기반 대체 디자인 검토.
 
-## 접근성 — 색 대비·글자 크기 (2026-09-08 목업 검토에서 식별)
+## 접근성 — 색 대비·글자 크기 (2026-09-08 식별 → 2026-09-09 해소)
+
+앞으로는 `__tests__/color-contrast.test.ts`가 토큰 명암비를 지킨다 — 값이 미달로 돌아가면 실제 비율과 함께 실패한다.
 
 WCAG AA 본문 기준(4.5:1) 미달. 특정 화면이 아니라 **토큰 값 자체**의 문제라 사용처를 하나씩 고치는 대신 한 번에 정리해야 한다.
 
-* [ ] `--ink-faint` 대비 미달 — 라이트 `#8a8378`가 `--surface`(#faf7f0)에서 **3.5:1**, `--paper`(#f5f0e6)에서 **3.3:1**. 다크 `#75706a`도 `--surface`(#232120)에서 **3.3:1**. 타임스탬프·입력 플레이스홀더·"불러오는 중..." 등 전 화면에 쓰여 영향 범위가 넓다.
-* [ ] 헤더 비활성 내비의 `opacity-75` — `--on-header`가 `--header` 위에서 **4.3:1**로 기준을 아슬하게 못 넘긴다(`components/layout/Header.tsx`). 불투명도를 올리거나 별도 토큰으로 분리.
-* [ ] 인증 뱃지 `text-[10px]` — 12px 미만(`components/feed/AuthorBadge.tsx`, `components/layout/Header.tsx`의 헤더 뱃지도 동일). 12px 이상으로 올리거나 아이콘+접근명으로 대체 검토.
+* [x] ~~`--ink-faint` 대비 미달~~ — 2026-09-09 해소. 라이트 `#8a8378`→`#6b655b`, 다크 `#75706a`→`#989188`. 실제로 쓰이는 가장 어두운 배경(`surface-muted`)까지 4.5:1을 넘긴다. 원문:  — 라이트 `#8a8378`가 `--surface`(#faf7f0)에서 **3.5:1**, `--paper`(#f5f0e6)에서 **3.3:1**. 다크 `#75706a`도 `--surface`(#232120)에서 **3.3:1**. 타임스탬프·입력 플레이스홀더·"불러오는 중..." 등 전 화면에 쓰여 영향 범위가 넓다.
+* [x] ~~헤더 비활성 내비의 `opacity-75`~~ — 2026-09-09 해소. `opacity-80`으로(라이트 4.65:1 / 다크 4.93:1). 원문:  — `--on-header`가 `--header` 위에서 **4.3:1**로 기준을 아슬하게 못 넘긴다(`components/layout/Header.tsx`). 불투명도를 올리거나 별도 토큰으로 분리.
+* [x] ~~인증 뱃지 `text-[10px]`~~ — 2026-09-09 해소. 앱 전체의 `text-[10px]` 5곳을 `text-xs`(12px)로. 원문:  — 12px 미만(`components/feed/AuthorBadge.tsx`, `components/layout/Header.tsx`의 헤더 뱃지도 동일). 12px 이상으로 올리거나 아이콘+접근명으로 대체 검토.

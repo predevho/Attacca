@@ -11,7 +11,7 @@
   --surface-muted: #ede6d8;
   --ink: #171717;
   --ink-muted: #5c574e;
-  --ink-faint: #8a8378;
+  --ink-faint: #6b655b;  /* AA(4.5:1). 예전 #8a8378은 paper 위 3.3:1로 본문 기준 미달이었다 */
   --line: #ded5c4;
   --brand: #4e6e8e;
   --brand-strong: #3d5a80;
@@ -36,7 +36,7 @@
     --surface-muted: #2c2a28;
     --ink: #ede7da;
     --ink-muted: #a8a296;
-    --ink-faint: #75706a;
+    --ink-faint: #989188;  /* AA(4.5:1). 예전 #75706a은 surface 위 3.3:1 */
     --line: #34312e;
     --brand: #8fb0ce;
     --brand-strong: #a9c6de;

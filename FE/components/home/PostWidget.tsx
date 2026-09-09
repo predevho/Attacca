@@ -70,7 +70,7 @@ export function PostWidget({
               <span className="flex shrink-0 items-center gap-1 text-sm text-ink-muted">
                 {post.author?.nickname ?? '알 수 없음'}
                 {post.author?.verified && (
-                  <span className="rounded-full bg-brand px-1.5 py-0.5 text-[10px] text-on-brand">
+                  <span className="rounded-full bg-brand px-1.5 py-0.5 text-xs text-on-brand">
                     인증
                   </span>
                 )}

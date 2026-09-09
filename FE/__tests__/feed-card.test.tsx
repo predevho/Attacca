@@ -22,7 +22,8 @@ describe('PostCard', () => {
     const onOpen = vi.fn();
     const onLike = vi.fn();
     render(<PostCard post={post} onLike={onLike} onOpen={onOpen} />);
-    fireEvent.click(screen.getByRole('button'));
+    // 카드에 버튼이 둘이다(카드 열기 + 좋아요) — 이름으로 집는다.
+    fireEvent.click(screen.getByRole('button', { name: '좋아요 3개' }));
     expect(onLike).toHaveBeenCalledOnce();
     expect(onOpen).not.toHaveBeenCalled();
   });

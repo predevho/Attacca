@@ -56,7 +56,7 @@ export function Header() {
                 <Link
                   href={item.href}
                   aria-current={active ? 'page' : undefined}
-                  className={active ? 'border-b-2 border-current pb-0.5 font-semibold' : 'opacity-75'}
+                  className={active ? 'border-b-2 border-current pb-0.5 font-semibold' : 'opacity-80'}
                 >
                   {item.label}
                 </Link>
@@ -68,7 +68,7 @@ export function Header() {
         <div className="ml-auto flex flex-wrap items-center gap-3 text-sm">
           {me === null && (
             <>
-              <Link href="/login" className="opacity-75">로그인</Link>
+              <Link href="/login" className="opacity-80">로그인</Link>
               <Link
                 href="/signup"
                 className="rounded bg-on-header px-2.5 py-1 font-semibold text-header"
@@ -82,7 +82,7 @@ export function Header() {
               <Link href="/profile" className="inline-flex items-center gap-1.5 font-semibold">
                 {me.nickname}
                 {me.verified && (
-                  <span className="rounded-full bg-on-header px-1.5 py-0.5 text-[10px] font-semibold text-header">인증</span>
+                  <span className="rounded-full bg-on-header px-1.5 py-0.5 text-xs font-semibold text-header">인증</span>
                 )}
               </Link>
               {/*
@@ -91,11 +91,11 @@ export function Header() {
               */}
               {me.role === 'ADMIN' && (
                 <>
-                  <Link href="/admin/notices" className="opacity-75">공지</Link>
-                  <Link href="/admin/verified-performers" className="opacity-75">인증심사</Link>
+                  <Link href="/admin/notices" className="opacity-80">공지</Link>
+                  <Link href="/admin/verified-performers" className="opacity-80">인증심사</Link>
                 </>
               )}
-              <button type="button" onClick={onLogout} className="opacity-75">로그아웃</button>
+              <button type="button" onClick={onLogout} className="opacity-80">로그아웃</button>
             </>
           )}
         </div>
