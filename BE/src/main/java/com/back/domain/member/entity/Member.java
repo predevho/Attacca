@@ -71,6 +71,16 @@ public class Member extends BaseEntity {
     }
 
     /**
+     * 어드민으로 올린다. (DOMAIN-MEMBER-STATUTE §4.1)
+     *
+     * <p>내리는 짝은 일부러 두지 않았다. 부트스트랩은 올리기만 하고,
+     * 회수는 사람이 판단해서 할 일이다.
+     */
+    public void promoteToAdmin() {
+        this.role = Role.ADMIN;
+    }
+
+    /**
      * 탈퇴 처리. 개인 식별 정보를 지우거나 알아볼 수 없게 바꾼다. 되돌릴 수 없다.
      *
      * <p>email/nickname 은 유니크 제약이 있어 비울 수 없으므로 익명 값으로 바꾼다.

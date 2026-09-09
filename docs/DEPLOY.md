@@ -391,6 +391,16 @@ sudo systemctl disable --now attacca-update.timer   # 자동 배포 중단
   ```
 
   확인: `docker exec <be> sh -c 'touch /app/uploads/.probe && echo ok'`
+* **첫 어드민은 `ADMIN_LOGIN_IDS` 로 만든다.** 가입한 뒤 `.env.prod` 에 loginId를 적고
+  BE를 다시 띄우면 ADMIN이 된다. **승격 후 본인이 다시 로그인해야** 반영된다
+  (access 토큰 30분에 role이 박혀 있다). 올리기만 하고 내리지 않으니,
+  회수는 DB에서 직접 한다. 규칙은 `docs/DOMAIN-MEMBER-STATUTE.md` §4.1.
+
+  ```bash
+  # .env.prod 에 ADMIN_LOGIN_IDS=<loginId> 추가 후
+  ./deploy/dc.sh up -d be
+  ./deploy/dc.sh logs be | grep "어드민 부트스트랩"
+  ```
 * **롤백할 때는 타이머를 멈춰라.** `IMAGE_TAG=<sha>`로 되돌린 컨테이너 자체는
   타이머가 건드리지 않지만(그 태그는 움직이지 않는다), **다음 푸시가 오면
   그대로 굴러간다.** 원인을 잡을 때까지는 `sudo systemctl stop attacca-update.timer`.

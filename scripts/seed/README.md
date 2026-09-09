@@ -49,6 +49,7 @@ node scripts/seed/seed.mjs
 스크립트는 확인만 하고 멈춘다. 둘 중 하나로 부여한 뒤 다시 돌리면 이어서 진행한다.
 
 **화면에서 (권장)** — 어드민으로 로그인해 인증 연주자 관리에서 직접 부여.
+어드민이 없으면 `ADMIN_LOGIN_IDS` 로 만든다(`docs/DOMAIN-MEMBER-STATUTE.md` §4.1).
 
 **SQL로** — 어드민 API가 만드는 것과 같은 행을 넣는다.
 `verification_application` 에 `APPROVED` 행이 있으면 인증된 것으로 본다.
