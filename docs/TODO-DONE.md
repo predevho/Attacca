@@ -2,6 +2,8 @@
 
 완료된 작업 기록.
 
+* [x] (2026-09-14) FE UI 테마·공통 UI 1차(Task 1~3): `system/light/dark` ThemeProvider·Header ThemeControl·semantic token, Button/Field/StatusMessage/EmptyState, NOTICE/IMPORT 적용. FE 집중 테스트 20/20·전체 Vitest 504/504·typecheck 통과·lint 오류 0건.
+
 ---
 
 * [x] (2026-09-09) 어드민 공지 관리 화면 — **NOTICE 도메인의 빠진 절반**. 규칙은 `docs/DOMAIN-NOTICE-STATUTE.md` §8.

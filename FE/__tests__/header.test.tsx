@@ -33,7 +33,7 @@ describe('Header', () => {
     expect(screen.getByRole('link', { name: '공연' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '구인' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '채팅' })).toBeInTheDocument();
-    expect(screen.getByText('스모크1')).toBeInTheDocument();
+    expect(screen.getAllByText('스모크1')).not.toHaveLength(0);
   });
 
   it('현재 경로의 링크에 aria-current를 붙인다', async () => {
@@ -46,7 +46,7 @@ describe('Header', () => {
 
   it('인증 회원에게 인증 뱃지를 보여준다', async () => {
     render(<Header />);
-    expect(await screen.findByText('인증')).toBeInTheDocument();
+    expect((await screen.findAllByText('인증')).length).toBeGreaterThan(0);
   });
 
   it('ADMIN에게만 어드민 화면 링크를 보여준다', async () => {
@@ -61,7 +61,7 @@ describe('Header', () => {
 
   it('일반 회원에게는 어드민 화면 링크를 보여주지 않는다', async () => {
     render(<Header />);
-    await screen.findByText('스모크1');
+    await screen.findAllByText('스모크1');
     expect(screen.queryByRole('link', { name: '공지' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: '인증심사' })).not.toBeInTheDocument();
   });
@@ -111,5 +111,12 @@ describe('Header', () => {
     fireEvent.click(await screen.findByRole('button', { name: '로그아웃' }));
     await waitFor(() => expect(postBff).toHaveBeenCalledWith('/api/bff/logout'));
     expect(push).toHaveBeenCalledWith('/login');
+  });
+
+  it('테마 control이 현재 모드와 다음 모드를 접근 가능하게 노출한다', async () => {
+    render(<Header />);
+    expect(await screen.findByRole('button', { name: /시스템 테마/ })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '라이트 테마' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '다크 테마' })).not.toBeInTheDocument();
   });
 });

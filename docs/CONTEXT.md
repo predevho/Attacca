@@ -6,6 +6,8 @@
 
 ## 현재 상태
 
+* **UI 테마·공통 UI(2026-09-14, Task 1~5)**: `ThemeProvider`/`ThemeControl`이 `system/light/dark`와 `attacca-theme` localStorage를 제공한다. Header에 세 모드 control을 연결했고 공개 홈·공지 상세·공연 상세, NOTICE/IMPORT 화면은 semantic token을 사용한다. 공연 상세 제목/작업 영역은 375px에서 겹치지 않도록 반응형 행으로 분리했다. FE 회귀 테스트 508건, typecheck, lint 오류 0건, color 검사, Playwright 5건 통과. build는 Google Fonts 네트워크 차단 환경에서 실패했으므로 네트워크가 가능한 환경에서 재확인해야 한다. 운영 후속: `KOPIS_SERVICE_KEY`·`IMPORT_CONTACT` 설정 후 실제 외부 반입/승인 smoke, 기존 미점검 도메인의 라이트·다크 화면 점검, Google Fonts build 재검증.
+
 * **디자인 시스템(2026-08-18)**: 헨레 악보 모티프. `globals.css`에 시맨틱 색 토큰 15종(`paper`/`surface`/`surface-muted`/`ink`/`ink-muted`/`ink-faint`/`line`/`brand`/`brand-strong`/`on-brand`/`header`/`on-header`/`danger`/`warn`/`success`)을 Tailwind v4 `@theme inline`으로 정의. **컴포넌트는 의미로만 색을 쓰고 다크를 모른다** — 다크는 `prefers-color-scheme`에서 값만 교체. 헤더만 명암이 반전된다(라이트=짙은 표지 #3d5a80, 다크=밝은 표지 #8fb0ce). 새 색이 필요하면 하드코딩하지 말고 토큰을 추가할 것. `npm run check:colors`가 하드코딩 색·테두리 색 미지정을 잡는다. 라이트/다크 토큰 집합 일치는 `__tests__/color-tokens.test.ts`가 지킨다. 예외 1건: 카카오 버튼(`bg-[#FEE500]` + `text-black`)은 외부 브랜드 식별색이라 치환 대상 아님.
 * **전역 헤더(2026-08-18)**: `components/layout/Header.tsx`. 루트 레이아웃에 있고 인증 화면(`/login`·`/signup`)에서는 스스로 렌더를 건너뛴다(신원 요청도 안 보냄). 판정 로직은 `lib/layout/header.ts`(`NAV_ITEMS`/`isActive`/`shouldShowHeader`). 활성 경로는 접두 일치. 신원 조회 실패·fetch reject 시 렌더하지 않는다. **홈은 `/feed`이고 `/dashboard`는 제거됐다.**
 * 단계: BE 6개 도메인 + **FE 전 도메인 화면 완료, 전부 main 병합 완료**(피드·공연 FE도 main에 있음 — 2026-08-18 확인, 과거 "병합 대기" 기술은 오기였음). **2026-08-18 첫 실환경 통합 스모크 검증 완료**(BE+MySQL+FE 동시 기동, 전 도메인 브라우저 실왕복 통과, WS 실왕복 포함). 검증에서 결함 2건 발견·수정(채팅 실시간 수신 불가 / BE 파라미터 바인딩 500). **남은 건 배포·인프라와 BACKLOG의 정리 항목**.

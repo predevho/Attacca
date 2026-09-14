@@ -22,4 +22,51 @@ test.describe('IMPORT 공개·접근 제어 smoke', () => {
     expect(response?.status()).toBe(200);
     await expect(page).not.toHaveURL(/\/login/);
   });
+
+  for (const viewport of [{ width: 320, height: 812 }, { width: 1280, height: 800 }]) {
+    test(`${viewport.width}px 공개 홈에서 Header와 본문이 겹치거나 넘치지 않는다`, async ({ page }) => {
+      await page.setViewportSize(viewport);
+      await page.goto('/');
+      await expect(page.getByRole('banner')).toBeVisible();
+      const layout = await page.evaluate(() => ({
+        viewportWidth: document.documentElement.clientWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+        headerHeight: document.querySelector('header')?.getBoundingClientRect().height ?? 0,
+        mainTop: document.querySelector('main')?.getBoundingClientRect().top ?? 0,
+      }));
+      expect(layout.scrollWidth).toBeLessThanOrEqual(layout.viewportWidth);
+      expect(layout.mainTop).toBeGreaterThanOrEqual(layout.headerHeight);
+    });
+  }
+
+  test('320px 홈 헤더의 모바일 메뉴를 열고 메뉴 항목에 접근할 수 있다', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 812 });
+    await page.goto('/');
+
+    const menuButton = page.locator('button[aria-controls="mobile-navigation"]');
+    await expect(menuButton).toHaveAttribute('aria-expanded', 'false');
+
+    await menuButton.click();
+
+    await expect(menuButton).toHaveAttribute('aria-expanded', 'true');
+    const menu = page.locator('#mobile-navigation');
+    await expect(menu).toBeVisible();
+    for (const label of ['홈', '피드', '공연', '구인', '채팅']) {
+      await expect(menu.getByRole('link', { name: label })).toBeVisible();
+    }
+  });
+
+  test('모바일 메뉴는 Escape로 닫힌다', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 812 });
+    await page.goto('/');
+
+    const menuButton = page.locator('button[aria-controls="mobile-navigation"]');
+    await menuButton.click();
+    await expect(page.locator('#mobile-navigation')).toBeVisible();
+
+    await page.keyboard.press('Escape');
+
+    await expect(page.locator('#mobile-navigation')).toBeHidden();
+    await expect(menuButton).toHaveAttribute('aria-expanded', 'false');
+  });
 });

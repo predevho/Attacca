@@ -74,4 +74,10 @@ describe('PerformanceDetailPage', () => {
     render(<PerformanceDetailPage />);
     expect(await screen.findByText(/포스터 업로드에 실패/)).toBeInTheDocument();
   });
+
+  it('좁은 화면에서도 제목과 작업 영역을 별도 flex 행으로 구성한다', async () => {
+    render(<PerformanceDetailPage />);
+    await screen.findByText('가을 리사이틀');
+    expect(screen.getByRole('heading', { name: '가을 리사이틀' }).parentElement).toHaveClass('flex-col', 'sm:flex-row');
+  });
 });

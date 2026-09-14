@@ -66,9 +66,9 @@ export default function PerformanceDetailPage() {
         <img src={performance.posterImageUrl} alt="" className="mb-4 max-h-96 w-full rounded object-contain" />
       )}
 
-      <div className="mb-3 flex items-start justify-between">
-        <h1 className="text-2xl font-bold">{performance.title}</h1>
-        <div className="flex gap-2">
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <h1 className="min-w-0 text-2xl font-bold">{performance.title}</h1>
+        <div className="flex shrink-0 gap-2">
           {canEdit(me ?? null, performance.organizer.id) && (
             <button type="button" onClick={() => router.push(`/performances/${performance.id}/edit`)} className="text-xs text-ink-faint">수정</button>
           )}

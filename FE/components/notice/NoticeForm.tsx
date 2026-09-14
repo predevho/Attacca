@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { validateNotice, hasError, type NoticeErrors } from '@/lib/notice/logic';
 import type { NoticeFormValues, NoticeType } from '@/lib/notice/types';
+import { Button } from '@/components/ui/Button';
+import { Field } from '@/components/ui/Field';
 
 const TYPES: { key: NoticeType; label: string; hint: string }[] = [
   { key: 'NOTICE', label: '공지', hint: '운영 안내' },
@@ -40,7 +42,7 @@ export function NoticeForm({
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (hasError(errors)) {
-      setTouched({ title: true, content: true, place: true, scheduledAt: true });
+      setTouched({ title: true, content: true, place: true, scheduledAt: true, sourceName: true, sourceUrl: true });
       return;
     }
     onSubmit(form);
@@ -70,45 +72,38 @@ export function NoticeForm({
         <p className="text-xs text-ink-faint">{TYPES.find((t) => t.key === form.type)?.hint}</p>
       </fieldset>
 
-      <label className="flex flex-col gap-1 text-sm">제목
+      <Field label="제목" error={titleMsg}>
         <input value={form.title} onChange={(e) => set('title', e.target.value)}
           onBlur={blur('title')} aria-invalid={titleMsg ? true : undefined}
           className={titleMsg
             ? 'rounded border border-danger px-3 py-2'
             : 'rounded border border-line px-3 py-2'} />
-        {titleMsg && <span role="alert" className="text-xs text-danger">{titleMsg}</span>}
-      </label>
+      </Field>
 
-      <label className="flex flex-col gap-1 text-sm">
-        본문 ({form.content.length}/5000)
+      <Field label={`본문 (${form.content.length}/5000)`} error={contentMsg}>
         <textarea value={form.content} onChange={(e) => set('content', e.target.value)}
           onBlur={blur('content')} aria-invalid={contentMsg ? true : undefined}
           className={contentMsg
             ? 'h-48 rounded border border-danger px-3 py-2'
             : 'h-48 rounded border border-line px-3 py-2'} />
-        {contentMsg && <span role="alert" className="text-xs text-danger">{contentMsg}</span>}
-      </label>
+      </Field>
 
-      <label className="flex flex-col gap-1 text-sm">일시
+      <Field label="일시" error={scheduledMsg} hint={!scheduledMsg ? '비우면 달력에 표시되지 않습니다.' : undefined}>
         <input type="datetime-local" value={form.scheduledAt}
           onChange={(e) => set('scheduledAt', e.target.value)} onBlur={blur('scheduledAt')}
           aria-invalid={scheduledMsg ? true : undefined}
           className={scheduledMsg
             ? 'rounded border border-danger px-3 py-2'
             : 'rounded border border-line px-3 py-2'} />
-        {scheduledMsg
-          ? <span role="alert" className="text-xs text-danger">{scheduledMsg}</span>
-          : <span className="text-xs text-ink-faint">비우면 달력에 표시되지 않습니다.</span>}
-      </label>
+      </Field>
 
-      <label className="flex flex-col gap-1 text-sm">장소
+      <Field label="장소" error={placeMsg}>
         <input value={form.place} onChange={(e) => set('place', e.target.value)}
           onBlur={blur('place')} aria-invalid={placeMsg ? true : undefined}
           className={placeMsg
             ? 'rounded border border-danger px-3 py-2'
             : 'rounded border border-line px-3 py-2'} />
-        {placeMsg && <span role="alert" className="text-xs text-danger">{placeMsg}</span>}
-      </label>
+      </Field>
 
       <label className="flex items-start gap-2 text-sm">
         <input type="checkbox" className="mt-0.5" checked={form.pinned}
@@ -120,26 +115,20 @@ export function NoticeForm({
       </label>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="flex flex-col gap-1 text-sm">출처 이름
+        <Field label="출처 이름" error={sourceNameMsg}>
           <input value={form.sourceName ?? ''} onChange={(e) => set('sourceName', e.target.value)} onBlur={blur('sourceName')}
             aria-invalid={sourceNameMsg ? true : undefined} className="rounded border border-line px-3 py-2" />
-          {sourceNameMsg && <span role="alert" className="text-xs text-danger">{sourceNameMsg}</span>}
-        </label>
-        <label className="flex flex-col gap-1 text-sm">원문 링크
+        </Field>
+        <Field label="원문 링크" error={sourceUrlMsg}>
           <input type="url" value={form.sourceUrl ?? ''} onChange={(e) => set('sourceUrl', e.target.value)} onBlur={blur('sourceUrl')}
             aria-invalid={sourceUrlMsg ? true : undefined} className="rounded border border-line px-3 py-2" />
-          {sourceUrlMsg && <span role="alert" className="text-xs text-danger">{sourceUrlMsg}</span>}
-        </label>
+        </Field>
       </div>
 
       <div className="flex gap-2">
-        <button type="submit" disabled={pending}
-          className="rounded bg-brand px-4 py-2 text-sm text-on-brand disabled:opacity-50">
-          {submitLabel}
-        </button>
+        <Button type="submit" loading={pending}>{submitLabel}</Button>
         {onCancel && (
-          <button type="button" onClick={onCancel}
-            className="rounded border border-line px-4 py-2 text-sm">취소</button>
+          <Button type="button" variant="secondary" onClick={onCancel}>취소</Button>
         )}
       </div>
     </form>

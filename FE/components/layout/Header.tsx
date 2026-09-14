@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { getBff, postBff } from '@/lib/api';
 import { NAV_ITEMS, isActive, shouldShowHeader } from '@/lib/layout/header';
 import type { Me } from '@/lib/feed/types';
+import { ThemeControl } from '@/components/theme/ThemeControl';
 
 /** 신원 상태: undefined=아직 모름, null=비로그인, Me=로그인. */
 type Identity = Me | null | undefined;
@@ -24,6 +25,7 @@ export function Header() {
   const pathname = usePathname();
   const visible = shouldShowHeader(pathname);
   const [me, setMe] = useState<Identity>(undefined);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     // 인증 화면에서는 신원을 조회하지 않는다.
@@ -36,6 +38,15 @@ export function Header() {
     return () => { cancelled = true; };
   }, [visible]);
 
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') setMenuOpen(false);
+    }
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [menuOpen]);
+
   async function onLogout() {
     await postBff('/api/bff/logout');
     router.push('/login');
@@ -43,61 +54,71 @@ export function Header() {
 
   if (!visible) return null;
 
+  const navLinks = NAV_ITEMS.map((item) => {
+    const active = isActive(pathname, item.href);
+    return (
+      <li key={item.href}>
+        <Link
+          href={item.href}
+          aria-current={active ? 'page' : undefined}
+          onClick={() => setMenuOpen(false)}
+          className={active ? 'border-b-2 border-current pb-0.5 font-semibold' : 'opacity-80'}
+        >
+          {item.label}
+        </Link>
+      </li>
+    );
+  });
+
+  const accountLinks = me === null ? (
+    <>
+      <Link href="/login" onClick={() => setMenuOpen(false)} className="opacity-80">로그인</Link>
+      <Link href="/signup" onClick={() => setMenuOpen(false)} className="rounded bg-on-header px-2.5 py-1 font-semibold text-header">
+        회원가입
+      </Link>
+    </>
+  ) : me ? (
+    <>
+      <Link href="/profile" onClick={() => setMenuOpen(false)} className="inline-flex items-center gap-1.5 font-semibold">
+        {me.nickname}
+        {me.verified && <span className="rounded-full bg-on-header px-1.5 py-0.5 text-xs font-semibold text-header">인증</span>}
+      </Link>
+      {me.role === 'ADMIN' && (
+        <>
+          <Link href="/admin/notices" onClick={() => setMenuOpen(false)} className="opacity-80">공지</Link>
+          <Link href="/admin/verified-performers" onClick={() => setMenuOpen(false)} className="opacity-80">인증심사</Link>
+        </>
+      )}
+      <button type="button" onClick={onLogout} className="text-left opacity-80">로그아웃</button>
+    </>
+  ) : null;
+
   return (
     <header className="bg-header text-on-header">
-      <nav className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3">
+      <nav className="mx-auto max-w-5xl px-4 py-3">
+        <div className="flex min-h-8 items-center gap-4">
         <Link href="/" className="text-lg font-bold tracking-tight">Attacca</Link>
+        <ul className="hidden items-center gap-4 text-sm md:flex">{navLinks}</ul>
 
-        <ul className="flex flex-wrap items-center gap-4 text-sm">
-          {NAV_ITEMS.map((item) => {
-            const active = isActive(pathname, item.href);
-            return (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  aria-current={active ? 'page' : undefined}
-                  className={active ? 'border-b-2 border-current pb-0.5 font-semibold' : 'opacity-80'}
-                >
-                  {item.label}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+        <div className="ml-auto flex items-center gap-3 text-sm">
+          <ThemeControl />
+          <div className="hidden items-center gap-3 md:flex">{accountLinks}</div>
+          <button
+            type="button"
+            aria-label={menuOpen ? '메뉴 닫기' : '메뉴 열기'}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-navigation"
+            onClick={() => setMenuOpen((open) => !open)}
+            className="inline-flex size-8 items-center justify-center rounded border border-on-header/40 text-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus md:hidden"
+          >
+            <span aria-hidden="true">{menuOpen ? '×' : '☰'}</span>
+          </button>
+        </div>
+        </div>
 
-        <div className="ml-auto flex flex-wrap items-center gap-3 text-sm">
-          {me === null && (
-            <>
-              <Link href="/login" className="opacity-80">로그인</Link>
-              <Link
-                href="/signup"
-                className="rounded bg-on-header px-2.5 py-1 font-semibold text-header"
-              >
-                회원가입
-              </Link>
-            </>
-          )}
-          {me && (
-            <>
-              <Link href="/profile" className="inline-flex items-center gap-1.5 font-semibold">
-                {me.nickname}
-                {me.verified && (
-                  <span className="rounded-full bg-on-header px-1.5 py-0.5 text-xs font-semibold text-header">인증</span>
-                )}
-              </Link>
-              {/*
-                어드민 화면이 둘이 되면서 링크를 나눴다. 하나로 묶으려면 어드민 홈이
-                필요한데, 화면 둘에 허브를 따로 두는 것은 과하다.
-              */}
-              {me.role === 'ADMIN' && (
-                <>
-                  <Link href="/admin/notices" className="opacity-80">공지</Link>
-                  <Link href="/admin/verified-performers" className="opacity-80">인증심사</Link>
-                </>
-              )}
-              <button type="button" onClick={onLogout} className="opacity-80">로그아웃</button>
-            </>
-          )}
+        <div id="mobile-navigation" hidden={!menuOpen} className="mt-3 border-t border-on-header/20 pt-3 md:hidden">
+          <ul className="grid gap-3 text-sm">{navLinks}</ul>
+          {me !== undefined && <div className="mt-3 flex flex-wrap gap-3 border-t border-on-header/20 pt-3 text-sm">{accountLinks}</div>}
         </div>
       </nav>
     </header>
