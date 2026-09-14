@@ -33,3 +33,7 @@ deploy/certbot/
 
 # Codex 격리 작업공간
 .worktrees/
+
+# Playwright generated artifacts
+FE/test-results/
+FE/playwright-report/

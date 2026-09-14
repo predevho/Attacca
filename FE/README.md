@@ -26,6 +26,7 @@ npm test            # Vitest 353개
 npm run lint        # eslint
 npm run build       # 프로덕션 빌드
 npm run check:colors  # 하드코딩된 색이 남아 있는지 검사
+npm run test:e2e      # Playwright 브라우저 smoke 테스트
 ```
 
 ## 구조
@@ -78,3 +79,6 @@ Vitest + Testing Library. BFF 라우트 테스트는 파일 상단에 `// @vites
 
 테스트는 "렌더된다"보다 **규칙이 지켜지는지**를 겨냥합니다 — 미들웨어 matcher가 보호 화면을
 빠뜨리지 않는지, 공개 응답에 회원 id가 값으로도 없는지, 공개 BFF가 쿠키를 읽지 않는지 같은 것들.
+
+브라우저 smoke 테스트는 `npm run test:e2e`로 실행합니다. 로컬 Next.js 서버에서 공개 공지 상세,
+비로그인 보호 라우트의 로그인 리다이렉트, IMPORT 심사 화면 접근 게이트를 확인합니다.
