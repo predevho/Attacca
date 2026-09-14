@@ -40,6 +40,10 @@ class NoticeAdminControllerTest {
     private static final String EVENT_BODY = "{\"type\":\"EVENT\",\"title\":\"심사 발표\","
             + "\"content\":\"본문\",\"scheduledAt\":\"2026-09-16T10:00:00\",\"place\":\"온라인\","
             + "\"pinned\":false}";
+    private static final String SOURCED_NOTICE_BODY = "{\"type\":\"NOTICE\","
+            + "\"title\":\"외부 공지\",\"content\":\"본문\",\"pinned\":false,"
+            + "\"sourceName\":\"서울대학교\","
+            + "\"sourceUrl\":\"https://admission.snu.ac.kr\"}";
 
     @BeforeEach
     void setUp() {
@@ -124,6 +128,46 @@ class NoticeAdminControllerTest {
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.resultCode").value("400-01"));
+    }
+
+    @Test
+    void 위험하거나_정규화되지_않은_출처_URL은_400_01() throws Exception {
+        for (String sourceUrl : new String[]{"javascript:alert(1)", " HTTPS://example.com"}) {
+            String body = "{\"type\":\"NOTICE\",\"title\":\"공지\",\"content\":\"본문\","
+                    + "\"pinned\":false,\"sourceName\":\"출처\",\"sourceUrl\":\""
+                    + sourceUrl + "\"}";
+
+            mockMvc.perform(post("/api/admin/notices").header("Authorization", adminBearer)
+                            .contentType(MediaType.APPLICATION_JSON).content(body))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error.resultCode").value("400-01"));
+        }
+    }
+
+    @Test
+    void 원문_URL만_있고_출처_이름이_없으면_400_01() throws Exception {
+        String body = "{\"type\":\"NOTICE\",\"title\":\"공지\",\"content\":\"본문\","
+                + "\"pinned\":false,\"sourceUrl\":\"https://example.com\"}";
+
+        mockMvc.perform(post("/api/admin/notices").header("Authorization", adminBearer)
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.resultCode").value("400-01"));
+    }
+
+    @Test
+    void 생성과_수정_응답에_출처가_유지된다() throws Exception {
+        String id = register(SOURCED_NOTICE_BODY);
+
+        String edited = "{\"type\":\"NOTICE\",\"title\":\"수정 공지\","
+                + "\"content\":\"본문\",\"pinned\":false,\"sourceName\":\"연세대학교\","
+                + "\"sourceUrl\":\"https://admission.yonsei.ac.kr\"}";
+        mockMvc.perform(put("/api/admin/notices/" + id).header("Authorization", adminBearer)
+                        .contentType(MediaType.APPLICATION_JSON).content(edited))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.sourceName").value("연세대학교"))
+                .andExpect(jsonPath("$.data.sourceUrl")
+                        .value("https://admission.yonsei.ac.kr"));
     }
 
     @Test

@@ -13,7 +13,7 @@
 * 확정된 기술 스택
   * BE: Spring Boot 3.4.x / Java 21 / MySQL / Spring Security(JWT + OAuth2) / WebSocket(STOMP)+Redis / FileStorage 추상화(로컬 기본/S3 opt-in)
   * FE: Next.js 16(App Router)/React 19/TS/Tailwind/Vitest, 위치 `FE/`. BFF+httpOnly 쿠키. `cd FE && npm run dev`(:3000)
-* 도메인 7개: MEMBER, VERIFIED-PERFORMER, FEED, PERFORMANCE, RECRUITMENT(구인/구직), CHAT, **NOTICE(2026-09-08 BE 구현 완료)**
+* 도메인 8개: MEMBER, VERIFIED-PERFORMER, FEED, PERFORMANCE, RECRUITMENT(구인/구직), CHAT, NOTICE, **IMPORT(2026-09-14 구현 완료)**
 * 어드민: 별도 도메인 아님. MEMBER의 ROLE_ADMIN.
 * **NOTICE(공지·소식·운영 일정)**: 새 홈 화면의 캐러셀·달력 원천. 엔티티 1종 `Notice`(`type` NOTICE/NEWS/EVENT, `scheduledAt` **nullable — 값이 있으면 달력에 뜬다는 단일 상태**, `pinned`=캐러셀 노출, coverImageKey, soft delete). 쓰기 `/api/admin/notices`(경로로 ROLE_ADMIN 게이팅, 소유자 판정 없음), 읽기 `/api/public/notices?scope=PINNED|SCHEDULED|ALL&from=&to=`(비인증). `EVENT`는 등록·수정 시 `scheduledAt` 필수(없으면 400-01), `SCHEDULED` 조회는 `from`·`to` 필수. 달력 범위는 **from 포함 / to 미포함**. `PINNED`은 최대 5건(그 외 기본 20/최대 50). 에러코드 404-12. 문서: `DOMAIN-NOTICE-CONSTITUTION.md`/`STATUTE.md`.
 * **공개 API 3종(2026-09-08, 새 홈이 소비)**: `/api/public/notices` · `/api/public/performances?scope=UPCOMING|PAST|ALL|SCHEDULED&from=&to=` · `/api/public/feed/posts?sort=LATEST|POPULAR`. 전부 **읽기 전용**이고 인증 경로와 컨트롤러·DTO가 분리돼 있다. 공개 응답의 회원 표시는 반드시 **`PublicMemberDisplay`**(닉네임+뱃지, 회원 id 없음) — `MemberDisplay`는 `@JsonProperty("id")`로 회원 id를 흘리므로 공개 응답에 쓰지 말 것. NOTICE는 작성자 자체를 담지 않고(운영 주체 명의), PERFORMANCE·FEED는 담는다. FEED 공개는 목록만(상세 비공개 = 로그인 유도 동선), `likedByMe` 없음. 인기글은 **최근 30일 창** 안의 (좋아요+댓글) 순, 오프셋 페이징(`FeedPublicService.POPULAR_WINDOW_DAYS`).
@@ -96,4 +96,4 @@
 
 ## 다음 작업
 
-* TODO-READY.md 참고.
+* IMPORT 운영 검증: `KOPIS_SERVICE_KEY` 발급과 `IMPORT_CONTACT` 결정 후 KOPIS 실제 호출, 대학 게시판 첫 페이지 수집, 어드민 승인·거절·포스터 저장 smoke test를 수행한다. 현재 자동 검증은 FE 493/493·lint 오류 0건·build 성공, BE JDK 21 `cleanTest test` `BUILD SUCCESSFUL`이다.

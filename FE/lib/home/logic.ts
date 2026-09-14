@@ -87,7 +87,7 @@ export function toCalendarEntries(
       title: n.title,
       at: n.scheduledAt as string,
       place: n.place,
-      href: null, // 공지 상세 화면이 아직 없다.
+    href: `/notices/${n.id}`,
     }));
 
   return [...fromPerformances, ...fromNotices].sort(
@@ -174,7 +174,7 @@ export function toSlides(
     caption: n.scheduledAt ? formatDateTime(n.scheduledAt) : formatDayLabel(n.createdAt),
     body: n.content,
     imageUrl: n.coverImageUrl,
-    href: null,
+    href: `/notices/${n.id}`,
   }));
   // 지난 공연은 다가오는 공연이 하나도 없을 때만 뒤에 덧붙인다.
   const fallback = performances.length === 0 ? past.map(toPerformanceSlide('PAST_PERFORMANCE')) : [];

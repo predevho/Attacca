@@ -66,10 +66,17 @@ public class Notice extends BaseEntity {
     @Column(name = "cover_image_key")
     private String coverImageKey;
 
+    @Column(length = 200)
+    private String sourceName;
+
+    @Column(length = 500)
+    private String sourceUrl;
+
     private LocalDateTime deletedAt;
 
     private Notice(Long authorId, NoticeType type, String title, String content,
-            LocalDateTime scheduledAt, String place, boolean pinned) {
+            LocalDateTime scheduledAt, String place, boolean pinned, String sourceName,
+            String sourceUrl) {
         this.authorId = authorId;
         this.type = type;
         this.title = title;
@@ -77,22 +84,38 @@ public class Notice extends BaseEntity {
         this.scheduledAt = scheduledAt;
         this.place = place;
         this.pinned = pinned;
+        this.sourceName = sourceName;
+        this.sourceUrl = sourceUrl;
     }
 
     public static Notice create(Long authorId, NoticeType type, String title, String content,
             LocalDateTime scheduledAt, String place, boolean pinned) {
-        return new Notice(authorId, type, title, content, scheduledAt, place, pinned);
+        return create(authorId, type, title, content, scheduledAt, place, pinned, null, null);
+    }
+
+    public static Notice create(Long authorId, NoticeType type, String title, String content,
+            LocalDateTime scheduledAt, String place, boolean pinned, String sourceName,
+            String sourceUrl) {
+        return new Notice(authorId, type, title, content, scheduledAt, place, pinned, sourceName,
+                sourceUrl);
     }
 
     /** 본문 필드를 전체 교체한다(PUT 시맨틱). 작성자·커버·삭제상태는 바꾸지 않는다. */
     public void edit(NoticeType type, String title, String content, LocalDateTime scheduledAt,
             String place, boolean pinned) {
+        edit(type, title, content, scheduledAt, place, pinned, null, null);
+    }
+
+    public void edit(NoticeType type, String title, String content, LocalDateTime scheduledAt,
+            String place, boolean pinned, String sourceName, String sourceUrl) {
         this.type = type;
         this.title = title;
         this.content = content;
         this.scheduledAt = scheduledAt;
         this.place = place;
         this.pinned = pinned;
+        this.sourceName = sourceName;
+        this.sourceUrl = sourceUrl;
     }
 
     public void changeCover(String newKey) {

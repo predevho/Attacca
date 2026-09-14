@@ -15,6 +15,8 @@ public record NoticeResponse(
         String place,
         boolean pinned,
         String coverImageUrl,
+        String sourceName,
+        String sourceUrl,
         LocalDateTime createdAt,
         LocalDateTime updatedAt) {
 }

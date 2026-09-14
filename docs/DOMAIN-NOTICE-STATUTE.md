@@ -37,6 +37,8 @@ com.back.domain.notice
 | `place` | String | 일정 장소. ≤200, nullable |
 | `pinned` | boolean | 홈 캐러셀 노출 여부. 기본 false, non-null |
 | `coverImageKey` | String | 커버 이미지 key(FileService). nullable |
+| `sourceName` | String | 외부 출처 이름. ≤200, nullable |
+| `sourceUrl` | String | 외부 원문 링크. http·https만 허용, ≤500, nullable |
 | `deletedAt` | LocalDateTime | soft delete 마킹. null=미삭제 |
 
 * 팩토리 `create(authorId, type, title, content, scheduledAt, place, pinned)`.
@@ -65,6 +67,8 @@ com.back.domain.notice
   * `title` `@NotBlank @Size(max=100)`, `content` `@NotBlank @Size(max=5000)`, `place` `@Size(max=200)`.
   * `type == EVENT`이면 `scheduledAt` 필수. 위반 시 `INVALID_INPUT_VALUE`(400-01).
   * `scheduledAt` 과거 일시 등록은 **허용**(지난 일정 기록용).
+  * `sourceName` `@Size(max=200)`, `sourceUrl` `@Size(max=500)` 및 `^\s*(https?://\S+)?\s*$` 검증. `javascript:`·`data:`와 공백·대소문자 우회는 거절한다.
+  * `sourceUrl`이 있으면 `sourceName`도 필수다. 위반 시 `INVALID_INPUT_VALUE`(400-01). 출처 이름만 있는 것은 허용한다.
 
 ---
 
@@ -113,7 +117,7 @@ com.back.domain.notice
 
 ### 7.2 어드민 (`ROLE_ADMIN`) — 접두사 `/api/admin/notices`
 
-* `POST /` : 등록. body `{type, title, content, scheduledAt, place, pinned}`. → `NoticeResponse`
+* `POST /` : 등록. body `{type, title, content, scheduledAt, place, pinned, sourceName, sourceUrl}`. → `NoticeResponse`
 * `GET /?type=&page=&size=` : 목록(`createdAt DESC`). → `Page<NoticeResponse>`
 * `GET /{id}` : 단건. → `NoticeResponse`
 * `PUT /{id}` : 수정(전체 교체). body 는 등록과 동일. → `NoticeResponse`
@@ -122,8 +126,9 @@ com.back.domain.notice
 
 ### 7.3 응답 DTO
 
-* `PublicNoticeResponse`: `id, type, title, content, scheduledAt, place, coverImageUrl, createdAt`
+* `PublicNoticeResponse`: `id, type, title, content, scheduledAt, place, coverImageUrl, sourceName, sourceUrl, createdAt`
   * 작성자 없음(§6). `coverImageUrl`은 `coverImageKey`를 `FileService.getUrl`로 변환(없으면 null).
+  * 출처 두 필드는 공개하기로 명시적으로 결정한 화이트리스트다. FE는 `sourceUrl`이 http(s)일 때만 원문 링크를 그린다.
 * `NoticeResponse`(어드민): 위 필드 + `author{id, nickname, verified}`, `pinned`, `updatedAt`
   * `author`는 `MemberQueryService.findDisplaysByIds` 배치 조회로 파생(N+1 방지, PERFORMANCE·FEED와 동일 패턴).
 
@@ -165,6 +170,7 @@ com.back.domain.notice
 * 컨트롤러(공개): **인증 없이 200**이 나오는지 — 이 도메인의 핵심 회귀. 그리고 **공개 응답 본문에 `authorId`·작성자·내부 필드가 없음을 명시적으로 단언**한다(§6이 코드로 지켜지는지 확인하는 유일한 방법).
 * 컨트롤러(어드민): 비어드민 403, 미인증 401, CRUD 흐름, 페이징.
 * SecurityConfig: `/api/public/**` permitAll 이 다른 경로의 보호를 깨지 않는지 회귀(기존 `SecurityConfigTest` 확장).
+* 출처: `sourceUrl`의 `javascript:`·`data:`·공백·대소문자 우회 거절, 링크만 있고 출처 이름이 없는 요청 400, 공개·어드민 응답의 두 필드 포함.
 
 ---
 

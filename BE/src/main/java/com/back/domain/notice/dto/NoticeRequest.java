@@ -3,6 +3,7 @@ package com.back.domain.notice.dto;
 import com.back.domain.notice.entity.NoticeType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 
@@ -20,5 +21,9 @@ public record NoticeRequest(
         @Size(max = 5000, message = "본문은 5000자를 넘을 수 없습니다.") String content,
         LocalDateTime scheduledAt,
         @Size(max = 200, message = "장소는 200자를 넘을 수 없습니다.") String place,
-        boolean pinned) {
+        boolean pinned,
+        @Size(max = 200, message = "출처 이름은 200자를 넘을 수 없습니다.") String sourceName,
+        @Size(max = 500, message = "원문 링크는 500자를 넘을 수 없습니다.")
+        @Pattern(regexp = "^\\s*(https?://\\S+)?\\s*$", flags = Pattern.Flag.CASE_INSENSITIVE,
+                message = "원문 링크는 http 또는 https URL이어야 합니다.") String sourceUrl) {
 }

@@ -112,13 +112,13 @@ describe('toCalendarEntries', () => {
     expect(entries).toHaveLength(0);
   });
 
-  it('공연만 링크를 갖는다(공지 상세 화면이 아직 없다)', () => {
+  it('공연과 공지 모두 상세 링크를 갖는다', () => {
     const entries = toCalendarEntries(
       [performance(7, '공연', '2026-09-10T19:00:00')],
       [notice(8, '일정', '2026-09-11T10:00:00')],
     );
     expect(entries[0].href).toBe('/performances/7');
-    expect(entries[1].href).toBeNull();
+    expect(entries[1].href).toBe('/notices/8');
   });
 });
 

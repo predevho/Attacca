@@ -241,6 +241,8 @@ Redirect URI를 `https://attacca.site/api/bff/oauth/kakao/callback`로 등록한
 | `JWT_SECRET` | | **반드시 교체.** 32자 이상 무작위 |
 | `STORAGE_TYPE` | `local` | 단일 인스턴스라 `local` + 볼륨으로 충분. S3는 나중에 |
 | `KAKAO_CLIENT_ID` / `KAKAO_CLIENT_SECRET` | 빈 값 | 비우면 자체 로그인만 쓴다 |
+| `KOPIS_SERVICE_KEY` | 빈 값 | KOPIS Open API 인증키. 비우면 KOPIS 수집을 건너뛴다 |
+| `IMPORT_CONTACT` | 운영 연락처 | 대학 게시판 User-Agent `AttaccaBot/1.0 (+...)`에 공개할 메일 주소 또는 URL. 운영 시 필수 |
 | `SERVER_NAME` | (2단계) | 도메인. 인증서 경로에도 쓰인다 |
 
 BE는 그 외에 `DDL_AUTO`(=`validate`, 바꾸지 말 것), `FLYWAY_ENABLED`(=`true`),

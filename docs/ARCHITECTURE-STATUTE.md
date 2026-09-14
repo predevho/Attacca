@@ -17,6 +17,8 @@
   * 소셜 로그인: OAuth2 (카카오/구글 등)
 * 실시간 채팅: WebSocket(STOMP) + Redis Pub/Sub
 * 파일 저장: `FileStorage` 인터페이스로 추상화 — 로컬 디스크(기본값, 개발용) / AWS S3 서울 리전(opt-in, `storage.type=s3`) 두 구현체
+* 외부 반입: Spring `RestClient` + `jackson-dataformat-xml`(KOPIS XML) + `jsoup`(대학 서버 렌더링 HTML)
+* 작업 스케줄링: Spring Scheduling(`@EnableScheduling`), 단일 서버의 원천별 메모리 잠금. 분산 잠금은 도입하지 않는다.
 
 ### Frontend
 
@@ -50,7 +52,8 @@ com.back
 │   ├── performance
 │   ├── recruitment
 │   ├── chat
-│   └── notice
+│   ├── notice
+│   └── imports
 └── global
     ├── config          // 설정 (Security, WebSocket, JPA, S3 등)
     ├── security        // 인증/인가, JWT, OAuth2

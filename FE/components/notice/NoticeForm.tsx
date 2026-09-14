@@ -50,6 +50,8 @@ export function NoticeForm({
   const contentMsg = msgFor('content');
   const placeMsg = msgFor('place');
   const scheduledMsg = msgFor('scheduledAt');
+  const sourceNameMsg = msgFor('sourceName');
+  const sourceUrlMsg = msgFor('sourceUrl');
 
   return (
     <form onSubmit={submit} noValidate className="flex flex-col gap-4">
@@ -116,6 +118,19 @@ export function NoticeForm({
           <span className="block text-xs text-ink-faint">홈 캐러셀에 실립니다.</span>
         </span>
       </label>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="flex flex-col gap-1 text-sm">출처 이름
+          <input value={form.sourceName ?? ''} onChange={(e) => set('sourceName', e.target.value)} onBlur={blur('sourceName')}
+            aria-invalid={sourceNameMsg ? true : undefined} className="rounded border border-line px-3 py-2" />
+          {sourceNameMsg && <span role="alert" className="text-xs text-danger">{sourceNameMsg}</span>}
+        </label>
+        <label className="flex flex-col gap-1 text-sm">원문 링크
+          <input type="url" value={form.sourceUrl ?? ''} onChange={(e) => set('sourceUrl', e.target.value)} onBlur={blur('sourceUrl')}
+            aria-invalid={sourceUrlMsg ? true : undefined} className="rounded border border-line px-3 py-2" />
+          {sourceUrlMsg && <span role="alert" className="text-xs text-danger">{sourceUrlMsg}</span>}
+        </label>
+      </div>
 
       <div className="flex gap-2">
         <button type="submit" disabled={pending}

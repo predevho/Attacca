@@ -61,7 +61,12 @@ class NoticeServiceTest {
 
     private NoticeRequest request(NoticeType type, String title, LocalDateTime scheduledAt,
             boolean pinned) {
-        return new NoticeRequest(type, title, "본문", scheduledAt, null, pinned);
+        return new NoticeRequest(type, title, "본문", scheduledAt, null, pinned, null, null);
+    }
+
+    private NoticeRequest sourcedRequest(String sourceName, String sourceUrl) {
+        return new NoticeRequest(NoticeType.NOTICE, "외부 공지", "본문", null, null, false,
+                sourceName, sourceUrl);
     }
 
     private ErrorCode errorOf(Throwable t) {
@@ -80,6 +85,42 @@ class NoticeServiceTest {
         assertThat(response.title()).isEqualTo("점검 안내");
         assertThat(response.author().nickname()).isEqualTo("운영자");
         assertThat(response.coverImageUrl()).isNull();
+    }
+
+    @Test
+    void create는_출처를_저장하고_어드민_응답에_유지한다() {
+        NoticeResponse response = service.create(adminId,
+                sourcedRequest("서울대학교", "https://admission.snu.ac.kr"));
+
+        assertThat(response.sourceName()).isEqualTo("서울대학교");
+        assertThat(response.sourceUrl()).isEqualTo("https://admission.snu.ac.kr");
+    }
+
+    @Test
+    void 원문_URL만_있고_출처_이름이_없으면_400_01() {
+        assertThatThrownBy(() -> service.create(adminId,
+                sourcedRequest(" ", "https://example.com")))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(t -> assertThat(errorOf(t)).isEqualTo(ErrorCode.INVALID_INPUT_VALUE));
+    }
+
+    @Test
+    void 원문_URL이_공백뿐이면_400_01() {
+        assertThatThrownBy(() -> service.create(adminId, sourcedRequest("출처", "   ")))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(t -> assertThat(errorOf(t)).isEqualTo(ErrorCode.INVALID_INPUT_VALUE));
+    }
+
+    @Test
+    void 수정하면_출처를_전체_교체하고_공개_응답에도_유지한다() {
+        Long id = service.create(adminId,
+                sourcedRequest("기존 출처", "https://example.com/old")).id();
+
+        service.editNotice(id, sourcedRequest("새 출처", "https://example.com/new"));
+        PublicNoticeResponse response = service.getPublicNotice(id);
+
+        assertThat(response.sourceName()).isEqualTo("새 출처");
+        assertThat(response.sourceUrl()).isEqualTo("https://example.com/new");
     }
 
     @Test
