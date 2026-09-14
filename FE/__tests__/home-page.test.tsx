@@ -166,7 +166,7 @@ describe('홈', () => {
     render(<HomePage />);
     await screen.findByText(/첫 독주회 프로그램 조언 부탁드려요/);
 
-    fireEvent.click(screen.getByRole('button', { name: '인기글' }));
+    fireEvent.click(screen.getByRole('tab', { name: '인기글' }));
 
     expect(await screen.findByText(/무대 공포증 이렇게 넘겼습니다/)).toBeInTheDocument();
     expect(getBff.mock.calls.some((c) => String(c[0]).includes('sort=POPULAR'))).toBe(true);

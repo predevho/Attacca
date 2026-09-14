@@ -69,4 +69,52 @@ test.describe('IMPORT 공개·접근 제어 smoke', () => {
     await expect(page.locator('#mobile-navigation')).toBeHidden();
     await expect(menuButton).toHaveAttribute('aria-expanded', 'false');
   });
+
+  test('320px 피드 탭은 overflow 없이 키보드로 정렬을 바꿀 수 있다', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 812 });
+    await page.goto('/');
+
+    const widget = page.getByRole('region', { name: '게시글' });
+    const latest = widget.getByRole('tab', { name: '최신글' });
+    const popular = widget.getByRole('tab', { name: '인기글' });
+    const allFeed = widget.getByRole('link', { name: /피드 전체보기/ });
+
+    await expect(latest).toHaveAttribute('aria-selected', 'true');
+    await expect(popular).toHaveAttribute('aria-selected', 'false');
+    await expect(allFeed).toBeVisible();
+
+    const layout = await widget.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      const controls = Array.from(element.querySelectorAll('button, a')).map((control) => {
+        const controlRect = control.getBoundingClientRect();
+        return {
+          left: controlRect.left,
+          right: controlRect.right,
+          top: controlRect.top,
+          bottom: controlRect.bottom,
+        };
+      });
+      return {
+        clientWidth: element.clientWidth,
+        scrollWidth: element.scrollWidth,
+        left: rect.left,
+        right: rect.right,
+        controls,
+      };
+    });
+
+    expect(layout.scrollWidth).toBeLessThanOrEqual(layout.clientWidth);
+    for (const control of layout.controls) {
+      expect(control.left).toBeGreaterThanOrEqual(layout.left);
+      expect(control.right).toBeLessThanOrEqual(layout.right);
+    }
+
+    await latest.focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(popular).toBeFocused();
+    await page.keyboard.press('Enter');
+
+    await expect(popular).toHaveAttribute('aria-selected', 'true');
+    await expect(latest).toHaveAttribute('aria-selected', 'false');
+  });
 });
