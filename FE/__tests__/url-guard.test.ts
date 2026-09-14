@@ -12,6 +12,8 @@ describe('링크 스킴 가드', () => {
     'data:text/html,<script>x</script>',
     'vbscript:msgbox(1)',
     '/relative',
+    'https://',
+    'http:///path',
     '',
   ])('%s 는 링크로 그리면 안 된다', (u) => expect(isHttpUrl(u)).toBe(false));
 });

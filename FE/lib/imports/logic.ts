@@ -1,10 +1,9 @@
 import type { ImportedItem } from './types';
 import type { NoticeFormValues } from '@/lib/notice/types';
+import { isHttpUrl as isSafeHttpUrl } from '@/lib/url';
 
 export function isHttpUrl(value: string | null | undefined): boolean {
-  if (!value) return false;
-  try { const url = new URL(value.trim()); return url.protocol === 'http:' || url.protocol === 'https:'; }
-  catch { return false; }
+  return value ? isSafeHttpUrl(value) : false;
 }
 
 export function toNoticeInitial(item: ImportedItem): NoticeFormValues {

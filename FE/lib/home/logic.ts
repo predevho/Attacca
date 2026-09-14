@@ -193,8 +193,11 @@ export function slideLabel(kind: Slide['kind']): string {
  * 내부 절대경로만 허용한다 — `//evil.com` 같은 프로토콜 상대 URL은 외부로 나가므로 막는다.
  */
 export function safeNext(next: string | null | undefined, fallback = '/feed'): string {
-  if (!next || !next.startsWith('/') || next.startsWith('//')) {
+  if (!next || !next.startsWith('/') || next.startsWith('//') || next.includes('\\')) {
     return fallback;
   }
+  const base = 'https://attacca.invalid';
+  const parsed = new URL(next, base);
+  if (parsed.origin !== base) return fallback;
   return next;
 }
