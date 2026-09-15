@@ -48,7 +48,27 @@ describe('RecruitmentsPage', () => {
   it('악기 필터 선택 시 instrument 쿼리로 재조회', async () => {
     render(<RecruitmentsPage />);
     await screen.findByText('공고1');
-    fireEvent.change(screen.getByLabelText('악기 필터'), { target: { value: 'PIANO' } });
+    fireEvent.change(screen.getByLabelText('모집 파트'), { target: { value: 'PIANO' } });
     await waitFor(() => expect(getBff.mock.calls.some((c) => String(c[0]).includes('instrument=PIANO'))).toBe(true));
+  });
+
+  it('모집 상태는 접근 가능한 탭으로 표시하고 선택 상태를 전달한다', async () => {
+    render(<RecruitmentsPage />);
+
+    const tablist = screen.getByRole('tablist', { name: '모집 상태' });
+    expect(within(tablist).getAllByRole('tab')).toHaveLength(3);
+    expect(screen.getByRole('tab', { name: '모집중' })).toHaveAttribute('aria-selected', 'true');
+
+    fireEvent.click(screen.getByRole('tab', { name: '마감' }));
+    expect(screen.getByRole('tab', { name: '마감' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: '모집중' })).toHaveAttribute('aria-selected', 'false');
+  });
+
+  it('악기 필터와 내 지원 현황을 모바일에서도 구분 가능한 이름으로 제공한다', async () => {
+    render(<RecruitmentsPage />);
+    await screen.findByText('공고1');
+
+    expect(screen.getByLabelText('모집 파트')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '내 지원 현황' })).toHaveClass('w-full');
   });
 });

@@ -103,54 +103,65 @@ export default function RecruitmentDetailPage() {
   if (!posting || !me) return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-ink-faint">불러오는 중...</main>;
 
   return (
-    <main className="mx-auto mt-8 max-w-xl px-4">
-      <button type="button" onClick={() => router.push('/recruitments')} className="mb-4 text-sm text-ink-muted">← 구인</button>
+    <main aria-labelledby="recruitment-title" className="mx-auto mt-8 max-w-xl px-4">
+      <button type="button" aria-label="구인 목록으로 돌아가기" onClick={() => router.push('/recruitments')}
+        className="mb-6 rounded px-1 text-sm text-ink-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">← 구인</button>
 
-      <div className="mb-3 flex items-start justify-between">
-        <h1 className="text-2xl font-bold">{posting.title}</h1>
-        <div className="flex gap-2">
+      <header className="mb-6 flex flex-col gap-4">
+      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <h1 id="recruitment-title" className="min-w-0 break-words text-2xl font-bold">{posting.title}</h1>
+        <div aria-label="공고 관리" className="flex shrink-0 flex-wrap gap-x-4 gap-y-2">
           {canEdit(me, posting.author.id) && (
-            <button type="button" onClick={() => router.push(`/recruitments/${posting.id}/edit`)} className="text-xs text-ink-faint">수정</button>
+            <button type="button" aria-label="공고 수정" onClick={() => router.push(`/recruitments/${posting.id}/edit`)}
+              className="rounded px-1 text-xs text-ink-faint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">수정</button>
           )}
           {isAuthor && !posting.closed && (
             <button type="button" onClick={close} disabled={pending !== null}
-              className="text-xs text-ink-faint disabled:opacity-50">
+              aria-label={pending === 'close' ? '공고 마감 중' : '공고 마감'} className="rounded px-1 text-xs text-ink-faint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-50">
               {pending === 'close' ? '마감 중...' : '마감'}
             </button>
           )}
           {canDelete(me, posting.author.id) && (
             <button type="button" onClick={remove} disabled={pending !== null}
-              className="text-xs text-ink-faint disabled:opacity-50">
+              aria-label="공고 삭제" className="rounded px-1 text-xs text-ink-faint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-50">
               {pending === 'remove' ? '삭제 중...' : '삭제'}
             </button>
           )}
         </div>
       </div>
+      <div className="flex flex-col gap-3 text-sm text-ink-muted sm:flex-row sm:items-center sm:justify-between">
+        <AuthorBadge author={posting.author} />
+        <div role="status" aria-label="공고 상태"
+          className={posting.closed ? 'w-fit rounded-full border border-line px-3 py-1 text-xs text-ink-muted' : 'w-fit rounded-full border border-success px-3 py-1 text-xs text-success'}>
+          {posting.closed ? '마감' : '모집 중'}
+        </div>
+      </div>
+      </header>
 
-      <div className="mb-4 text-sm text-ink-muted"><AuthorBadge author={posting.author} /></div>
-
-      <dl className="mb-6 flex flex-col gap-2 text-sm">
+      <section aria-label="모집 정보" className="mb-6">
+      <dl className="grid gap-3 text-sm sm:grid-cols-2">
         <div><dt className="text-ink-muted">모집 파트</dt><dd>{instrumentText(posting.instruments, instrumentLabels)}</dd></div>
         {posting.recruitCount != null && <div><dt className="text-ink-muted">모집 인원</dt><dd>{posting.recruitCount}명</dd></div>}
         {posting.location && <div><dt className="text-ink-muted">활동 지역</dt><dd>{posting.location}</dd></div>}
         {posting.fee && <div><dt className="text-ink-muted">보수</dt><dd>{posting.fee}</dd></div>}
         <div><dt className="text-ink-muted">마감</dt><dd>{formatDeadline(posting.deadline)}</dd></div>
-        {posting.description && <div><dt className="text-ink-muted">설명</dt><dd className="whitespace-pre-wrap">{posting.description}</dd></div>}
       </dl>
+      {posting.description && <div className="mt-5 border-t border-line pt-4 text-sm"><p className="text-ink-muted">설명</p><p className="mt-1 whitespace-pre-wrap">{posting.description}</p></div>}
+      </section>
 
       {isAuthor ? (
-        <section>
+        <section aria-label="지원자 목록" className="mt-8">
           <h2 className="mb-2 text-sm font-medium text-ink-muted">지원자</h2>
           {error && <p role="alert" className="mb-3 text-sm text-danger">{error}</p>}
           <ApplicantList applications={applicants} onAccept={(aid) => decide(aid, 'accept')} onReject={(aid) => decide(aid, 'reject')} />
         </section>
       ) : posting.closed ? (
-        <p className="text-sm text-ink-muted">마감된 공고입니다.</p>
+        <section aria-label="지원 안내" className="mt-8"><p className="text-sm text-ink-muted">마감된 공고입니다.</p></section>
       ) : (
-        <>
+        <section aria-label="지원하기" className="mt-8">
           {error && <p role="alert" className="mb-3 text-sm text-danger">{error}</p>}
           <ApplyPanel submitting={submitting} applied={applied} onApply={apply} />
-        </>
+        </section>
       )}
     </main>
   );

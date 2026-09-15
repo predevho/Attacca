@@ -60,7 +60,7 @@ describe('RecruitmentDetailPage', () => {
     expect(await screen.findByText('지원자1')).toBeInTheDocument();
     expect(screen.getByText('수정')).toBeInTheDocument();
     // '마감' 버튼 텍스트가 마감일 <dt>마감</dt> 라벨과 중복되어 getByText로는 모호함(2개 매치) → role 지정으로 소거.
-    expect(screen.getByRole('button', { name: '마감' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '공고 마감' })).toBeInTheDocument();
     expect(screen.getByText('삭제')).toBeInTheDocument();
   });
 
@@ -104,15 +104,40 @@ describe('RecruitmentDetailPage', () => {
     expect(screen.queryByText('PIANO')).not.toBeInTheDocument();
   });
 
+  it('상세 헤더와 행동 영역을 모바일에서 겹치지 않게 세로로 배치하고 접근성 이름을 제공한다', async () => {
+    mockGet(2);
+    render(<RecruitmentDetailPage />);
+
+    expect(await screen.findByRole('heading', { name: '피아노 반주자' })).toHaveAttribute('id', 'recruitment-title');
+    expect(screen.getByRole('main')).toHaveAttribute('aria-labelledby', 'recruitment-title');
+    expect(screen.getByRole('status', { name: '공고 상태' })).toHaveTextContent('모집 중');
+    expect(screen.getByRole('region', { name: '모집 정보' }).querySelector('dl')).toHaveClass('grid', 'gap-3', 'sm:grid-cols-2');
+    expect(screen.getByRole('region', { name: '지원하기' })).toHaveClass('mt-8');
+    expect(screen.getByRole('button', { name: '구인 목록으로 돌아가기' })).toHaveClass('focus-visible:outline-2');
+  });
+
+  it('작성자 화면에서 지원자 영역을 행동 영역과 분리한다', async () => {
+    mockGet(9, (p) => {
+      if (p.startsWith('/api/bff/recruitments/7/applications')) {
+        return { ok: true, data: { content: [], number: 0, totalPages: 1, last: true } };
+      }
+      return { ok: false, message: 'x' };
+    });
+    render(<RecruitmentDetailPage />);
+
+    expect(await screen.findByRole('region', { name: '지원자 목록' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '지원자 목록' })).toHaveClass('mt-8');
+  });
+
   it('마감 버튼을 연타해도 요청은 한 번만 나간다', async () => {
     mockGet(9); // 작성자
     // 응답을 붙잡아 두고 그 사이에 다시 누른다 — 실제 연타가 일어나는 창이다.
     let release!: (v: unknown) => void;
     postBff.mockReturnValue(new Promise((r) => { release = r; }));
     render(<RecruitmentDetailPage />);
-    const close = await screen.findByRole('button', { name: '마감' });
+    const close = await screen.findByRole('button', { name: '공고 마감' });
     fireEvent.click(close);
-    const pendingBtn = await screen.findByRole('button', { name: '마감 중...' });
+    const pendingBtn = await screen.findByRole('button', { name: '공고 마감 중' });
     fireEvent.click(pendingBtn);
     fireEvent.click(pendingBtn);
     expect(postBff).toHaveBeenCalledTimes(1);

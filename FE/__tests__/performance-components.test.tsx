@@ -46,4 +46,12 @@ describe('PerformanceCard', () => {
     fireEvent.click(screen.getByText('가을 리사이틀'));
     expect(onOpen).toHaveBeenCalledOnce();
   });
+
+  it('모바일 카드의 핵심 정보와 키보드 포커스 스타일을 유지한다', () => {
+    render(<PerformanceCard performance={perf} onOpen={vi.fn()} />);
+    const open = screen.getByRole('button', { name: '가을 리사이틀' });
+    expect(open.className).toContain('focus-visible:outline');
+    expect(screen.getByRole('article').className).toContain('p-3');
+    expect(screen.getByText(/예술의전당/)).toBeInTheDocument();
+  });
 });

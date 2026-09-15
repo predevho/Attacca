@@ -53,8 +53,15 @@ export default function PerformanceDetailPage() {
   if (!performance) return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-ink-faint">불러오는 중...</main>;
 
   return (
-    <main className="mx-auto mt-8 max-w-xl px-4">
-      <button type="button" onClick={() => router.push('/performances')} className="mb-4 text-sm text-ink-muted">← 공연</button>
+    <main className="mx-auto mt-6 max-w-3xl px-4 pb-10 sm:mt-8" aria-label={`${performance.title} 공연 상세`}>
+      <button
+        type="button"
+        onClick={() => router.push('/performances')}
+        aria-label="공연 목록으로 돌아가기"
+        className="mb-5 inline-flex min-h-10 items-center rounded px-2 text-sm text-ink-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+      >
+        ← 공연 목록
+      </button>
 
       {posterFailed && (
         <p className="mb-4 rounded border border-warn bg-surface-muted px-3 py-2 text-sm text-warn">
@@ -62,44 +69,52 @@ export default function PerformanceDetailPage() {
         </p>
       )}
 
-      {performance.posterImageUrl && (
-        <img src={performance.posterImageUrl} alt="" className="mb-4 max-h-96 w-full rounded object-contain" />
-      )}
+      <div className="grid gap-6 sm:grid-cols-[minmax(0,13rem)_minmax(0,1fr)] sm:items-start sm:gap-8">
+        {performance.posterImageUrl && (
+          <img src={performance.posterImageUrl} alt={`${performance.title} 포스터`} className="max-h-[28rem] w-full rounded object-contain sm:max-h-80" />
+        )}
 
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-        <h1 className="min-w-0 text-2xl font-bold">{performance.title}</h1>
-        <div className="flex shrink-0 gap-2">
+        <div className={performance.posterImageUrl ? '' : 'sm:col-span-2'}>
+          <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <h1 className="min-w-0 break-words text-2xl font-bold leading-tight">{performance.title}</h1>
+            <div className="flex shrink-0 gap-1" aria-label="공연 관리 작업">
           {canEdit(me ?? null, performance.organizer.id) && (
-            <button type="button" onClick={() => router.push(`/performances/${performance.id}/edit`)} className="text-xs text-ink-faint">수정</button>
+            <button type="button" onClick={() => router.push(`/performances/${performance.id}/edit`)} aria-label="공연 수정" className="min-h-10 rounded px-3 text-sm text-ink-faint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">수정</button>
           )}
           {canDelete(me ?? null, performance.organizer.id) && (
-            <button type="button" onClick={remove} className="text-xs text-ink-faint">삭제</button>
+            <button type="button" onClick={remove} aria-label="공연 삭제" className="min-h-10 rounded px-3 text-sm text-ink-faint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">삭제</button>
           )}
+            </div>
+          </div>
+
+          <div className="mb-5 text-sm text-ink-muted"><AuthorBadge author={performance.organizer} /></div>
+
+          {error && <p className="mb-3 text-sm text-danger" role="alert">{error}</p>}
+
+          <dl className="grid gap-x-5 gap-y-4 text-sm sm:grid-cols-2">
+            <div><dt className="mb-1 text-xs font-medium text-ink-muted">일시</dt><dd>{formatDateTime(performance.performedAt)}</dd></div>
+            <div><dt className="mb-1 text-xs font-medium text-ink-muted">장소</dt><dd>{performance.venue}</dd></div>
+            {performance.ticketInfo && <div><dt className="mb-1 text-xs font-medium text-ink-muted">관람료</dt><dd>{performance.ticketInfo}</dd></div>}
+            {performance.ticketUrl && (
+              <div>
+                <dt className="mb-1 text-xs font-medium text-ink-muted">티켓</dt>
+                <dd>
+                  {isHttpUrl(performance.ticketUrl)
+                    ? <a href={performance.ticketUrl} aria-label="티켓 예매하기 (새 창)" className="inline-flex min-h-10 items-center rounded bg-brand px-3 text-sm font-medium text-on-brand underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" target="_blank" rel="noreferrer">티켓 예매하기 ↗</a>
+                    : <span className="text-ink-muted">{performance.ticketUrl}</span>}
+                </dd>
+              </div>
+            )}
+          </dl>
         </div>
       </div>
 
-      <div className="mb-4 text-sm text-ink-muted"><AuthorBadge author={performance.organizer} /></div>
-
-      {error && <p className="mb-3 text-sm text-danger">{error}</p>}
-
-      <dl className="flex flex-col gap-2 text-sm">
-        <div><dt className="text-ink-muted">일시</dt><dd>{formatDateTime(performance.performedAt)}</dd></div>
-        <div><dt className="text-ink-muted">장소</dt><dd>{performance.venue}</dd></div>
-        {performance.description && <div><dt className="text-ink-muted">소개</dt><dd className="whitespace-pre-wrap">{performance.description}</dd></div>}
-        {performance.program && <div><dt className="text-ink-muted">프로그램</dt><dd className="whitespace-pre-wrap">{performance.program}</dd></div>}
-        {performance.ticketInfo && <div><dt className="text-ink-muted">관람료</dt><dd>{performance.ticketInfo}</dd></div>}
-        {performance.ticketUrl && (
-          <div>
-            <dt className="text-ink-muted">티켓</dt>
-            {/* http(s)가 아니면 링크로 만들지 않는다. 규칙이 생기기 전 저장된 값이 있을 수 있다. */}
-            <dd>
-              {isHttpUrl(performance.ticketUrl)
-                ? <a href={performance.ticketUrl} className="text-brand-strong" target="_blank" rel="noreferrer">예매 링크</a>
-                : <span className="text-ink-muted">{performance.ticketUrl}</span>}
-            </dd>
-          </div>
-        )}
-      </dl>
+      {(performance.description || performance.program) && (
+        <div className="mt-8 grid gap-6 border-t border-line pt-6 sm:grid-cols-2">
+          {performance.description && <section><h2 className="mb-2 text-sm font-semibold">소개</h2><p className="whitespace-pre-wrap text-sm leading-6">{performance.description}</p></section>}
+          {performance.program && <section><h2 className="mb-2 text-sm font-semibold">프로그램</h2><p className="whitespace-pre-wrap text-sm leading-6">{performance.program}</p></section>}
+        </div>
+      )}
     </main>
   );
 }
