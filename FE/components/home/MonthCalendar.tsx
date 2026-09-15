@@ -130,7 +130,13 @@ export function MonthCalendar({
       </section>
 
       <section aria-label={selectedDay === null ? '이번 달 일정' : '선택한 날짜 일정'} className="rounded-lg border border-line bg-surface">
-        <h2 className="p-4 font-semibold">이번 달 일정</h2>
+        <div className="flex items-center justify-between gap-3 p-4">
+          <h2 className="font-semibold">{selectedDay === null ? '이번 달 일정' : `${month}월 ${selectedDay}일 일정`}</h2>
+          <div className="flex shrink-0 gap-2 text-xs text-ink-muted">
+            <Link href="/performances" className="transition-colors hover:text-ink">공연 전체</Link>
+            <Link href="/notices" className="transition-colors hover:text-ink">공지 전체</Link>
+          </div>
+        </div>
         {selectedDay !== null && (
           <p aria-live="polite" className="px-4 pb-2 text-sm text-ink-muted">
             {month}월 {selectedDay}일 일정 {selectedEntries.length}건
