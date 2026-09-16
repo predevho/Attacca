@@ -29,8 +29,17 @@ describe('VerifiedPerformerPage', () => {
   it('PENDING이면 심사 중 카드(폼 없음)', async () => {
     mockMe({ ...base, status: 'PENDING' });
     render(<VerifiedPerformerPage />);
-    expect(await screen.findByText(/심사 중/)).toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: '상태: 심사 중' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '신청' })).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '상태: 심사 중' })).toHaveAttribute('aria-live', 'polite');
+  });
+
+  it('상태 카드의 지원 사유와 증빙 링크를 의미 있는 그룹으로 제공', async () => {
+    mockMe({ ...base, status: 'APPROVED', evidenceUrls: ['https://example.com'] });
+    render(<VerifiedPerformerPage />);
+    expect(await screen.findByRole('heading', { name: '인증 신청 상태' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: '지원 사유' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: '증빙 링크' })).toBeInTheDocument();
   });
 
   it('REJECTED이면 사유 + 재신청 폼', async () => {
@@ -54,7 +63,7 @@ describe('VerifiedPerformerPage', () => {
     render(<VerifiedPerformerPage />);
     fireEvent.change(await screen.findByLabelText('지원 사유'), { target: { value: '5년' } });
     fireEvent.click(screen.getByRole('button', { name: '신청' }));
-    await waitFor(() => expect(screen.getByText(/심사 중/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('region', { name: '상태: 심사 중' })).toBeInTheDocument());
     expect(postBff).toHaveBeenCalledWith('/api/bff/verified-performers/applications', { statement: '5년', evidenceUrls: [] });
   });
 

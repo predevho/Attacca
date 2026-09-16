@@ -46,13 +46,20 @@ public class MemberOAuthService {
             boolean agreedTerms, boolean agreedPrivacy) {
         OAuthUserInfo info = resolveClient(provider).fetch(code, redirectUri);
 
-        Member member = socialAccountRepository
+        Member existingSocialMember = socialAccountRepository
                 .findByProviderAndProviderUserId(provider, info.providerUserId())
                 .map(SocialAccount::getMember)
-                .orElseGet(() -> linkOrCreate(provider, info, agreedTerms, agreedPrivacy));
+                .orElse(null);
+        boolean newMember = false;
+        Member member = existingSocialMember;
+        if (member == null) {
+            boolean emailAlreadyExists = memberRepository.findByEmail(info.email()).isPresent();
+            member = linkOrCreate(provider, info, agreedTerms, agreedPrivacy);
+            newMember = !emailAlreadyExists;
+        }
 
         TokenIssuer.IssuedTokens tokens = tokenIssuer.issue(member.getId(), member.getRole());
-        return new TokenPairResponse(tokens.accessToken(), tokens.refreshToken());
+        return new TokenPairResponse(tokens.accessToken(), tokens.refreshToken(), newMember);
     }
 
     private OAuthClient resolveClient(OAuthProvider provider) {

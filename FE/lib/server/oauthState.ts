@@ -2,6 +2,7 @@ import 'server-only';
 import type { CookieStore } from '@/lib/server/cookies';
 
 export const STATE_COOKIE = 'oauth_state';
+export const NEXT_COOKIE = 'oauth_next';
 export const CONSENT_COOKIE = 'oauth_consent';
 const STATE_MAX_AGE = 600; // 10분
 
@@ -27,6 +28,18 @@ export function verifyState(store: CookieStore, urlState: string | null): boolea
 /** state 쿠키를 삭제한다(단일 사용). */
 export function clearState(store: CookieStore): void {
   store.delete(STATE_COOKIE);
+}
+
+export function issueNext(store: CookieStore, next: string | null): void {
+  if (next) store.set(NEXT_COOKIE, next, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/', maxAge: 600 });
+}
+
+export function readNext(store: CookieStore): string | null {
+  return store.get(NEXT_COOKIE)?.value ?? null;
+}
+
+export function clearNext(store: CookieStore): void {
+  store.delete(NEXT_COOKIE);
 }
 
 /**

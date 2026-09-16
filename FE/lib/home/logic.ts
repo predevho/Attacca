@@ -192,7 +192,7 @@ export function slideLabel(kind: Slide['kind']): string {
  * 로그인 후 돌아갈 경로를 안전하게 고른다.
  * 내부 절대경로만 허용한다 — `//evil.com` 같은 프로토콜 상대 URL은 외부로 나가므로 막는다.
  */
-export function safeNext(next: string | null | undefined, fallback = '/feed'): string {
+export function safeNext(next: string | null | undefined, fallback = '/'): string {
   if (!next || !next.startsWith('/') || next.startsWith('//') || next.includes('\\')) {
     return fallback;
   }

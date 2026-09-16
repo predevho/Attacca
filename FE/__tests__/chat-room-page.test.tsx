@@ -44,6 +44,12 @@ describe('ChatRoomPage', () => {
     expect(await screen.findByText('안녕')).toBeInTheDocument();
     expect(subscribeRoom).toHaveBeenCalledWith(3, expect.any(Function));
   });
+  it('모바일 방 화면은 동적 viewport와 명확한 뒤로가기 이름을 사용', async () => {
+    mockOk();
+    render(<ChatRoomPage />);
+    expect(await screen.findByRole('button', { name: '채팅 목록으로 돌아가기' })).toBeInTheDocument();
+    expect(screen.getByRole('main')).toHaveClass('min-h-[100dvh]');
+  });
 
   it('수신 메시지를 append', async () => {
     mockOk();

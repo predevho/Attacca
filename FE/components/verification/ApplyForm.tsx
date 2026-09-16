@@ -29,7 +29,7 @@ export function ApplyForm({
       <label className="flex flex-col gap-1 text-sm">
         <span className="text-ink-muted">지원 사유</span>
         <textarea aria-label="지원 사유" value={statement} maxLength={1000}
-          onChange={(e) => setStatement(e.target.value)} className="h-32 rounded border border-line px-3 py-2" />
+          onChange={(e) => setStatement(e.target.value)} className="h-32 rounded border border-line px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand" />
       </label>
       <div className="flex flex-col gap-1 text-sm">
         <span className="text-ink-muted">증빙 링크 (최대 10개)</span>
@@ -37,7 +37,7 @@ export function ApplyForm({
       </div>
       {error && <p className="text-sm text-danger">{error}</p>}
       <button type="button" onClick={submit} disabled={submitting}
-        className="self-start rounded bg-brand px-4 py-2 text-on-brand disabled:opacity-40">
+        className="min-h-10 self-start rounded bg-brand px-4 py-2 text-on-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:opacity-40">
         {submitting ? '처리 중...' : submitLabel}
       </button>
     </div>

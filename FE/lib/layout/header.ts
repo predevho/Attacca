@@ -7,8 +7,8 @@ export const NAV_ITEMS = [
   { href: '/chat', label: '채팅' },
 ] as const;
 
-/** 헤더를 감출 화면(인증). 여기서 걸러 신원 조회 요청 자체를 보내지 않는다. */
-const HIDDEN_PREFIXES = ['/login', '/signup'];
+/** 헤더를 감출 화면(회원가입). 여기서 걸러 신원 조회 요청 자체를 보내지 않는다. */
+const HIDDEN_PREFIXES = ['/signup'];
 
 function matchesPrefix(pathname: string, prefix: string): boolean {
   return pathname === prefix || pathname.startsWith(`${prefix}/`);

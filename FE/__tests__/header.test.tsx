@@ -99,11 +99,13 @@ describe('Header', () => {
     expect(screen.getByRole('link', { name: '홈' })).toBeInTheDocument();
   });
 
-  it('로그인 화면에서는 렌더하지 않고 신원 조회도 하지 않는다', async () => {
+  it('로그인 화면에서도 브랜드와 최소 내비게이션을 렌더링한다', async () => {
     pathname = '/login';
-    const { container } = render(<Header />);
-    expect(container).toBeEmptyDOMElement();
-    expect(getBff).not.toHaveBeenCalled();
+    getBff.mockResolvedValue({ ok: false, message: '인증 필요' });
+    render(<Header />);
+    expect(screen.getByRole('link', { name: 'Attacca' })).toHaveAttribute('href', '/');
+    expect(screen.getByRole('link', { name: '홈' })).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: '로그인' })).toBeInTheDocument();
   });
 
   it('로그아웃하면 BFF를 호출하고 /login으로 보낸다', async () => {

@@ -37,6 +37,8 @@ export default function ProfilePage() {
   const [withdrawError, setWithdrawError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const [draftInstruments, setDraftInstruments] = useState<string[]>([]);
   const [draftBio, setDraftBio] = useState('');
@@ -51,7 +53,7 @@ export default function ProfilePage() {
       setProfile(profileRes.data as Profile);
       if (optionRes.ok) setOptions((optionRes.data as { instruments: Option[] }).instruments);
       if (identityRes.ok) setMe(identityRes.data as Me);
-    });
+    }).catch(() => setLoadError('프로필을 불러오지 못했습니다.'));
   }, [router]);
 
   function labelOf(code: string) {
@@ -76,10 +78,18 @@ export default function ProfilePage() {
   }
 
   async function save() {
+    if (saving) return;
     setError(null);
-    const res = await putBff<Profile>('/api/bff/me/profile', { instruments: draftInstruments, bio: draftBio });
-    if (res.ok) { setProfile(res.data as Profile); setEditing(false); }
-    else setError(res.message ?? '저장에 실패했습니다.');
+    setSaving(true);
+    try {
+      const res = await putBff<Profile>('/api/bff/me/profile', { instruments: draftInstruments, bio: draftBio });
+      if (res.ok) { setProfile(res.data as Profile); setEditing(false); }
+      else setError(res.message ?? '저장에 실패했습니다.');
+    } catch {
+      setError('저장에 실패했습니다. 네트워크를 확인해 주세요.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function onImageChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -91,13 +101,20 @@ export default function ProfilePage() {
     setUploading(true);
     const fd = new FormData();
     fd.append('file', file);
-    const res = await putBffForm<{ profileImageUrl: string }>('/api/bff/me/profile/image', fd);
-    setUploading(false);
-    if (res.ok && profile) setProfile({ ...profile, profileImageUrl: (res.data as { profileImageUrl: string }).profileImageUrl });
-    else setError(res.message ?? '이미지 업로드에 실패했습니다.');
+    try {
+      const res = await putBffForm<{ profileImageUrl: string }>('/api/bff/me/profile/image', fd);
+      if (res.ok && profile) setProfile({ ...profile, profileImageUrl: (res.data as { profileImageUrl: string }).profileImageUrl });
+      else setError(res.message ?? '이미지 업로드에 실패했습니다.');
+    } catch {
+      setError('이미지 업로드에 실패했습니다. 네트워크를 확인해 주세요.');
+    } finally {
+      setUploading(false);
+    }
   }
 
-  if (!profile) return <main className="mx-auto mt-24 max-w-md px-4">불러오는 중...</main>;
+  if (!profile) return <main className="mx-auto mt-24 max-w-md px-4">
+    {loadError ? <p role="alert" className="text-sm text-danger">{loadError}</p> : <p role="status" aria-live="polite">불러오는 중...</p>}
+  </main>;
 
   const pwErrors = validatePasswordChange(pwForm);
 
@@ -110,17 +127,22 @@ export default function ProfilePage() {
     setPwPending(true);
     setPwError(null);
     // 확인란은 서버로 보내지 않는다 — 서버가 확인할 것이 없다.
-    const res = await putBff('/api/bff/members/me/password', {
-      currentPassword: pwForm.currentPassword,
-      newPassword: pwForm.newPassword,
-    });
-    setPwPending(false);
-    if (res.ok) {
-      setPwForm(EMPTY_PW);
-      setPwTouched({});
-      setPwDone(true);
-    } else {
-      setPwError(res.message ?? '비밀번호를 바꾸지 못했습니다.');
+    try {
+      const res = await putBff('/api/bff/members/me/password', {
+        currentPassword: pwForm.currentPassword,
+        newPassword: pwForm.newPassword,
+      });
+      if (res.ok) {
+        setPwForm(EMPTY_PW);
+        setPwTouched({});
+        setPwDone(true);
+      } else {
+        setPwError(res.message ?? '비밀번호를 바꾸지 못했습니다.');
+      }
+    } catch {
+      setPwError('비밀번호를 바꾸지 못했습니다. 네트워크를 확인해 주세요.');
+    } finally {
+      setPwPending(false);
     }
   }
 
@@ -129,19 +151,26 @@ export default function ProfilePage() {
   async function withdraw() {
     setWithdrawPending(true);
     setWithdrawError(null);
-    const res = await deleteBff('/api/bff/members/me');
-    setWithdrawPending(false);
-    if (res.ok) {
+    try {
+      const res = await deleteBff('/api/bff/members/me');
+      if (res.ok) {
       // 전체 새로고침으로 나간다. `router.push` 로 나가면 클라이언트 상태가 살아 있어,
       // 헤더가 들고 있던 신원 때문에 **방금 계정을 지운 사람에게 '로그아웃' 메뉴가
       // 계속 보인다**(2026-09-09 로컬에서 확인). 헤더는 신원을 마운트 때 한 번만 읽고
       // 경로가 바뀌어도 다시 읽지 않는다. `router.refresh()` 는 서버 컴포넌트만
       // 새로 그리므로 이 상태를 지우지 못한다.
-      window.location.assign('/');
-    } else {
-      setWithdrawError(res.message ?? '탈퇴에 실패했습니다.');
+        window.location.assign('/');
+      } else {
+        setWithdrawError(res.message ?? '탈퇴에 실패했습니다.');
+      }
+    } catch {
+      setWithdrawError('탈퇴에 실패했습니다. 네트워크를 확인해 주세요.');
+    } finally {
+      setWithdrawPending(false);
     }
   }
+
+  const controlClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand';
 
   function pwField(key: keyof PasswordChangeForm, label: string, hint?: string) {
     const msg = pwTouched[key] ? pwErrors[key] : undefined;
@@ -154,9 +183,9 @@ export default function ProfilePage() {
           onBlur={() => setPwTouched((t) => ({ ...t, [key]: true }))}
           aria-invalid={msg ? true : undefined}
           aria-describedby={msg ? `${key}-error` : undefined}
-          className={msg
+            className={`${msg
             ? 'rounded border border-danger px-3 py-2'
-            : 'rounded border border-line px-3 py-2'}
+            : 'rounded border border-line px-3 py-2'} min-h-11 ${controlClass}`}
         />
         {msg
           ? <span id={`${key}-error`} role="alert" className="text-xs text-danger">{msg}</span>
@@ -166,7 +195,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <main className="mx-auto mt-16 max-w-md px-4">
+    <main className="mx-auto mt-10 max-w-md px-4 pb-10 sm:mt-16">
       <h1 className="mb-2 text-2xl font-bold">내 프로필</h1>
       {me && (
         <p className="mb-6 text-sm">
@@ -178,9 +207,9 @@ export default function ProfilePage() {
         {profile.profileImageUrl
           ? <img src={profile.profileImageUrl} alt="프로필" className="h-20 w-20 rounded-full object-cover" />
           : <div className="flex h-20 w-20 items-center justify-center rounded-full bg-surface-muted text-xs text-ink-muted">사진 없음</div>}
-        <label className="cursor-pointer rounded border border-line px-3 py-1.5 text-sm">
+        <label aria-label={uploading ? '이미지 업로드 중' : '이미지 변경'} className={`inline-flex min-h-11 items-center cursor-pointer rounded border border-line px-3 text-sm ${controlClass}`}>
           {uploading ? '업로드 중...' : '이미지 변경'}
-          <input type="file" accept="image/*" className="hidden" onChange={onImageChange} disabled={uploading} />
+          <input aria-label={uploading ? '이미지 업로드 중' : '이미지 변경'} type="file" accept="image/*" className="hidden" onChange={onImageChange} disabled={uploading} />
         </label>
       </div>
 
@@ -200,9 +229,9 @@ export default function ProfilePage() {
             <p className="whitespace-pre-wrap text-sm">{profile.bio || <span className="text-ink-faint">자기소개가 없습니다.</span>}</p>
           </div>
           <div className="mt-2 flex flex-wrap gap-2">
-            <button onClick={startEdit} className="rounded bg-brand px-4 py-2 text-on-brand">수정</button>
-            <Link href="/recruitments/applications/me" className="rounded border border-line px-4 py-2 text-center">내 지원 현황</Link>
-            <button onClick={() => router.push('/verified-performer')} className="rounded border border-line px-4 py-2 text-center">인증 연주자</button>
+            <button onClick={startEdit} className={`min-h-11 rounded bg-brand px-4 text-on-brand ${controlClass}`}>수정</button>
+            <Link href="/recruitments/applications/me" className={`inline-flex min-h-11 items-center justify-center rounded border border-line px-4 text-center ${controlClass}`}>내 지원 현황</Link>
+            <button onClick={() => router.push('/verified-performer')} className={`min-h-11 rounded border border-line px-4 text-center ${controlClass}`}>인증 연주자</button>
           </div>
         </section>
       ) : (
@@ -214,7 +243,7 @@ export default function ProfilePage() {
                 const on = draftInstruments.includes(o.code);
                 return (
                   <button key={o.code} type="button" onClick={() => toggleInstrument(o.code)}
-                    className={`rounded-full px-3 py-1 text-sm ${on ? 'bg-brand text-on-brand' : 'bg-surface-muted text-ink-muted'}`}>
+                    className={`min-h-11 rounded-full px-3 text-sm ${controlClass} ${on ? 'bg-brand text-on-brand' : 'bg-surface-muted text-ink-muted'}`}>
                     {o.label}
                   </button>
                 );
@@ -227,8 +256,8 @@ export default function ProfilePage() {
               className="h-32 w-full rounded border border-line px-3 py-2 text-sm" />
           </div>
           <div className="mt-2 flex gap-2">
-            <button onClick={save} className="rounded bg-brand px-4 py-2 text-on-brand">저장</button>
-            <button onClick={() => { setEditing(false); setError(null); }} className="rounded border border-line px-4 py-2">취소</button>
+            <button onClick={save} disabled={saving} aria-busy={saving} className={`min-h-11 rounded bg-brand px-4 text-on-brand disabled:opacity-50 ${controlClass}`}>{saving ? '저장 중' : '저장'}</button>
+            <button onClick={() => { setEditing(false); setError(null); }} disabled={saving} className={`min-h-11 rounded border border-line px-4 ${controlClass}`}>취소</button>
           </div>
         </section>
       )}
@@ -249,9 +278,9 @@ export default function ProfilePage() {
               비밀번호를 바꿨습니다. 다른 기기는 다시 로그인해야 합니다.
             </p>
           )}
-          <button type="submit" disabled={pwPending}
-            className="w-fit rounded bg-brand px-4 py-2 text-sm text-on-brand disabled:opacity-50">
-            비밀번호 변경
+          <button type="submit" disabled={pwPending} aria-busy={pwPending}
+            className={`min-h-11 w-fit rounded bg-brand px-4 text-sm text-on-brand disabled:opacity-50 ${controlClass}`}>
+            {pwPending ? '변경 중' : '비밀번호 변경'}
           </button>
         </form>
       </section>
@@ -268,7 +297,7 @@ export default function ProfilePage() {
 
         {!withdrawing ? (
           <button onClick={() => setWithdrawing(true)}
-            className="mt-4 rounded border border-danger px-4 py-2 text-sm text-danger">탈퇴하기</button>
+            className={`mt-4 min-h-11 rounded border border-danger px-4 text-sm text-danger ${controlClass}`}>탈퇴하기</button>
         ) : (
           <div className="mt-4 rounded border border-danger p-4">
             <label className="block text-sm">
@@ -279,11 +308,11 @@ export default function ProfilePage() {
             {withdrawError && <p role="alert" className="mt-2 text-sm text-danger">{withdrawError}</p>}
             <div className="mt-3 flex gap-2">
               <button onClick={withdraw} disabled={confirmText !== '탈퇴합니다' || withdrawPending}
-                className="rounded bg-danger px-4 py-2 text-sm text-on-brand disabled:opacity-50">
-                영구 삭제
+                aria-busy={withdrawPending} className={`min-h-11 rounded bg-danger px-4 text-sm text-on-brand disabled:opacity-50 ${controlClass}`}>
+                {withdrawPending ? '삭제 중' : '영구 삭제'}
               </button>
               <button onClick={() => { setWithdrawing(false); setConfirmText(''); setWithdrawError(null); }}
-                className="rounded border border-line px-4 py-2 text-sm">취소</button>
+                className={`min-h-11 rounded border border-line px-4 text-sm ${controlClass}`}>취소</button>
             </div>
           </div>
         )}

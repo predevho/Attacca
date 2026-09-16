@@ -35,6 +35,12 @@ describe('ProfilePage', () => {
     expect(screen.getByText('첼로 좋아요')).toBeInTheDocument();
   });
 
+  it('프로필 조회에 실패하면 운영형 오류 상태를 보여준다', async () => {
+    getBff.mockRejectedValueOnce(new Error('network'));
+    render(<ProfilePage />);
+    expect(await screen.findByRole('alert')).toHaveTextContent('프로필을 불러오지 못했습니다.');
+  });
+
   it('수정 버튼을 누르면 편집 모드로 전환된다', async () => {
     render(<ProfilePage />);
     fireEvent.click(await screen.findByRole('button', { name: '수정' }));
@@ -50,6 +56,25 @@ describe('ProfilePage', () => {
     fireEvent.click(screen.getByRole('button', { name: '저장' }));
     await waitFor(() => expect(putBff).toHaveBeenCalledWith('/api/bff/me/profile', expect.objectContaining({ bio: '첼로 좋아요' })));
     expect(await screen.findByText('수정됨')).toBeInTheDocument();
+  });
+
+  it('저장 중에는 저장 버튼을 잠그고 진행 상태를 알린다', async () => {
+    let resolveSave!: (value: unknown) => void;
+    putBff.mockReturnValue(new Promise((resolve) => { resolveSave = resolve; }));
+    render(<ProfilePage />);
+    fireEvent.click(await screen.findByRole('button', { name: '수정' }));
+    const saveButton = screen.getByRole('button', { name: '저장' });
+    fireEvent.click(saveButton);
+    expect(screen.getByRole('button', { name: '저장 중' })).toBeDisabled();
+    expect(saveButton).toHaveAttribute('aria-busy', 'true');
+    resolveSave({ ok: true, data: { instruments: ['VIOLIN'], bio: '첼로 좋아요', profileImageUrl: null }, message: null });
+  });
+
+  it('주요 조작 요소는 모바일 터치 영역과 키보드 포커스 스타일을 갖는다', async () => {
+    render(<ProfilePage />);
+    const edit = await screen.findByRole('button', { name: '수정' });
+    expect(edit).toHaveClass('min-h-11', 'focus-visible:outline-2');
+    expect(document.querySelector('label[aria-label="이미지 변경"]')).toHaveClass('min-h-11', 'focus-visible:outline-2');
   });
 
   it('악기 10개 초과 선택은 막고 안내한다', async () => {
@@ -73,6 +98,17 @@ describe('ProfilePage', () => {
     fireEvent.change(input, { target: { files: [file] } });
     expect(putBffForm).not.toHaveBeenCalled();
     expect(await screen.findByText('이미지 파일만 업로드할 수 있습니다.')).toBeInTheDocument();
+  });
+
+  it('이미지 업로드 중에는 입력을 잠그고 진행 상태를 알린다', async () => {
+    let resolveUpload!: (value: unknown) => void;
+    putBffForm.mockReturnValue(new Promise((resolve) => { resolveUpload = resolve; }));
+    render(<ProfilePage />);
+    await screen.findByRole('button', { name: '수정' });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [new File(['x'], 'a.png', { type: 'image/png' })] } });
+    expect(document.querySelector('input[aria-label="이미지 업로드 중"]')).toBeDisabled();
+    resolveUpload({ ok: true, data: { profileImageUrl: '/image.png' }, message: null });
   });
 
   it('me 조회 실패면 /login으로 리다이렉트한다', async () => {

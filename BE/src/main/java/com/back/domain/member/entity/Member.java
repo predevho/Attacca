@@ -108,4 +108,9 @@ public class Member extends BaseEntity {
     public boolean isWithdrawn() {
         return deletedAt != null;
     }
+
+    /** 회원 본인의 닉네임을 변경한다. 유효성·중복 검사는 서비스가 담당한다. */
+    public void changeNickname(String nickname) {
+        this.nickname = nickname;
+    }
 }

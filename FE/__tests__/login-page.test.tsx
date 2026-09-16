@@ -2,7 +2,9 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+const { push, postBff } = vi.hoisted(() => ({ push: vi.fn(), postBff: vi.fn() }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
+vi.mock('@/lib/api', () => ({ postBff }));
 
 import { LoginForm } from '@/app/(auth)/login/LoginForm';
 import { ERROR_MESSAGES } from '@/app/(auth)/login/page';
@@ -13,6 +15,26 @@ describe('LoginForm', () => {
     expect(screen.getByLabelText('아이디')).toBeInTheDocument();
     expect(screen.getByLabelText('비밀번호')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '로그인' })).toBeInTheDocument();
+  });
+
+  it('일반 로그인은 약관 동의 없이 제출하고 기본 홈으로 이동한다', async () => {
+    const user = userEvent.setup();
+    postBff.mockResolvedValue({ ok: true, data: null, message: null });
+    render(<LoginForm initialError={null} />);
+    await user.type(screen.getByLabelText('아이디'), 'user');
+    await user.type(screen.getByLabelText('비밀번호'), 'password');
+    await user.click(screen.getByRole('button', { name: '로그인' }));
+    expect(push).toHaveBeenCalledWith('/');
+  });
+
+  it('next가 있으면 일반 로그인 성공 후 원래 경로로 이동한다', async () => {
+    const user = userEvent.setup();
+    postBff.mockResolvedValue({ ok: true, data: null, message: null });
+    render(<LoginForm initialError={null} next="/admin/imports" />);
+    await user.type(screen.getByLabelText('아이디'), 'user');
+    await user.type(screen.getByLabelText('비밀번호'), 'password');
+    await user.click(screen.getByRole('button', { name: '로그인' }));
+    expect(push).toHaveBeenCalledWith('/admin/imports');
   });
 
   it('동의 전에는 카카오 로그인이 눌리지 않는다', () => {

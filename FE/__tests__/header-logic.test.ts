@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { NAV_ITEMS, isActive, shouldShowHeader } from '@/lib/layout/header';
 
 describe('shouldShowHeader', () => {
-  it('인증 화면에서는 헤더를 숨긴다', () => {
-    expect(shouldShowHeader('/login')).toBe(false);
+  it('로그인 화면에는 최소 헤더를 보여주고 회원가입 화면은 숨긴다', () => {
+    expect(shouldShowHeader('/login')).toBe(true);
     expect(shouldShowHeader('/signup')).toBe(false);
   });
 

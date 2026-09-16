@@ -54,6 +54,7 @@ class MemberOAuthServiceTest {
         TokenPairResponse tokens = service.oauthLogin(OAuthProvider.KAKAO, "code", "https://app/cb", true, true);
 
         assertThat(tokens.accessToken()).isNotBlank();
+        assertThat(tokens.isNewMember()).isTrue();
         Member created = memberRepository.findByEmail("new@attacca.com").orElseThrow();
         assertThat(created.getLoginId()).isNull();
         assertThat(created.getPassword()).isNull();
@@ -71,6 +72,8 @@ class MemberOAuthServiceTest {
 
         assertThat(socialAccountRepository.findAll()).hasSize(1);
         assertThat(memberRepository.findAll()).hasSize(1);
+        assertThat(service.oauthLogin(OAuthProvider.KAKAO, "code", "https://app/cb", true, true)
+                .isNewMember()).isFalse();
     }
 
     @Test

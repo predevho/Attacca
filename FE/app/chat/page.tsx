@@ -66,14 +66,19 @@ export default function ChatListPage() {
   if (!ready) return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-ink-faint">불러오는 중...</main>;
 
   return (
-    <main className="mx-auto mt-8 max-w-xl px-4">
-      <h1 className="mb-4 text-2xl font-bold">채팅</h1>
-      <div className="mb-4 flex flex-col gap-3">
+    <main aria-labelledby="chat-page-title" className="mx-auto mt-6 max-w-2xl px-4 pb-8 sm:mt-8 sm:px-6">
+      <header className="mb-5 flex items-start justify-between gap-4">
+        <h1 id="chat-page-title" className="text-2xl font-bold leading-tight">채팅</h1>
+      </header>
+      <section aria-label="새 채팅 시작" className="mb-7 grid gap-3 sm:grid-cols-2">
         <NewChatForm submitting={submitting} onStart={startChat} />
         <NewGroupForm submitting={submitting} onCreate={createGroup} />
-      </div>
+      </section>
       {error && <p className="mb-3 text-sm text-danger">{error}</p>}
-      <RoomList />
+      <section aria-labelledby="chat-room-list-title">
+        <h2 id="chat-room-list-title" className="mb-3 text-base font-semibold">대화 목록</h2>
+        <RoomList />
+      </section>
     </main>
   );
 }

@@ -10,31 +10,32 @@ const MESSAGE: Record<Application['status'], string> = {
 
 export function MyStatusCard({ application }: { application: Application }) {
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-line bg-surface p-4" aria-label={`상태: ${statusLabel(application.status)}`}>
-      <div className="flex items-center gap-2">
-        <p className="text-sm font-medium">{MESSAGE[application.status]}</p>
+    <section className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-4" aria-label={`상태: ${statusLabel(application.status)}`} aria-live="polite">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <h2 className="text-base font-semibold">인증 신청 상태</h2>
+        <span className="rounded-full bg-surface-muted px-2 py-1 text-xs font-medium text-ink-muted">{statusLabel(application.status)}</span>
       </div>
-      <div className="text-sm text-ink-muted">
-        <span className="text-ink-muted">지원 사유</span>
+      <p className="text-sm font-medium">{MESSAGE[application.status]}</p>
+      <fieldset className="text-sm text-ink-muted">
+        <legend className="mb-1 font-medium text-ink-muted">지원 사유</legend>
         <p className="whitespace-pre-wrap">{application.statement}</p>
-      </div>
+      </fieldset>
       {application.evidenceUrls.length > 0 && (
-        <ul className="text-sm">
+        <fieldset className="text-sm"><legend className="mb-1 font-medium text-ink-muted">증빙 링크</legend><ul className="flex flex-col gap-1">
           {application.evidenceUrls.map((u, i) => (
             <li key={i}>
               {isHttpUrl(u)
-                ? <a href={u} target="_blank" rel="noreferrer" className="text-brand-strong underline">{u}</a>
+                ? <a href={u} target="_blank" rel="noreferrer" className="break-words text-brand-strong underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{u}</a>
                 : <span>{u}</span>}
             </li>
           ))}
-        </ul>
+        </ul></fieldset>
       )}
       {application.decisionReason && (
-        <div className="text-sm text-ink-muted">
-          <span className="text-ink-muted">처리 사유</span>
+        <fieldset className="text-sm text-ink-muted"><legend className="mb-1 font-medium text-ink-muted">처리 사유</legend>
           <p className="whitespace-pre-wrap">{application.decisionReason}</p>
-        </div>
+        </fieldset>
       )}
-    </div>
+    </section>
   );
 }

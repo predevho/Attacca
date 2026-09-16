@@ -211,17 +211,17 @@ describe('safeNext', () => {
   });
 
   it('없으면 기본 경로로 보낸다', () => {
-    expect(safeNext(null)).toBe('/feed');
-    expect(safeNext(undefined)).toBe('/feed');
-    expect(safeNext('')).toBe('/feed');
+    expect(safeNext(null)).toBe('/');
+    expect(safeNext(undefined)).toBe('/');
+    expect(safeNext('')).toBe('/');
   });
 
   it('외부로 나가는 값은 막는다', () => {
     // //evil.com 은 프로토콜 상대 URL이라 그대로 두면 열린 리다이렉트가 된다.
-    expect(safeNext('//evil.com')).toBe('/feed');
-    expect(safeNext('https://evil.com')).toBe('/feed');
-    expect(safeNext('/\\evil.com')).toBe('/feed');
-    expect(safeNext('\\\\evil.com')).toBe('/feed');
-    expect(safeNext('evil.com')).toBe('/feed');
+    expect(safeNext('//evil.com')).toBe('/');
+    expect(safeNext('https://evil.com')).toBe('/');
+    expect(safeNext('/\\evil.com')).toBe('/');
+    expect(safeNext('\\\\evil.com')).toBe('/');
+    expect(safeNext('evil.com')).toBe('/');
   });
 });

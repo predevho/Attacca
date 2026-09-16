@@ -12,7 +12,7 @@ import { ThemeControl } from '@/components/theme/ThemeControl';
 type Identity = Me | null | undefined;
 
 /**
- * 전역 헤더. 루트 레이아웃에 배치하되 인증 화면에서는 스스로 렌더를 건너뛴다.
+ * 전역 헤더. 루트 레이아웃에 배치하며 회원가입 화면만 렌더를 건너뛴다.
  *
  * 홈이 공개 랜딩이 되면서 **비로그인 방문자에게도 헤더를 보여준다**(로그인·회원가입 버튼).
  * 이전에는 신원을 못 얻으면 아무것도 그리지 않았는데, 그러면 공개 홈에 헤더가 사라져
@@ -28,7 +28,7 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    // 인증 화면에서는 신원을 조회하지 않는다.
+    // 헤더가 보이는 공개/로그인 화면에서 신원 상태를 확인한다.
     if (!visible) return;
     let cancelled = false;
     // 네트워크 레벨 reject까지 삼킨다. 헤더 때문에 페이지 전체가 죽으면 안 된다.

@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.back.domain.member.dto.ProfileImageResponse;
 import com.back.domain.member.dto.ProfileResponse;
 import com.back.domain.member.dto.UpdateProfileRequest;
+import com.back.domain.member.dto.UpdateNicknameRequest;
 import com.back.domain.member.entity.Instrument;
 import com.back.domain.member.entity.Member;
 import com.back.domain.member.repository.MemberProfileRepository;
@@ -118,6 +119,18 @@ class MemberProfileServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .extracting(e -> ((BusinessException) e).getErrorCode())
                 .isEqualTo(ErrorCode.MEMBER_NOT_FOUND);
+    }
+
+    @Test
+    void 닉네임_중복이면_기존_에러코드를_던진다() {
+        Member member = savedMember("nickname-a");
+        savedMember("nickname-b");
+
+        assertThatThrownBy(() -> service.updateNickname(member.getId(),
+                new UpdateNicknameRequest("닉nickname-b")))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode())
+                .isEqualTo(ErrorCode.NICKNAME_ALREADY_EXISTS);
     }
 
     @Test

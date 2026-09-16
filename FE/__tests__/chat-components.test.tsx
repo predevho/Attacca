@@ -28,6 +28,14 @@ describe('RoomListItem', () => {
     fireEvent.click(screen.getByText('홍길동'));
     expect(onOpen).toHaveBeenCalled();
   });
+  it('방 전체를 접근 가능한 열기 버튼으로 제공', () => {
+    const onOpen = vi.fn();
+    render(<RoomListItem room={room} onOpen={onOpen} />);
+    const openButton = screen.getByRole('button', { name: /홍길동/ });
+    expect(openButton).toHaveAttribute('type', 'button');
+    fireEvent.click(openButton);
+    expect(onOpen).toHaveBeenCalled();
+  });
 });
 
 // NewChatForm 은 회원 id 입력에서 닉네임 검색으로 바뀌었다 → __tests__/member-search.test.tsx
@@ -43,6 +51,10 @@ describe('MessageBubble', () => {
     render(<MessageBubble message={m} mine={true} />);
     expect(screen.queryByText('홍길동')).not.toBeInTheDocument();
     expect(screen.getByText('안녕')).toBeInTheDocument();
+  });
+  it('긴 메시지는 단어 단위가 없어도 버블 안에서 줄바꿈', () => {
+    render(<MessageBubble message={{ ...m, content: 'a'.repeat(200) }} mine />);
+    expect(screen.getByText('a'.repeat(200))).toHaveClass('break-all');
   });
 });
 
@@ -76,5 +88,9 @@ describe('MessageComposer', () => {
     expect(screen.getByRole('button', { name: '전송' })).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: '전송' }));
     expect(onSend).not.toHaveBeenCalled();
+  });
+  it('모바일 하단 safe-area를 확보', () => {
+    render(<MessageComposer onSend={() => {}} />);
+    expect(screen.getByRole('contentinfo')).toHaveClass('pb-[env(safe-area-inset-bottom)]');
   });
 });

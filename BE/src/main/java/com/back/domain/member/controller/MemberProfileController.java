@@ -5,6 +5,7 @@ import com.back.domain.member.dto.ProfileImageResponse;
 import com.back.domain.member.dto.ProfileOptionsResponse;
 import com.back.domain.member.dto.ProfileResponse;
 import com.back.domain.member.dto.UpdateProfileRequest;
+import com.back.domain.member.dto.UpdateNicknameRequest;
 import com.back.domain.member.service.MemberProfileService;
 import com.back.global.common.ApiResponse;
 import jakarta.validation.Valid;
@@ -15,6 +16,7 @@ import com.back.domain.member.dto.TokenPairResponse;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -36,6 +38,16 @@ public class MemberProfileController {
     @GetMapping("/me")
     public ApiResponse<MemberIdentityResponse> getMyIdentity(@AuthenticationPrincipal Long memberId) {
         return ApiResponse.success(memberProfileService.getMyIdentity(memberId));
+    }
+
+    /**
+     * 본인 닉네임만 부분 수정한다. PATCH는 회원 전체를 교체하지 않는 HTTP 의미에 맞고,
+     * principal을 서비스 입력으로 사용해 다른 회원 수정 경계를 만들지 않는다.
+     */
+    @PatchMapping("/me")
+    public ApiResponse<MemberIdentityResponse> updateMyNickname(@AuthenticationPrincipal Long memberId,
+            @Valid @RequestBody UpdateNicknameRequest request) {
+        return ApiResponse.success(memberProfileService.updateNickname(memberId, request));
     }
 
     @GetMapping("/me/profile")

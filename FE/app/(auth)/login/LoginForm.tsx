@@ -54,7 +54,9 @@ export function LoginForm({
         이미 가입한 회원에게는 한 번 더 확인하는 셈이지만, 동의 없이 가입되는 경로를
         남기는 것보다 낫다(DOMAIN-MEMBER-STATUTE §3.4).
       */}
-      <label className="mt-6 flex items-start gap-2 text-sm">
+      <section aria-labelledby="kakao-login-heading" className="mt-8 border-t border-line pt-6">
+      <h2 id="kakao-login-heading" className="text-sm font-semibold">카카오로 시작하기</h2>
+      <label className="mt-3 flex items-start gap-2 text-sm">
         <input type="checkbox" className="mt-0.5" checked={kakaoConsent}
           onChange={(e) => setKakaoConsent(e.target.checked)} />
         <span>
@@ -64,13 +66,16 @@ export function LoginForm({
         </span>
       </label>
       <a
-        href={kakaoConsent ? '/api/bff/oauth/kakao/start?consent=1' : undefined}
+        href={kakaoConsent
+          ? `/api/bff/oauth/kakao/start?consent=1${next ? `&next=${encodeURIComponent(next)}` : ''}`
+          : undefined}
         aria-disabled={!kakaoConsent}
         onClick={(e) => { if (!kakaoConsent) e.preventDefault(); }}
         className={kakaoConsent
           ? 'mt-3 block rounded bg-[#FEE500] py-2 text-center text-sm font-medium text-black'
           : 'mt-3 block cursor-not-allowed rounded bg-[#FEE500] py-2 text-center text-sm font-medium text-black opacity-50'}
       >카카오 로그인</a>
+      </section>
       <p className="mt-4 text-sm">
         계정이 없으신가요? <a href="/signup" className="underline">회원가입</a>
       </p>
