@@ -1,5 +1,7 @@
 # 배포
 
+> **전환 상태 (2026-09-17)**: 이 문서는 현재 EC2에서 FE·BE를 함께 실행하는 운영 절차를 설명한다. 목표 구조는 Vercel FE + `api.attacca.site` EC2 BE + Terraform import-first + BE 블루/그린이며, 아직 구현·전환하지 않았다. 전환 설계와 승인 전 작업 순서는 [2026-09-17-vercel-api-blue-green-terraform-design.md](superpowers/specs/2026-09-17-vercel-api-blue-green-terraform-design.md)를 따른다. 이 문서의 기존 Compose 명령은 전환 완료 전까지 유효하다.
+
 > 2026-09-08. **AWS EC2 1대 + RDS**. 1단계는 도메인 없이 IP + HTTP로 띄우고, 2단계에서 도메인·HTTPS를 붙인다.
 
 ## AWS 계정 준비

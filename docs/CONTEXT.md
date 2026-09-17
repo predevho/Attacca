@@ -97,3 +97,5 @@
 ## 다음 작업
 
 * IMPORT(외부 공연·입시 공지 반입) 사양 승인·도메인 문서·구현 계획 완료, 구현 착수 대기 — TODO-DOING 참고. 그 외는 TODO-READY.md 참고.
+* 배포 구조는 Vercel FE(`attacca.site`)와 EC2 BE(`api.attacca.site`) 분리로 전환하기로 했다. 현행 Compose는 아직 정본이며, 블루/그린 전 STOMP relay·presence 공유와 Terraform 기존 자원 import가 선행한다. 설계 초안은 `docs/superpowers/specs/2026-09-17-vercel-api-blue-green-terraform-design.md`.
+  * 단계 0 기준선: Git `13ebdadfb7aceeff2e4b68f5048af8486d8ce57d`, apex/www DNS는 `3.39.184.71`(TTL 3600), `api`·`staging`은 NXDOMAIN. AWS CLI 기본 리전은 `ap-northeast-2`, 호출자는 account `530310463238`의 IAM user `predevho`, Attacca EC2는 `i-0c04da18f6eb5292d`(`t3.micro`, `3.39.184.71`)까지 읽기 전용 확인. 정본: `docs/ops/inventory/2026-09-17-infrastructure-baseline.md`.

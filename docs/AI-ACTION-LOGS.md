@@ -6,6 +6,9 @@
 
 * 2026-09-16 — 로그인 UX 회귀를 정리했다. 로그인 화면 약관 체크를 제거하고 비밀번호 재확인 일치/불일치 안내를 추가했다. 성공 로그인과 로그아웃의 이동·헤더 상태를 확인했으며, 카카오 버튼은 별도 체크 없이 인가를 시작하고 미설정 시 설정 오류를 보인다. 신규 소셜 회원의 필수 동의는 닉네임 온보딩으로 옮겼고, 온보딩을 중단한 뒤 재로그인해도 닉네임 설정으로 돌아가도록 서버 계약과 테스트를 보강했다. 피드 지연은 목록 렌더링의 N+1이 아니라 BFF/BE 응답과 개발 모드 초기 컴파일이 주원인으로 보이며, 타임라인 조회 인덱스(V6)를 추가했다. BE 전체·FE 전체 테스트, FE 빌드, Playwright E2E 8건을 통과했다.
 * 2026-09-17 — 자체 로그인 아이디와 비밀번호 길이를 모두 8~20자로 통일했다. 서버 DTO 제약, 화면 검증·안내, HTML 입력 최대 길이, MEMBER 규칙 문서를 함께 갱신했다. 새 경계 테스트를 먼저 실패시키고 통과시켰으며, 전체 백엔드·프론트 회귀를 다시 확인했다. 로그아웃 버튼의 포인터 커서 피드백은 사용자 요청에 따라 구현하지 않고 TODO 백로그에만 남겼다.
+* 2026-09-17 — 운영 구조를 Vercel FE(`attacca.site`)와 EC2 BE/Nginx/WebSocket/파일(`api.attacca.site`)로 분리하기로 했다. 현재 Compose는 FE·BE를 함께 실행하므로 즉시 삭제하지 않고, Vercel 검증 뒤 단계적으로 BE 전용으로 축소한다. 실제 WebSocket은 인메모리 Simple Broker·presence여서 BE 블루/그린보다 Redis relay·공유 presence가 먼저다. 기존 AWS 자원은 Terraform import-first로만 관리하며, 설계 초안과 작업 순서를 작성했다.
+* 2026-09-17 — 인프라 전환 단계 0을 읽기 전용으로 시작했다. Compose/Git/DNS 기준선은 기록했으나 AWS STS가 `InvalidClientTokenId`로 실패해 account·EC2·RDS·backup ID를 확인하지 못했다. 추측으로 Terraform을 시작하지 않고 기준선·TIL에 차단 사실과 재개 조건을 남겼다.
+* 2026-09-17 — AWS IAM 사용자 `predevho`의 새 CLI access key를 로컬 `default` 프로필에 설정한 뒤 STS 인증을 회복했다(account `530310463238`). 읽기 전용으로 실행 중 EC2를 다시 조회해 Attacca가 `i-0c04da18f6eb5292d`(`t3.micro`, `3.39.184.71`)임을 확인했다. 다른 프로젝트의 `pokade-server`는 작업 범위에서 제외했다. access key 값은 조회·기록하지 않았고, Terraform·DNS·AWS 변경은 아직 하지 않았다.
 
 * 2026-07-05 — 프로젝트 초기 설계 브레인스토밍 진행. 서비스 정의(음악인 커뮤니티 SNS), 도메인 6개, 기술 스택 확정.
 * 2026-07-05 — `docs/` 문서 체계 생성: ARCHITECTURE(CONSTITUTION/STATUTE), DOMAIN-COMMON(CONSTITUTION/STATUTE), DOMAIN-MEMBER(CONSTITUTION/STATUTE), TODO-*, CONTEXT, AI 기록 문서.

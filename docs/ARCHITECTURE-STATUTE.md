@@ -84,15 +84,19 @@ com.back
 ## 4. 실시간 채팅 규칙
 
 * 클라이언트-서버 실시간 통신은 WebSocket(STOMP)으로 한다.
-* 다중 서버 확장을 대비해 메시지 브로드캐스트는 Redis Pub/Sub를 경유한다.
+* **현재 구현은 단일 BE 인스턴스의 Simple Broker와 인메모리 `PresenceRegistry`다.** Redis는 refresh 토큰 화이트리스트에만 쓴다.
+* 블루/그린처럼 BE 인스턴스가 겹치는 배포를 시작하기 전, STOMP Broker Relay와 Redis 기반 `PresenceRegistry`로 바꿔 메시지·접속 상태를 공유한다. 전환 전에는 BE 두 벌을 동시에 운영하지 않는다.
 * 채팅 메시지는 DB에 영속화한다. (히스토리 조회 지원)
 
 ---
 
-## 5. 배포 (추후 결정)
+## 5. 배포
 
-* Nginx 리버스 프록시(`/api` → BE, 그 외 → FE), HTTPS(SSL) 종료, WebSocket 프록시는 **배포 단계에서 결정**한다.
-* 로컬 개발 단계에서는 도입하지 않는다. (Next dev 서버 + Spring 직접 실행)
+* 목표 운영 구조는 Vercel FE와 EC2 BE를 분리한다. `https://attacca.site`는 Vercel(Next.js+BFF), `https://api.attacca.site`는 EC2(Nginx+BE+Redis+로컬 파일)다.
+* 브라우저 REST 요청은 `attacca.site/api/bff/**`로 Vercel BFF에 보내고, BFF가 서버 간 통신으로 `api.attacca.site`의 BE를 호출한다. WebSocket과 파일 URL만 브라우저가 `api.attacca.site`에 직접 연결한다.
+* EC2 BE 배포는 건강 검증을 마친 대기 색상으로 Nginx upstream을 원자적으로 전환하는 블루/그린 방식으로 한다. 전환 때 WebSocket은 재연결될 수 있으며, 배포 전후의 DB 마이그레이션은 구·신 버전 호환이 가능한 expand/contract 방식만 허용한다.
+* AWS 기존 자원은 Terraform으로 새로 만들지 않고 import해 관리한다. 상태는 버전 관리된 S3 원격 backend와 S3 lockfile로 보관하며, 런타임 비밀값은 Terraform 상태나 저장소에 넣지 않는다.
+* 상세 전환 설계와 순서는 `docs/superpowers/specs/2026-09-17-vercel-api-blue-green-terraform-design.md`를 정본으로 한다. 구현 전까지 현재 단일 Compose 배포가 운영 정본이다.
 
 ---
 
