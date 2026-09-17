@@ -30,3 +30,6 @@ BE/gradle.properties
 
 # certbot 인증서·챌린지
 deploy/certbot/
+
+# Codex 격리 작업공간
+.worktrees/
