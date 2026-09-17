@@ -96,4 +96,4 @@
 
 ## 다음 작업
 
-* TODO-READY.md 참고.
+* IMPORT(외부 공연·입시 공지 반입) 사양 승인·도메인 문서·구현 계획 완료, 구현 착수 대기 — TODO-DOING 참고. 그 외는 TODO-READY.md 참고.
