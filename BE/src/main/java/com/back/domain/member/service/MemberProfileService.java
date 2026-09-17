@@ -4,6 +4,7 @@ import com.back.domain.member.dto.MemberIdentityResponse;
 import com.back.domain.member.dto.ProfileImageResponse;
 import com.back.domain.member.dto.ProfileResponse;
 import com.back.domain.member.dto.UpdateProfileRequest;
+import com.back.domain.member.dto.UpdateNicknameRequest;
 import com.back.domain.member.entity.Instrument;
 import com.back.domain.member.entity.Member;
 import com.back.domain.member.entity.MemberProfile;
@@ -36,6 +37,7 @@ public class MemberProfileService {
     // 인증 뱃지는 이 도메인의 값이 아니라 VERIFIED-PERFORMER 도메인의 파생 정보다.
     // 서비스 계층으로만 협력하고 그 엔티티는 직접 참조하지 않는다(도메인 경계 유지).
     private final VerifiedPerformerService verifiedPerformerService;
+    private final MemberConsentService consentService;
 
     @Transactional(readOnly = true)
     public MemberIdentityResponse getMyIdentity(Long memberId) {
@@ -44,6 +46,25 @@ public class MemberProfileService {
         boolean verified = verifiedPerformerService.isVerified(memberId);
         return new MemberIdentityResponse(
                 member.getId(), member.getNickname(), member.getRole(), verified);
+    }
+
+    /** 인증 principal의 회원만 대상으로 닉네임을 부분 수정한다. 중복은 기존 회원 에러 코드를 유지한다. */
+    @Transactional
+    public MemberIdentityResponse updateNickname(Long memberId, UpdateNicknameRequest request) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+        String nickname = request.nickname().trim();
+        if (!nickname.equals(member.getNickname()) && memberRepository.existsByNickname(nickname)) {
+            throw new BusinessException(ErrorCode.NICKNAME_ALREADY_EXISTS);
+        }
+        if (!member.isOnboardingComplete()) {
+            consentService.requireAgreed(request.agreedTerms(), request.agreedPrivacy());
+            consentService.recordRequired(member.getId());
+            member.completeOnboarding();
+        }
+        member.changeNickname(nickname);
+        return new MemberIdentityResponse(member.getId(), member.getNickname(), member.getRole(),
+                verifiedPerformerService.isVerified(memberId));
     }
 
     @Transactional(readOnly = true)

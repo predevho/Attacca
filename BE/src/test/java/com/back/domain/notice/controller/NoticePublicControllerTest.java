@@ -59,6 +59,18 @@ class NoticePublicControllerTest {
     }
 
     @Test
+    void 공개_응답에_출처가_유지된다() throws Exception {
+        Notice notice = noticeRepository.save(Notice.create(AUTHOR_ID, NoticeType.NOTICE,
+                "외부 공지", "본문", null, null, false, "KOPIS",
+                "https://www.kopis.or.kr"));
+
+        mockMvc.perform(get("/api/public/notices/" + notice.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.sourceName").value("KOPIS"))
+                .andExpect(jsonPath("$.data.sourceUrl").value("https://www.kopis.or.kr"));
+    }
+
+    @Test
     void 공개_응답에는_작성자와_회원식별자가_없다() throws Exception {
         Long id = save(NoticeType.NOTICE, "점검 안내", null, false).getId();
 

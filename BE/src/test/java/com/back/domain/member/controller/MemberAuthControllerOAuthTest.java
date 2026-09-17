@@ -3,6 +3,8 @@ package com.back.domain.member.controller;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -20,6 +22,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
@@ -52,11 +55,12 @@ class MemberAuthControllerOAuthTest {
 
         mockMvc.perform(post("/api/auth/oauth/kakao")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json(new OAuthLoginRequest("auth-code", "https://app/cb", true, true))))
+                        .content(json(new OAuthLoginRequest("auth-code", "https://app/cb"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
-                .andExpect(jsonPath("$.data.refreshToken").isNotEmpty());
+                .andExpect(jsonPath("$.data.refreshToken").isNotEmpty())
+                .andExpect(jsonPath("$.data.isNewMember").value(true));
     }
 
     @Test
@@ -66,8 +70,35 @@ class MemberAuthControllerOAuthTest {
 
         mockMvc.perform(post("/api/auth/oauth/kakao")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json(new OAuthLoginRequest("auth-code", "https://app/cb", true, true))))
+                        .content(json(new OAuthLoginRequest("auth-code", "https://app/cb"))))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.error.resultCode").value("401-08"));
+    }
+
+    @Test
+    void 신규_소셜_회원은_닉네임과_동의를_완료하기_전에는_일반_API를_쓸_수_없다() throws Exception {
+        when(kakaoOAuthClient.fetch(any(), any()))
+                .thenReturn(new OAuthUserInfo("kakao-onboarding", "onboarding@attacca.com", true, "임시"));
+
+        MvcResult login = mockMvc.perform(post("/api/auth/oauth/kakao")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(new OAuthLoginRequest("auth-code", "https://app/cb"))))
+                .andExpect(status().isOk())
+                .andReturn();
+        String accessToken = objectMapper.readTree(login.getResponse().getContentAsString())
+                .path("data").path("accessToken").asText();
+
+        mockMvc.perform(get("/api/feed/posts").header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.message").value("닉네임과 필수 약관 동의를 완료해 주세요."));
+
+        mockMvc.perform(patch("/api/members/me")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nickname\":\"완료닉\",\"agreedTerms\":true,\"agreedPrivacy\":true}"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/feed/posts").header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk());
     }
 }

@@ -44,33 +44,50 @@ class MemberOAuthServiceTest {
     @BeforeEach
     void setUp() {
         service = new MemberOAuthService(memberRepository, socialAccountRepository, tokenIssuer,
-                List.of(fakeClient), new MemberConsentService(consentRepository));
+                List.of(fakeClient));
     }
 
     @Test
     void newSocialUser_isCreatedAndLoggedIn() {
         fakeClient.next = new OAuthUserInfo("kakao-1", "new@attacca.com", true, "카카오유저");
 
-        TokenPairResponse tokens = service.oauthLogin(OAuthProvider.KAKAO, "code", "https://app/cb", true, true);
+        TokenPairResponse tokens = service.oauthLogin(OAuthProvider.KAKAO, "code", "https://app/cb");
 
         assertThat(tokens.accessToken()).isNotBlank();
+        assertThat(tokens.isNewMember()).isTrue();
         Member created = memberRepository.findByEmail("new@attacca.com").orElseThrow();
         assertThat(created.getLoginId()).isNull();
         assertThat(created.getPassword()).isNull();
+        assertThat(created.isOnboardingComplete()).isFalse();
+        assertThat(consentRepository.findByMemberIdOrderByAgreedAtDesc(created.getId())).isEmpty();
         assertThat(socialAccountRepository.findByProviderAndProviderUserId(OAuthProvider.KAKAO, "kakao-1"))
                 .isPresent();
     }
 
     @Test
-    void existingSocialAccount_logsInSameMember() {
+    void completedSocialAccount_logsInWithoutOnboarding() {
         Member member = memberRepository.save(Member.createSocial("s@attacca.com", "기존소셜"));
+        member.completeOnboarding();
         socialAccountRepository.save(SocialAccount.create(member, OAuthProvider.KAKAO, "kakao-1"));
         fakeClient.next = new OAuthUserInfo("kakao-1", "s@attacca.com", true, "기존소셜");
 
-        service.oauthLogin(OAuthProvider.KAKAO, "code", "https://app/cb", true, true);
+        service.oauthLogin(OAuthProvider.KAKAO, "code", "https://app/cb");
 
         assertThat(socialAccountRepository.findAll()).hasSize(1);
         assertThat(memberRepository.findAll()).hasSize(1);
+        assertThat(service.oauthLogin(OAuthProvider.KAKAO, "code", "https://app/cb")
+                .isNewMember()).isFalse();
+    }
+
+    @Test
+    void incompleteSocialAccount_requiresOnboardingAgain() {
+        Member member = memberRepository.save(Member.createSocial("pending@attacca.com", "가입중"));
+        socialAccountRepository.save(SocialAccount.create(member, OAuthProvider.KAKAO, "kakao-pending"));
+        fakeClient.next = new OAuthUserInfo("kakao-pending", "pending@attacca.com", true, "가입중");
+
+        TokenPairResponse tokens = service.oauthLogin(OAuthProvider.KAKAO, "code", "https://app/cb");
+
+        assertThat(tokens.isNewMember()).isTrue();
     }
 
     @Test
@@ -79,7 +96,7 @@ class MemberOAuthServiceTest {
                 Member.createLocal("jazzman", "pw", "same@attacca.com", "재즈맨"));
         fakeClient.next = new OAuthUserInfo("kakao-9", "same@attacca.com", true, "재즈맨");
 
-        service.oauthLogin(OAuthProvider.KAKAO, "code", "https://app/cb", true, true);
+        service.oauthLogin(OAuthProvider.KAKAO, "code", "https://app/cb");
 
         assertThat(memberRepository.findAll()).hasSize(1);
         SocialAccount linked = socialAccountRepository
@@ -91,7 +108,7 @@ class MemberOAuthServiceTest {
     void unverifiedEmail_throwsOauthEmailUnverified() {
         fakeClient.next = new OAuthUserInfo("kakao-2", "x@attacca.com", false, "미검증");
 
-        assertThatThrownBy(() -> service.oauthLogin(OAuthProvider.KAKAO, "code", "https://app/cb", true, true))
+        assertThatThrownBy(() -> service.oauthLogin(OAuthProvider.KAKAO, "code", "https://app/cb"))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode").isEqualTo(ErrorCode.OAUTH_EMAIL_UNVERIFIED);
     }
@@ -101,7 +118,7 @@ class MemberOAuthServiceTest {
         memberRepository.save(Member.createLocal("victim", "pw", "victim@attacca.com", "피해자"));
         fakeClient.next = new OAuthUserInfo("kakao-attacker", "victim@attacca.com", false, "공격자");
 
-        assertThatThrownBy(() -> service.oauthLogin(OAuthProvider.KAKAO, "code", "https://app/cb", true, true))
+        assertThatThrownBy(() -> service.oauthLogin(OAuthProvider.KAKAO, "code", "https://app/cb"))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode").isEqualTo(ErrorCode.OAUTH_EMAIL_UNVERIFIED);
 
@@ -114,7 +131,7 @@ class MemberOAuthServiceTest {
         memberRepository.save(Member.createLocal("id1", "pw", "a@attacca.com", "중복닉"));
         fakeClient.next = new OAuthUserInfo("kakao-3", "b@attacca.com", true, "중복닉");
 
-        service.oauthLogin(OAuthProvider.KAKAO, "code", "https://app/cb", true, true);
+        service.oauthLogin(OAuthProvider.KAKAO, "code", "https://app/cb");
 
         Member created = memberRepository.findByEmail("b@attacca.com").orElseThrow();
         assertThat(created.getNickname()).isNotEqualTo("중복닉");

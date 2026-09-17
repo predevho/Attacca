@@ -14,7 +14,8 @@ class NoticeTest {
     @Test
     void 생성하면_전달한_값을_그대로_갖는다() {
         LocalDateTime when = LocalDateTime.of(2026, 9, 16, 10, 0);
-        Notice notice = Notice.create(7L, NoticeType.EVENT, "심사 결과 발표", "본문", when, "온라인", true);
+        Notice notice = Notice.create(7L, NoticeType.EVENT, "심사 결과 발표", "본문", when,
+                "온라인", true, "KOPIS", "https://www.kopis.or.kr");
 
         assertThat(notice.getAuthorId()).isEqualTo(7L);
         assertThat(notice.getType()).isEqualTo(NoticeType.EVENT);
@@ -22,6 +23,8 @@ class NoticeTest {
         assertThat(notice.getScheduledAt()).isEqualTo(when);
         assertThat(notice.getPlace()).isEqualTo("온라인");
         assertThat(notice.isPinned()).isTrue();
+        assertThat(notice.getSourceName()).isEqualTo("KOPIS");
+        assertThat(notice.getSourceUrl()).isEqualTo("https://www.kopis.or.kr");
         assertThat(notice.getCoverImageKey()).isNull();
         assertThat(notice.isDeleted()).isFalse();
     }
@@ -46,7 +49,8 @@ class NoticeTest {
         notice.changeCover("old-key");
 
         LocalDateTime when = LocalDateTime.of(2026, 10, 1, 9, 0);
-        notice.edit(NoticeType.EVENT, "새 제목", "새 본문", when, "새 장소", true);
+        notice.edit(NoticeType.EVENT, "새 제목", "새 본문", when, "새 장소", true,
+                "서울대학교", "https://admission.snu.ac.kr");
 
         assertThat(notice.getType()).isEqualTo(NoticeType.EVENT);
         assertThat(notice.getTitle()).isEqualTo("새 제목");
@@ -54,6 +58,8 @@ class NoticeTest {
         assertThat(notice.getScheduledAt()).isEqualTo(when);
         assertThat(notice.getPlace()).isEqualTo("새 장소");
         assertThat(notice.isPinned()).isTrue();
+        assertThat(notice.getSourceName()).isEqualTo("서울대학교");
+        assertThat(notice.getSourceUrl()).isEqualTo("https://admission.snu.ac.kr");
         assertThat(notice.getAuthorId()).isEqualTo(1L);
         assertThat(notice.getCoverImageKey()).isEqualTo("old-key");
     }

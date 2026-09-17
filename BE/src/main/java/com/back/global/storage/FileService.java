@@ -4,6 +4,7 @@ import com.back.global.exception.BusinessException;
 import com.back.global.exception.ErrorCode;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ByteArrayInputStream;
 import java.time.LocalDate;
 import java.util.Locale;
 import java.util.UUID;
@@ -48,6 +49,24 @@ public class FileService {
         FileMetadata saved = fileMetadataRepository.save(FileMetadata.create(
                 key, originalName, file.getContentType(), file.getSize(), uploaderId));
 
+        return new StoredFile(saved.getId(), key, fileStorage.getUrl(key));
+    }
+
+    @Transactional
+    public StoredFile upload(byte[] content, String contentType, String originalName,
+            String directory, long uploaderId) {
+        if (content == null || content.length == 0 || contentType == null
+                || !contentType.startsWith("image/") || originalName == null || originalName.isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_FILE);
+        }
+        String key = generateKey(directory, originalName);
+        try (InputStream input = new ByteArrayInputStream(content)) {
+            fileStorage.upload(key, input, content.length, contentType);
+        } catch (IOException | RuntimeException e) {
+            throw new BusinessException(ErrorCode.FILE_UPLOAD_FAILED, e);
+        }
+        FileMetadata saved = fileMetadataRepository.save(FileMetadata.create(
+                key, originalName, contentType, content.length, uploaderId));
         return new StoredFile(saved.getId(), key, fileStorage.getUrl(key));
     }
 

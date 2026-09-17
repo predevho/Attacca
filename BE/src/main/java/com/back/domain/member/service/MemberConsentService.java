@@ -30,7 +30,7 @@ public class MemberConsentService {
 
     /**
      * 현재 버전으로 필수 동의 이력을 남긴다.
-     * 가입과 같은 트랜잭션에서 불러야 한다 — 회원만 생기고 동의가 없는 상태를 만들지 않는다.
+     * 자체 가입 또는 소셜 온보딩 완료와 같은 트랜잭션에서 불러야 한다.
      */
     @Transactional
     public void recordRequired(Long memberId) {

@@ -1,6 +1,7 @@
 package com.back.domain.member.controller;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -51,6 +52,26 @@ class MemberProfileControllerTest {
         mockMvc.perform(get("/api/members/me/profile"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.error.resultCode").value("401-01"));
+    }
+
+    @Test
+    void 본인의_닉네임을_PATCH로_수정할_수_있다() throws Exception {
+        mockMvc.perform(patch("/api/members/me")
+                        .header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nickname\": \"새닉네임\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.nickname").value("새닉네임"));
+    }
+
+    @Test
+    void 닉네임_규칙을_벗어나면_PATCH는_400() throws Exception {
+        mockMvc.perform(patch("/api/members/me")
+                        .header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nickname\": \"a\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.resultCode").value("400-01"));
     }
 
     @Test

@@ -20,5 +20,7 @@ public record PublicNoticeResponse(
         LocalDateTime scheduledAt,
         String place,
         String coverImageUrl,
+        String sourceName,
+        String sourceUrl,
         LocalDateTime createdAt) {
 }

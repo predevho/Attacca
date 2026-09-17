@@ -103,7 +103,7 @@ class MemberConsentTest {
     void rejectsWhenFieldsMissing() throws Exception {
         // 필드가 없으면 boolean 기본값 false 다. "빠뜨리면 통과"가 되지 않아야 한다.
         String body = objectMapper.writeValueAsString(Map.of(
-                "loginId", "nofield", "password", "goodpassword",
+                "loginId", "nofield1", "password", "goodpassword",
                 "email", "nofield@attacca.com", "nickname", "무필드"));
 
         mockMvc.perform(post("/api/auth/signup")

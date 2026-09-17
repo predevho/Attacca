@@ -17,6 +17,7 @@ import com.back.global.storage.StoredFile;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -36,6 +37,8 @@ import org.springframework.web.multipart.MultipartFile;
 public class NoticeService {
 
     private static final String COVER_DIRECTORY = "notice";
+    private static final Pattern HTTP_URL = Pattern.compile("^https?://\\S+$",
+            Pattern.CASE_INSENSITIVE);
 
     private final NoticeRepository noticeRepository;
     private final MemberQueryService memberQueryService;
@@ -43,19 +46,26 @@ public class NoticeService {
 
     @Transactional
     public NoticeResponse register(Long authorId, NoticeRequest request) {
+        return create(authorId, request);
+    }
+
+    @Transactional
+    public NoticeResponse create(long authorId, NoticeRequest request) {
         validateSchedule(request);
+        validateSource(request);
         Notice saved = noticeRepository.save(Notice.create(authorId, request.type(),
                 request.title(), request.content(), request.scheduledAt(), request.place(),
-                request.pinned()));
+                request.pinned(), request.sourceName(), request.sourceUrl()));
         return toAdminResponse(saved);
     }
 
     @Transactional
     public NoticeResponse editNotice(Long id, NoticeRequest request) {
         validateSchedule(request);
+        validateSource(request);
         Notice notice = findActive(id);
         notice.edit(request.type(), request.title(), request.content(), request.scheduledAt(),
-                request.place(), request.pinned());
+                request.place(), request.pinned(), request.sourceName(), request.sourceUrl());
         return toAdminResponse(notice);
     }
 
@@ -75,6 +85,17 @@ public class NoticeService {
         if (oldKey != null) {
             fileService.delete(oldKey);
         }
+        return toAdminResponse(notice);
+    }
+
+    @Transactional
+    public NoticeResponse updateCoverBytes(long adminId, long id, byte[] content, String contentType,
+            String originalName) {
+        Notice notice = findActive(id);
+        String oldKey = notice.getCoverImageKey();
+        StoredFile stored = fileService.upload(content, contentType, originalName, COVER_DIRECTORY, adminId);
+        notice.changeCover(stored.storageKey());
+        if (oldKey != null) fileService.delete(oldKey);
         return toAdminResponse(notice);
     }
 
@@ -131,6 +152,19 @@ public class NoticeService {
         }
     }
 
+    private void validateSource(NoticeRequest request) {
+        String sourceUrl = request.sourceUrl();
+        if (sourceUrl == null || sourceUrl.isEmpty()) {
+            return;
+        }
+        if (request.sourceName() == null || request.sourceName().isBlank()
+                || !sourceUrl.equals(sourceUrl.trim())
+                || !HTTP_URL.matcher(sourceUrl).matches()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE,
+                    "원문 링크에는 유효한 출처 이름과 http 또는 https URL이 필요합니다.");
+        }
+    }
+
     /** 이미지 타입만 허용. 크기 상한은 전역 multipart 설정이 담당. */
     private void validateImage(MultipartFile file) {
         if (file == null || file.getContentType() == null
@@ -159,12 +193,13 @@ public class NoticeService {
 
     private NoticeResponse toAdminResponse(Notice n, MemberDisplay author) {
         return new NoticeResponse(n.getId(), author, n.getType(), n.getTitle(), n.getContent(),
-                n.getScheduledAt(), n.getPlace(), n.isPinned(), coverUrl(n), n.getCreatedAt(),
-                n.getUpdatedAt());
+                n.getScheduledAt(), n.getPlace(), n.isPinned(), coverUrl(n), n.getSourceName(),
+                n.getSourceUrl(), n.getCreatedAt(), n.getUpdatedAt());
     }
 
     private PublicNoticeResponse toPublicResponse(Notice n) {
         return new PublicNoticeResponse(n.getId(), n.getType(), n.getTitle(), n.getContent(),
-                n.getScheduledAt(), n.getPlace(), coverUrl(n), n.getCreatedAt());
+                n.getScheduledAt(), n.getPlace(), coverUrl(n), n.getSourceName(), n.getSourceUrl(),
+                n.getCreatedAt());
     }
 }

@@ -67,7 +67,7 @@ class MemberWithdrawTest {
     @Test
     @DisplayName("탈퇴하면 개인 식별 정보가 사라진다")
     void erasesIdentity() throws Exception {
-        Long id = signup("leaver", "leave@attacca.com", "떠날사람");
+        Long id = signup("leaver01", "leave@attacca.com", "떠날사람");
 
         mockMvc.perform(delete("/api/members/me")
                         .header("Authorization", "Bearer " + accessTokenFor(id)))
@@ -84,7 +84,7 @@ class MemberWithdrawTest {
     @Test
     @DisplayName("회원 행 자체는 남는다 — 글의 작성자 참조가 끊기면 안 된다")
     void keepsTheRow() throws Exception {
-        Long id = signup("keeprow", "keep@attacca.com", "행유지");
+        Long id = signup("keeprow01", "keep@attacca.com", "행유지");
 
         mockMvc.perform(delete("/api/members/me")
                         .header("Authorization", "Bearer " + accessTokenFor(id)))
@@ -96,7 +96,7 @@ class MemberWithdrawTest {
     @Test
     @DisplayName("탈퇴한 아이디로는 다시 로그인할 수 없다")
     void cannotLoginAfterWithdrawal() throws Exception {
-        Long id = signup("gone", "gone@attacca.com", "사라짐");
+        Long id = signup("goneuser", "gone@attacca.com", "사라짐");
         mockMvc.perform(delete("/api/members/me")
                         .header("Authorization", "Bearer " + accessTokenFor(id)))
                 .andExpect(status().isOk());
@@ -104,7 +104,7 @@ class MemberWithdrawTest {
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                Map.of("loginId", "gone", "password", "goodpassword"))))
+                                Map.of("loginId", "goneuser", "password", "goodpassword"))))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.error.resultCode").value("401-07"));
     }
@@ -112,13 +112,13 @@ class MemberWithdrawTest {
     @Test
     @DisplayName("비운 아이디를 다른 사람이 다시 쓸 수 있다")
     void freesTheLoginId() throws Exception {
-        Long id = signup("reuse", "reuse@attacca.com", "재사용");
+        Long id = signup("reuseuser", "reuse@attacca.com", "재사용");
         mockMvc.perform(delete("/api/members/me")
                         .header("Authorization", "Bearer " + accessTokenFor(id)))
                 .andExpect(status().isOk());
 
         // loginId 를 null 로 비웠으므로 유니크 제약에 걸리지 않는다.
-        assertThat(signup("reuse", "reuse2@attacca.com", "재사용2")).isNotEqualTo(id);
+        assertThat(signup("reuseuser", "reuse2@attacca.com", "재사용2")).isNotEqualTo(id);
     }
 
     @Test
@@ -136,7 +136,7 @@ class MemberWithdrawTest {
     @Test
     @DisplayName("두 번 탈퇴할 수 없다")
     void cannotWithdrawTwice() throws Exception {
-        Long id = signup("twice", "twice@attacca.com", "두번");
+        Long id = signup("twiceuser", "twice@attacca.com", "두번");
         String token = accessTokenFor(id);
 
         mockMvc.perform(delete("/api/members/me").header("Authorization", "Bearer " + token))

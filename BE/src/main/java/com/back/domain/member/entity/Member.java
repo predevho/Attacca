@@ -48,26 +48,32 @@ public class Member extends BaseEntity {
     @Column(nullable = false)
     private Role role;
 
+    /** 신규 소셜 회원은 닉네임과 필수 약관을 확정한 뒤에만 일반 기능을 쓸 수 있다. */
+    @Column(name = "onboarding_complete", nullable = false)
+    private boolean onboardingComplete;
+
     /** 탈퇴 시각. 채워지면 로그인·재발급이 막힌다. (DOMAIN-MEMBER-STATUTE §3.6) */
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
-    private Member(String loginId, String password, String email, String nickname, Role role) {
+    private Member(String loginId, String password, String email, String nickname, Role role,
+            boolean onboardingComplete) {
         this.loginId = loginId;
         this.password = password;
         this.email = email;
         this.nickname = nickname;
         this.role = role;
+        this.onboardingComplete = onboardingComplete;
     }
 
     /** 자체 가입 회원 생성. encodedPassword = 이미 해시된 비밀번호. */
     public static Member createLocal(String loginId, String encodedPassword, String email, String nickname) {
-        return new Member(loginId, encodedPassword, email, nickname, Role.USER);
+        return new Member(loginId, encodedPassword, email, nickname, Role.USER, true);
     }
 
     /** 소셜 전용 회원 생성. loginId/password 없음. */
     public static Member createSocial(String email, String nickname) {
-        return new Member(null, null, email, nickname, Role.USER);
+        return new Member(null, null, email, nickname, Role.USER, false);
     }
 
     /**
@@ -107,5 +113,15 @@ public class Member extends BaseEntity {
 
     public boolean isWithdrawn() {
         return deletedAt != null;
+    }
+
+    /** 회원 본인의 닉네임을 변경한다. 유효성·중복 검사는 서비스가 담당한다. */
+    public void changeNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
+    /** 소셜 가입 진행 중인 회원이 닉네임과 필수 동의를 확정하면 일반 회원이 된다. */
+    public void completeOnboarding() {
+        this.onboardingComplete = true;
     }
 }

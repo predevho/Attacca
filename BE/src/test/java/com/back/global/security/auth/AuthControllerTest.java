@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -44,6 +45,7 @@ class AuthControllerTest {
         mockMvc = MockMvcBuilders
                 .standaloneSetup(new AuthController(jwtProvider, tokenIssuer, store, roleProvider))
                 .setControllerAdvice(new GlobalExceptionHandler())
+                .setMessageConverters(new MappingJackson2HttpMessageConverter())
                 .build();
     }
 

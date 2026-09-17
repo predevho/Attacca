@@ -6,8 +6,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.back.domain.member.dto.ProfileImageResponse;
 import com.back.domain.member.dto.ProfileResponse;
 import com.back.domain.member.dto.UpdateProfileRequest;
+import com.back.domain.member.dto.UpdateNicknameRequest;
 import com.back.domain.member.entity.Instrument;
 import com.back.domain.member.entity.Member;
+import com.back.domain.member.repository.MemberConsentRepository;
 import com.back.domain.member.repository.MemberProfileRepository;
 import com.back.domain.member.repository.MemberRepository;
 import com.back.domain.verifiedperformer.repository.VerificationApplicationRepository;
@@ -37,6 +39,8 @@ class MemberProfileServiceTest {
     @Autowired
     private MemberProfileRepository memberProfileRepository;
     @Autowired
+    private MemberConsentRepository memberConsentRepository;
+    @Autowired
     private FileMetadataRepository fileMetadataRepository;
     @Autowired
     private VerificationApplicationRepository verificationApplicationRepository;
@@ -51,7 +55,7 @@ class MemberProfileServiceTest {
         FileService fileService = new FileService(fileStorage, fileMetadataRepository);
         verifiedPerformerService = new VerifiedPerformerService(verificationApplicationRepository);
         service = new MemberProfileService(memberRepository, memberProfileRepository, fileService,
-                verifiedPerformerService);
+                verifiedPerformerService, new MemberConsentService(memberConsentRepository));
     }
 
     private Member savedMember(String suffix) {
@@ -118,6 +122,41 @@ class MemberProfileServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .extracting(e -> ((BusinessException) e).getErrorCode())
                 .isEqualTo(ErrorCode.MEMBER_NOT_FOUND);
+    }
+
+    @Test
+    void 닉네임_중복이면_기존_에러코드를_던진다() {
+        Member member = savedMember("nickname-a");
+        savedMember("nickname-b");
+
+        assertThatThrownBy(() -> service.updateNickname(member.getId(),
+                new UpdateNicknameRequest("닉nickname-b", false, false)))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode())
+                .isEqualTo(ErrorCode.NICKNAME_ALREADY_EXISTS);
+    }
+
+    @Test
+    void 소셜_가입_진행_회원은_닉네임과_필수_동의를_저장해야_완료된다() {
+        Member member = memberRepository.save(Member.createSocial("social@attacca.com", "임시닉"));
+
+        service.updateNickname(member.getId(), new UpdateNicknameRequest("새닉네임", true, true));
+
+        assertThat(member.isOnboardingComplete()).isTrue();
+        assertThat(member.getNickname()).isEqualTo("새닉네임");
+        assertThat(memberConsentRepository.findByMemberIdOrderByAgreedAtDesc(member.getId())).hasSize(2);
+    }
+
+    @Test
+    void 소셜_가입_진행_회원은_동의_없이_완료할_수_없다() {
+        Member member = memberRepository.save(Member.createSocial("social-no@attacca.com", "임시닉2"));
+
+        assertThatThrownBy(() -> service.updateNickname(member.getId(),
+                new UpdateNicknameRequest("새닉네임", false, true)))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode())
+                .isEqualTo(ErrorCode.CONSENT_REQUIRED);
+        assertThat(member.isOnboardingComplete()).isFalse();
     }
 
     @Test

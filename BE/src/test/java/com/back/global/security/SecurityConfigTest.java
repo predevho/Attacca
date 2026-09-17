@@ -8,13 +8,17 @@ import com.back.global.security.handler.JwtAccessDeniedHandler;
 import com.back.global.security.handler.JwtAuthenticationEntryPoint;
 import com.back.global.security.jwt.JwtProperties;
 import com.back.global.security.jwt.JwtProvider;
+import com.back.global.security.onboarding.OnboardingCompletionFilter;
+import com.back.domain.member.repository.MemberRepository;
 import com.back.global.storage.StorageProperties;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import static org.mockito.Mockito.mock;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -105,6 +109,18 @@ class SecurityConfigTest {
             return new StorageProperties("local",
                     new StorageProperties.Local("build/test-files", "http://localhost:8080/files"),
                     null);
+        }
+
+        @Bean
+        MemberRepository memberRepository() {
+            // 이 슬라이스는 인가 규칙만 검증한다. 실제 onboarding 분기는 통합 테스트가 맡는다.
+            return mock(MemberRepository.class);
+        }
+
+        @Bean
+        OnboardingCompletionFilter onboardingCompletionFilter(MemberRepository memberRepository,
+                ObjectMapper objectMapper) {
+            return new OnboardingCompletionFilter(memberRepository, objectMapper);
         }
     }
 

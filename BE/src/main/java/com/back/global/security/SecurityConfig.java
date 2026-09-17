@@ -4,6 +4,7 @@ import com.back.global.security.handler.JwtAccessDeniedHandler;
 import com.back.global.security.handler.JwtAuthenticationEntryPoint;
 import com.back.global.security.jwt.JwtAuthenticationFilter;
 import com.back.global.security.jwt.JwtProvider;
+import com.back.global.security.onboarding.OnboardingCompletionFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,6 +24,7 @@ public class SecurityConfig {
     private final JwtProvider jwtProvider;
     private final JwtAuthenticationEntryPoint authenticationEntryPoint;
     private final JwtAccessDeniedHandler accessDeniedHandler;
+    private final OnboardingCompletionFilter onboardingCompletionFilter;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -49,7 +51,8 @@ public class SecurityConfig {
                         .authenticationEntryPoint(authenticationEntryPoint)
                         .accessDeniedHandler(accessDeniedHandler))
                 .addFilterBefore(new JwtAuthenticationFilter(jwtProvider),
-                        UsernamePasswordAuthenticationFilter.class);
+                        UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(onboardingCompletionFilter, JwtAuthenticationFilter.class);
         return http.build();
     }
 

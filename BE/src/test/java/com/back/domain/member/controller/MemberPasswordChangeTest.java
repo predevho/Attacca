@@ -83,7 +83,7 @@ class MemberPasswordChangeTest {
     @Test
     @DisplayName("바뀐 비밀번호로 로그인되고 옛 것으로는 안 된다")
     void changesPassword() throws Exception {
-        Long id = signup("changer");
+        Long id = signup("changer01");
 
         change(id, OLD, NEW).andExpect(status().isOk());
 
@@ -109,7 +109,7 @@ class MemberPasswordChangeTest {
     void revokesOtherSessions() throws Exception {
         // 비밀번호를 바꾸는 이유의 절반이 "남이 들어와 있을지 모른다" 인데,
         // 다른 기기를 끊지 않으면 바꾸나 마나다.
-        Long id = signup("revoker");
+        Long id = signup("revoker01");
         String otherDeviceJti = "other-device-jti";
         refreshTokenStore.save(id, otherDeviceJti);
         assertThat(refreshTokenStore.exists(id, otherDeviceJti)).isTrue();
@@ -146,7 +146,7 @@ class MemberPasswordChangeTest {
     @Test
     @DisplayName("새 비밀번호는 가입과 같은 규칙을 따른다")
     void appliesSignupRules() throws Exception {
-        Long id = signup("rules");
+        Long id = signup("ruleuser");
 
         change(id, OLD, "short7c")
                 .andExpect(status().isBadRequest())
@@ -162,6 +162,7 @@ class MemberPasswordChangeTest {
         // password 가 null 이라 확인할 현재 값이 없다.
         Member social = memberRepository.save(
                 Member.createSocial("social@attacca.test", "소셜전용"));
+        social.completeOnboarding();
 
         change(social.getId(), OLD, NEW)
                 .andExpect(status().isBadRequest())

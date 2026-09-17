@@ -65,6 +65,77 @@ oauth:
     token-uri: https://kauth.kakao.com/oauth/token
     user-info-uri: https://kapi.kakao.com/v2/user/me
 
+import:
+  kopis:
+    base-url: ${KOPIS_BASE_URL:http://www.kopis.or.kr}
+    service-key: ${KOPIS_SERVICE_KEY:}
+    genre-code: CCCA
+    days-ahead: 56
+    window-days: 28
+    rows: 100
+    poster-allowed-hosts:
+      - www.kopis.or.kr
+      - kopis.or.kr
+  collector:
+    university:
+      contact: ${IMPORT_CONTACT:}
+      boards:
+        - code: snu-admission
+          name: 서울대학교 입학본부
+          list-url: https://admission.snu.ac.kr/undergraduate/notice
+          charset: UTF-8
+          row-selector: "tbody tr"
+          title-selector: "td.subject a"
+          link-selector: "td.subject a"
+          date-selector: "td.date"
+          date-format: "yyyy. M. d."
+          post-id-pattern: "bbsidx=(\\d+)"
+          keywords: [음악, 실기, 곡목, 악보, 예능, 예체능, 모집요강, 수시, 정시]
+        - code: snu-music
+          name: 서울대학교 음악대학
+          list-url: https://music.snu.ac.kr/notice?sca=입학
+          charset: UTF-8
+          row-selector: "ul.board-list li"
+          title-selector: "a.subject"
+          link-selector: "a.subject"
+          date-selector: ".date"
+          date-format: "yyyy-MM-dd"
+          post-id-pattern: "/(\\d+)(?:\\?|$)"
+          keywords: [음악, 실기, 곡목, 악보, 예능, 예체능, 모집요강, 수시, 정시]
+        - code: yonsei-rolling
+          name: 연세대학교 입학처(수시)
+          list-url: https://admission.yonsei.ac.kr/seoul/admission/html/rolling/notice.asp
+          charset: EUC-KR
+          row-selector: "table tbody tr"
+          title-selector: "td.subject a"
+          link-selector: "td.subject a"
+          date-selector: "td.date"
+          date-format: "yyyy.MM.dd"
+          post-id-pattern: "BBS_NO=(\\d+)"
+          keywords: [음악, 실기, 곡목, 악보, 예능, 예체능, 모집요강, 수시, 정시]
+        - code: yonsei-regular
+          name: 연세대학교 입학처(정시)
+          list-url: https://admission.yonsei.ac.kr/seoul/admission/html/regular/notice.asp
+          charset: EUC-KR
+          row-selector: "table tbody tr"
+          title-selector: "td.subject a"
+          link-selector: "td.subject a"
+          date-selector: "td.date"
+          date-format: "yyyy.MM.dd"
+          post-id-pattern: "BBS_NO=(\\d+)"
+          keywords: [음악, 실기, 곡목, 악보, 예능, 예체능, 모집요강, 수시, 정시]
+        - code: karts-admission
+          name: 한국예술종합학교 입학
+          list-url: https://www.karts.ac.kr/cop/bbs/selectBoardList.do?bbsId=BBSMSTR_000000000007
+          charset: UTF-8
+          row-selector: "ul.board-list li"
+          title-selector: "a"
+          link-selector: "a"
+          date-selector: ".date"
+          date-format: "yyyy-MM-dd"
+          post-id-pattern: "nttId=(\\d+)"
+          keywords: [음악, 실기, 곡목, 악보, 예능, 예체능, 모집요강, 수시, 정시]
+
 storage:
   type: ${STORAGE_TYPE:local}          # local | s3
   local:

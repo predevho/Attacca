@@ -82,7 +82,12 @@ public enum ErrorCode {
     PASSWORD_NOT_SET("400-07", HttpStatus.BAD_REQUEST, "소셜 로그인 전용 계정은 비밀번호를 바꿀 수 없습니다."),
 
     // --- NOTICE(공지·소식·운영 일정) ---
-    NOTICE_NOT_FOUND("404-12", HttpStatus.NOT_FOUND, "공지를 찾을 수 없습니다.");
+    NOTICE_NOT_FOUND("404-12", HttpStatus.NOT_FOUND, "공지를 찾을 수 없습니다."),
+
+    // --- IMPORT(외부 반입) ---
+    IMPORT_ITEM_NOT_FOUND("404-13", HttpStatus.NOT_FOUND, "수집 항목을 찾을 수 없습니다."),
+    IMPORT_ITEM_ALREADY_HANDLED("409-11", HttpStatus.CONFLICT, "이미 처리된 수집 항목입니다."),
+    IMPORT_ALREADY_RUNNING("409-12", HttpStatus.CONFLICT, "해당 원천 수집이 이미 실행 중입니다.");
 
     private final String resultCode;
     private final HttpStatus status;

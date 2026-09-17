@@ -41,7 +41,6 @@ public class MemberAuthController {
     @PostMapping("/oauth/kakao")
     public ApiResponse<TokenPairResponse> kakaoLogin(@Valid @RequestBody OAuthLoginRequest request) {
         return ApiResponse.success(
-                memberOAuthService.oauthLogin(OAuthProvider.KAKAO, request.code(), request.redirectUri(),
-                        request.agreedTerms(), request.agreedPrivacy()));
+                memberOAuthService.oauthLogin(OAuthProvider.KAKAO, request.code(), request.redirectUri()));
     }
 }
