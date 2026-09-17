@@ -75,26 +75,31 @@ export default function RecruitmentsPage() {
         )}
       </div>
 
-      <div className="mb-4 flex items-center gap-2">
-        {TABS.map((t) => (
-          <button key={t.key} type="button" onClick={() => setScope(t.key)}
-            className={`rounded-full px-3 py-1 text-sm ${scope === t.key ? 'bg-brand text-on-brand' : 'bg-surface-muted text-ink-muted'}`}>
-            {t.label}
-          </button>
-        ))}
-        <select aria-label="악기 필터" value={instrument} onChange={(e) => setInstrument(e.target.value)}
-          className="ml-auto rounded border border-line px-2 py-1 text-sm">
-          <option value="">전체 파트</option>
-          {options.map((o) => <option key={o.code} value={o.code}>{o.label}</option>)}
-        </select>
+      <div className="mb-4 flex flex-col gap-3">
+        <div role="tablist" aria-label="모집 상태" className="flex max-w-full gap-2 overflow-x-auto pb-1">
+          {TABS.map((t) => (
+            <button key={t.key} role="tab" aria-selected={scope === t.key} type="button" onClick={() => setScope(t.key)}
+              className={`shrink-0 rounded-full px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${scope === t.key ? 'bg-brand text-on-brand' : 'bg-surface-muted text-ink-muted'}`}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+        <label className="flex items-center justify-between gap-3 text-sm text-ink-muted">
+          <span>모집 파트</span>
+          <select aria-label="모집 파트" value={instrument} onChange={(e) => setInstrument(e.target.value)}
+            className="min-w-0 flex-1 rounded border border-line bg-surface px-2 py-2 text-sm text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+            <option value="">전체 파트</option>
+            {options.map((o) => <option key={o.code} value={o.code}>{o.label}</option>)}
+          </select>
+        </label>
       </div>
 
       <ScopeList key={`${scope}:${instrument}`} scope={scope} instrument={instrument}
         instrumentLabels={toLabelMap(options)} />
 
-      <div className="mt-6 text-center">
+      <div className="mt-6">
         <button type="button" onClick={() => router.push('/recruitments/applications/me')}
-          className="text-sm text-ink-muted underline">내 지원 현황</button>
+          className="w-full rounded border border-line px-3 py-2 text-sm font-medium text-ink-muted underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">내 지원 현황</button>
       </div>
     </main>
   );

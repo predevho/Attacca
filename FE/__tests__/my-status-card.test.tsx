@@ -11,13 +11,13 @@ const app: Application = {
 describe('MyStatusCard', () => {
   it('PENDING이면 심사 중 문구', () => {
     render(<MyStatusCard application={app} />);
-    expect(screen.getByText(/심사 중/)).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '상태: 심사 중' })).toBeInTheDocument();
     expect(screen.getByText('5년 활동')).toBeInTheDocument();
   });
 
   it('APPROVED이면 승인 문구', () => {
     render(<MyStatusCard application={{ ...app, status: 'APPROVED' }} />);
-    expect(screen.getByText(/승인/)).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '상태: 승인됨' })).toBeInTheDocument();
   });
 
   it('REJECTED이면 사유 표시', () => {

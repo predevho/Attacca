@@ -32,7 +32,7 @@ function locationOf(res: Response) {
 }
 
 describe('GET /api/bff/oauth/kakao/callback', () => {
-  it('state 통과 + BE 성공 → 인증 쿠키 설정 후 /feed', async () => {
+  it('state 통과 + BE 성공 → 인증 쿠키 설정 후 홈으로 이동한다', async () => {
     jar['oauth_state'] = 'S';
     vi.stubGlobal('fetch', vi.fn(async () => beJson(
       { success: true, data: { accessToken: 'A', refreshToken: 'R' }, error: null }, 200)));
@@ -40,7 +40,7 @@ describe('GET /api/bff/oauth/kakao/callback', () => {
 
     const res = await GET(new Request('http://localhost:3000/api/bff/oauth/kakao/callback?code=c&state=S'));
 
-    expect(locationOf(res)).toBe('/feed');
+    expect(locationOf(res)).toBe('/');
     expect(jar['access_token']).toBe('A');
     expect(jar['refresh_token']).toBe('R');
     expect(jar['oauth_state']).toBeUndefined(); // 단일 사용
@@ -95,5 +95,29 @@ describe('GET /api/bff/oauth/kakao/callback', () => {
     expect(locationOf(res)).toBe('/login?error=oauth');
     expect(jar['access_token']).toBeUndefined();
     expect(jar['oauth_state']).toBeUndefined();
+  });
+
+  it('isNewMember=true → 토큰 쿠키 설정 후 닉네임 설정 화면으로 이동한다', async () => {
+    jar['oauth_state'] = 'S';
+    vi.stubGlobal('fetch', vi.fn(async () => beJson(
+      { success: true, data: { accessToken: 'A', refreshToken: 'R', isNewMember: true }, error: null }, 200)));
+    const { GET } = await import('@/app/api/bff/oauth/kakao/callback/route');
+
+    const res = await GET(new Request('http://localhost:3000/api/bff/oauth/kakao/callback?code=c&state=S&next=%2Fchat'));
+
+    expect(locationOf(res)).toBe('/signup/nickname?next=%2Fchat');
+    expect(jar['access_token']).toBe('A');
+    expect(jar['refresh_token']).toBe('R');
+  });
+
+  it('isNewMember=false → next 경로로 이동한다', async () => {
+    jar['oauth_state'] = 'S';
+    vi.stubGlobal('fetch', vi.fn(async () => beJson(
+      { success: true, data: { accessToken: 'A', refreshToken: 'R', isNewMember: false }, error: null }, 200)));
+    const { GET } = await import('@/app/api/bff/oauth/kakao/callback/route');
+
+    const res = await GET(new Request('http://localhost:3000/api/bff/oauth/kakao/callback?code=c&state=S&next=%2Fchat%3Froom%3D1'));
+
+    expect(locationOf(res)).toBe('/chat?room=1');
   });
 });

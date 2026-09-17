@@ -6,5 +6,12 @@
  * (증빙 링크에만 있던 가드를 공용으로 올렸다. 티켓 링크에는 빠져 있었다 — 2026-09-09)
  */
 export function isHttpUrl(u: string): boolean {
-  return /^https?:\/\//i.test(u.trim());
+  const trimmed = u.trim();
+  if (!/^https?:\/\/[^/\s]+/i.test(trimmed)) return false;
+  try {
+    const parsed = new URL(trimmed);
+    return (parsed.protocol === 'http:' || parsed.protocol === 'https:') && parsed.hostname !== '';
+  } catch {
+    return false;
+  }
 }

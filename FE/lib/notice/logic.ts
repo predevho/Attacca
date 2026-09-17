@@ -7,6 +7,8 @@ export const EMPTY_NOTICE_FORM: NoticeFormValues = {
   scheduledAt: '',
   place: '',
   pinned: false,
+  sourceName: '',
+  sourceUrl: '',
 };
 
 /** BE `NoticeRequest` 로 보낼 모양. */
@@ -17,6 +19,8 @@ export type NoticeRequest = {
   scheduledAt: string | null;
   place: string | null;
   pinned: boolean;
+  sourceName: string | null;
+  sourceUrl: string | null;
 };
 
 /**
@@ -35,6 +39,8 @@ export function toNoticeRequest(form: NoticeFormValues): NoticeRequest {
     scheduledAt: scheduledAt ? `${scheduledAt}:00` : null,
     place: place || null,
     pinned: form.pinned,
+    sourceName: form.sourceName?.trim() || null,
+    sourceUrl: form.sourceUrl?.trim() || null,
   };
 }
 
@@ -47,6 +53,8 @@ export function toFormValues(notice: AdminNotice): NoticeFormValues {
     scheduledAt: notice.scheduledAt ? notice.scheduledAt.slice(0, 16) : '',
     place: notice.place ?? '',
     pinned: notice.pinned,
+    sourceName: notice.sourceName ?? '',
+    sourceUrl: notice.sourceUrl ?? '',
   };
 }
 
@@ -69,6 +77,12 @@ export function validateNotice(form: NoticeFormValues): NoticeErrors {
   else if (content.length > 5000) e.content = '본문은 5000자를 넘을 수 없습니다.';
 
   if (place.length > 200) e.place = '장소는 200자를 넘을 수 없습니다.';
+  const sourceName = (form.sourceName ?? '').trim();
+  const sourceUrl = (form.sourceUrl ?? '').trim();
+  if (sourceName.length > 200) e.sourceName = '출처 이름은 200자를 넘을 수 없습니다.';
+  if (sourceUrl.length > 500) e.sourceUrl = '원문 링크는 500자를 넘을 수 없습니다.';
+  else if (sourceUrl && !/^https?:\/\/\S+$/i.test(sourceUrl)) e.sourceUrl = '원문 링크는 http 또는 https URL이어야 합니다.';
+  if (sourceUrl && !sourceName) e.sourceName = '원문 링크가 있으면 출처 이름을 입력해 주세요.';
 
   // 일시가 없으면 달력에 뜨지 않는다(STATUTE: scheduledAt 이 달력 노출의 유일한 상태).
   // 일정으로 올렸는데 달력에 안 뜨면 올린 뜻이 사라지므로 여기서 막는다.

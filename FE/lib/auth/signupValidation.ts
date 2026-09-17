@@ -21,7 +21,7 @@ export type SignupForm = {
 
 export type SignupErrors = Partial<Record<keyof SignupForm, string>>;
 
-const LOGIN_ID = /^[a-z0-9_]{4,20}$/;
+const LOGIN_ID = /^[a-z0-9_]{8,20}$/;
 // 서버는 @Email 을 쓴다. 여기서는 흔한 실수(@ 없음, 도메인 없음)만 잡는다 —
 // 이메일 형식을 정규식으로 완벽히 맞추려는 시도는 늘 실패한다.
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -30,11 +30,11 @@ export function validateSignup(form: SignupForm): SignupErrors {
   const e: SignupErrors = {};
 
   if (!form.loginId) e.loginId = '아이디를 입력해 주세요.';
-  else if (!LOGIN_ID.test(form.loginId)) e.loginId = '영문 소문자·숫자·밑줄 4~20자로 입력해 주세요.';
+  else if (!LOGIN_ID.test(form.loginId)) e.loginId = '영문 소문자·숫자·밑줄 8~20자로 입력해 주세요.';
 
   if (!form.password) e.password = '비밀번호를 입력해 주세요.';
-  else if (form.password.length < 8 || form.password.length > 64) {
-    e.password = '8자 이상 64자 이하로 입력해 주세요.';
+  else if (form.password.length < 8 || form.password.length > 20) {
+    e.password = '8자 이상 20자 이하로 입력해 주세요.';
   } else if (/\s/.test(form.password)) e.password = '공백은 쓸 수 없습니다.';
 
   // 확인란은 서버로 보내지 않는다. 오타로 잘못된 비밀번호가 저장되는 것만 막는다.

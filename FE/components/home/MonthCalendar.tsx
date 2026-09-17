@@ -1,7 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { buildMonthGrid, formatDayLabel, markersByDay } from '@/lib/home/logic';
+import { buildMonthGrid, dayOf, formatDayLabel, markersByDay } from '@/lib/home/logic';
 import type { CalendarEntry } from '@/lib/home/types';
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -10,6 +11,11 @@ const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 const DOT_CLASS: Record<CalendarEntry['kind'], string> = {
   PERFORMANCE: 'bg-brand',
   NOTICE: 'bg-warn',
+};
+
+const KIND_LABEL: Record<CalendarEntry['kind'], string> = {
+  PERFORMANCE: '공연',
+  NOTICE: '공지 일정',
 };
 
 /**
@@ -35,6 +41,18 @@ export function MonthCalendar({
 }) {
   const cells = buildMonthGrid(year, month);
   const markers = markersByDay(entries);
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const selectedEntries = selectedDay === null
+    ? entries
+    : entries.filter((entry) => dayOf(entry.at) === selectedDay);
+
+  function dayLabel(day: number): string {
+    const counts = (markers.get(day) ?? []).map((kind) => {
+      const count = entries.filter((entry) => dayOf(entry.at) === day && entry.kind === kind).length;
+      return `${KIND_LABEL[kind]} ${count}건`;
+    });
+    return `${month}월 ${day}일${counts.length > 0 ? `, ${counts.join(', ')}` : ''}`;
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -71,15 +89,19 @@ export function MonthCalendar({
 
         <div className="grid grid-cols-7 gap-0.5">
           {cells.map((day, i) => (
-            <span
+            <div
               key={i}
               className="flex h-10 flex-col items-center justify-center gap-1 text-sm"
             >
               {day !== null && (
-                <>
-                  <span className={day === today ? 'font-bold text-brand-strong' : undefined}>
-                    {day}
-                  </span>
+                <button
+                  type="button"
+                  aria-label={dayLabel(day)}
+                  aria-pressed={selectedDay === day}
+                  onClick={() => setSelectedDay((current) => (current === day ? null : day))}
+                  className={`flex h-10 w-full flex-col items-center justify-center gap-1 rounded ${day === today ? 'font-bold text-brand-strong' : ''}`}
+                >
+                  <span>{day}</span>
                   <span className="flex gap-0.5">
                     {(markers.get(day) ?? []).map((kind) => (
                       <span
@@ -89,9 +111,9 @@ export function MonthCalendar({
                       />
                     ))}
                   </span>
-                </>
+                </button>
               )}
-            </span>
+            </div>
           ))}
         </div>
 
@@ -107,10 +129,21 @@ export function MonthCalendar({
         </div>
       </section>
 
-      <section aria-label="이번 달 일정" className="rounded-lg border border-line bg-surface">
-        <h2 className="p-4 font-semibold">이번 달 일정</h2>
+      <section aria-label={selectedDay === null ? '이번 달 일정' : '선택한 날짜 일정'} className="rounded-lg border border-line bg-surface">
+        <div className="flex items-center justify-between gap-3 p-4">
+          <h2 className="font-semibold">{selectedDay === null ? '이번 달 일정' : `${month}월 ${selectedDay}일 일정`}</h2>
+          <div className="flex shrink-0 gap-2 text-xs text-ink-muted">
+            <Link href="/performances" className="transition-colors hover:text-ink">공연 전체</Link>
+            <Link href="/notices" className="transition-colors hover:text-ink">공지 전체</Link>
+          </div>
+        </div>
+        {selectedDay !== null && (
+          <p aria-live="polite" className="px-4 pb-2 text-sm text-ink-muted">
+            {month}월 {selectedDay}일 일정 {selectedEntries.length}건
+          </p>
+        )}
         {isLoading && <p className="px-4 pb-4 text-sm text-ink-faint">불러오는 중...</p>}
-        {!isLoading && entries.length === 0 && (
+        {!isLoading && selectedEntries.length === 0 && (
           <div className="px-4 pb-6">
             {/* 이번 달이 비어도 지난 공연은 있을 수 있다. 그쪽으로 길을 낸다. */}
             <p className="text-sm text-ink-faint">이번 달 일정이 없습니다.</p>
@@ -120,7 +153,7 @@ export function MonthCalendar({
           </div>
         )}
         <ul>
-          {entries.map((entry) => {
+          {selectedEntries.map((entry) => {
             const row = (
               <>
                 <span

@@ -22,10 +22,11 @@ NEXT_PUBLIC_BE_WS_URL=ws://localhost:8081/ws
 ## 스크립트
 
 ```bash
-npm test            # Vitest 353개
+npm test            # Vitest 전체
 npm run lint        # eslint
 npm run build       # 프로덕션 빌드
 npm run check:colors  # 하드코딩된 색이 남아 있는지 검사
+npm run test:e2e      # Playwright 브라우저 smoke 테스트
 ```
 
 ## 구조
@@ -66,6 +67,13 @@ UI(클라이언트) ──> app/api/bff/** ──> lib/server/* ──> Spring B
 쓰고, 다크에서는 `globals.css`가 값을 교체합니다. 새 색이 필요하면 하드코딩하지 말고 토큰을 추가하세요.
 `npm run check:colors`가 하드코딩된 색과 테두리 색 미지정을 잡습니다.
 
+## 테마
+
+Header의 테마 control에서 `시스템`, `라이트`, `다크`를 선택할 수 있습니다. 선택값은
+`attacca-theme` localStorage에 저장되고, 공개 홈·공지 상세·공연 상세와 NOTICE/IMPORT
+운영 화면은 semantic token으로 두 테마를 렌더링합니다. 아직 테마를 별도로 점검하지 않은
+기존 도메인 화면은 공통 토큰을 계속 사용하며 후속 화면 점검 대상으로 남아 있습니다.
+
 ## 레이아웃 주의
 
 사이드바가 있는 2단 그리드는 **`minmax(0,1fr)`**을 쓰세요. 그냥 `1fr`이면 최소 크기가 `auto`라
@@ -78,3 +86,7 @@ Vitest + Testing Library. BFF 라우트 테스트는 파일 상단에 `// @vites
 
 테스트는 "렌더된다"보다 **규칙이 지켜지는지**를 겨냥합니다 — 미들웨어 matcher가 보호 화면을
 빠뜨리지 않는지, 공개 응답에 회원 id가 값으로도 없는지, 공개 BFF가 쿠키를 읽지 않는지 같은 것들.
+
+브라우저 smoke 테스트는 `npm run test:e2e`로 실행합니다. 로컬 Next.js 서버에서 공개 공지 상세,
+비로그인 보호 라우트의 로그인 리다이렉트, IMPORT 심사 화면 접근 게이트를 확인합니다.
+공개 홈은 375px 모바일과 1280px 데스크톱 viewport에서 Header/본문 겹침과 가로 넘침도 확인합니다.

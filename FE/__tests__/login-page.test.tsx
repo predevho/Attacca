@@ -2,7 +2,9 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+const { push, postBff } = vi.hoisted(() => ({ push: vi.fn(), postBff: vi.fn() }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
+vi.mock('@/lib/api', () => ({ postBff }));
 
 import { LoginForm } from '@/app/(auth)/login/LoginForm';
 import { ERROR_MESSAGES } from '@/app/(auth)/login/page';
@@ -15,22 +17,31 @@ describe('LoginForm', () => {
     expect(screen.getByRole('button', { name: '로그인' })).toBeInTheDocument();
   });
 
-  it('동의 전에는 카카오 로그인이 눌리지 않는다', () => {
-    // 카카오는 최초 사용 시 곧바로 가입이 된다. 동의 없이 가입되는 경로를 남기지 않는다.
+  it('일반 로그인은 약관 동의 없이 제출하고 기본 홈으로 이동한다', async () => {
+    const user = userEvent.setup();
+    postBff.mockResolvedValue({ ok: true, data: null, message: null });
     render(<LoginForm initialError={null} />);
-    const kakao = screen.getByText('카카오 로그인');
-    expect(kakao).not.toHaveAttribute('href');
-    expect(kakao).toHaveAttribute('aria-disabled', 'true');
+    await user.type(screen.getByLabelText('아이디'), 'user');
+    await user.type(screen.getByLabelText('비밀번호'), 'password');
+    await user.click(screen.getByRole('button', { name: '로그인' }));
+    expect(push).toHaveBeenCalledWith('/');
   });
 
-  it('동의하면 카카오 로그인 링크가 start 라우트를 가리킨다', async () => {
+  it('next가 있으면 일반 로그인 성공 후 원래 경로로 이동한다', async () => {
     const user = userEvent.setup();
+    postBff.mockResolvedValue({ ok: true, data: null, message: null });
+    render(<LoginForm initialError={null} next="/admin/imports" />);
+    await user.type(screen.getByLabelText('아이디'), 'user');
+    await user.type(screen.getByLabelText('비밀번호'), 'password');
+    await user.click(screen.getByRole('button', { name: '로그인' }));
+    expect(push).toHaveBeenCalledWith('/admin/imports');
+  });
+
+  it('카카오 로그인은 별도 체크 없이 바로 시작할 수 있다', () => {
     render(<LoginForm initialError={null} />);
-
-    await user.click(screen.getByRole('checkbox'));
-
     const kakao = screen.getByRole('link', { name: '카카오 로그인' });
-    expect(kakao).toHaveAttribute('href', '/api/bff/oauth/kakao/start?consent=1');
+    expect(kakao).toHaveAttribute('href', '/api/bff/oauth/kakao/start');
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
   });
 
   it('initialError를 화면에 표시한다', () => {

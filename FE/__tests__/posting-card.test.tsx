@@ -27,4 +27,13 @@ describe('PostingCard', () => {
     fireEvent.click(screen.getByText('피아노 반주자'));
     expect(onOpen).toHaveBeenCalled();
   });
+
+  it('긴 제목은 카드 밖으로 넘치지 않고 키보드 포커스 스타일을 제공한다', () => {
+    render(<PostingCard posting={{ ...posting, title: '아주 긴 모집 제목 '.repeat(20) }} onOpen={() => {}} />);
+
+    const card = screen.getByRole('article');
+    const title = screen.getByRole('button', { name: /아주 긴 모집 제목/ });
+    expect(card).toHaveClass('overflow-hidden');
+    expect(title).toHaveClass('break-words', 'focus-visible:ring-2');
+  });
 });

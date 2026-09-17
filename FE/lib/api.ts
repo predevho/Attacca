@@ -44,6 +44,14 @@ export async function putBff<T = unknown>(path: string, body?: unknown): Promise
   });
 }
 
+export async function patchBff<T = unknown>(path: string, body?: unknown): Promise<BffResult<T>> {
+  return request<T>(path, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json' },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+}
+
 /** multipart PUT. content-type을 지정하지 않아 브라우저가 boundary를 설정한다. */
 export async function putBffForm<T = unknown>(path: string, form: FormData): Promise<BffResult<T>> {
   return request<T>(path, { method: 'PUT', body: form });

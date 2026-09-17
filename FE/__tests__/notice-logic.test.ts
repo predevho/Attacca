@@ -48,6 +48,7 @@ describe('toFormValues', () => {
     id: 1, type: 'NEWS', title: '소식', content: '본문',
     scheduledAt: '2026-10-01T03:00:00', place: '홀', pinned: false,
     coverImageUrl: null, createdAt: '2026-09-09T10:00:00', updatedAt: '2026-09-09T10:00:00',
+    sourceName: null, sourceUrl: null,
   };
 
   it('수정 폼에 실을 수 있게 되돌린다', () => {

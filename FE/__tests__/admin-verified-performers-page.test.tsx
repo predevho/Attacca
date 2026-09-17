@@ -32,6 +32,15 @@ describe('AdminVerifiedPerformersPage', () => {
     mockAdmin('ADMIN');
     render(<AdminVerifiedPerformersPage />);
     expect(await screen.findByText(/회원 #5/)).toBeInTheDocument();
+    expect(screen.getByRole('tablist', { name: '신청 상태' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: '심사 중' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('심사 카드 액션은 모바일에서도 충분한 터치 영역과 포커스 표시를 제공', async () => {
+    mockAdmin('ADMIN');
+    render(<AdminVerifiedPerformersPage />);
+    const approve = await screen.findByRole('button', { name: '승인' });
+    expect(approve).toHaveClass('min-h-10', 'focus-visible:ring-2');
   });
 
   it('승인 클릭 시 approve BFF 호출', async () => {

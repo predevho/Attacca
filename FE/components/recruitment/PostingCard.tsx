@@ -8,14 +8,14 @@ export function PostingCard(
   { posting: Posting; onOpen: () => void; instrumentLabels?: InstrumentLabels },
 ) {
   return (
-    <article className="relative rounded-lg border border-line bg-surface p-4">
+    <article className="relative overflow-hidden rounded-lg border border-line bg-surface p-4">
       <div className="flex items-start justify-between gap-2">
         {/* 제목은 heading으로 남기고 그 안의 버튼이 카드를 연다(PostCard와 같은 방식). */}
         <h3 className="min-w-0 font-semibold">
           <button
             type="button"
             onClick={onOpen}
-            className="block w-full cursor-pointer truncate text-left after:absolute after:inset-0 after:rounded-lg"
+            className="relative z-10 block w-full cursor-pointer break-words text-left after:absolute after:inset-0 after:rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
           >
             {posting.title}
           </button>

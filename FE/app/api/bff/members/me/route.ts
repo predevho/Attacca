@@ -15,3 +15,12 @@ export async function DELETE() {
   if (res.ok) clearAuthCookies(store);
   return bffResultJson(res);
 }
+
+export async function PATCH(request: Request) {
+  const body = await request.text();
+  return bffResultJson(await authedBeFetch(await cookies(), '/api/members/me', {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json' },
+    body,
+  }));
+}

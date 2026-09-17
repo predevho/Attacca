@@ -17,14 +17,14 @@ export function EvidenceUrlsInput({
   return (
     <div className="flex flex-col gap-2">
       {urls.map((u, i) => (
-        <div key={i} className="flex gap-2">
+        <div key={i} className="flex min-w-0 flex-col gap-2 sm:flex-row">
           <input aria-label={`증빙 링크 ${i + 1}`} value={u} onChange={(e) => setAt(i, e.target.value)}
-            placeholder="https://..." className="flex-1 rounded border border-line px-3 py-2 text-sm" />
-          <button type="button" onClick={() => removeAt(i)} className="rounded border border-line px-3 py-1 text-xs">삭제</button>
+            placeholder="https://..." className="min-w-0 flex-1 rounded border border-line px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand" />
+          <button type="button" onClick={() => removeAt(i)} className="min-h-10 rounded border border-line px-3 py-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">삭제</button>
         </div>
       ))}
       <button type="button" onClick={add} disabled={urls.length >= 10}
-        className="self-start rounded border border-line px-3 py-1 text-xs disabled:opacity-40">링크 추가</button>
+        className="min-h-10 self-start rounded border border-line px-3 py-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:opacity-40">링크 추가</button>
     </div>
   );
 }

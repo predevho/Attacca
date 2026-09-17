@@ -29,7 +29,8 @@ describe('회원가입 입력 검증', () => {
   });
 
   it.each([
-    ['abc', '4자 미만'],
+    ['user123', '8자 미만'],
+    ['user123456789012345678', '20자 초과'],
     ['Uppercase', '대문자'],
     ['has space', '공백'],
     ['한글아이디', '한글'],
@@ -39,6 +40,12 @@ describe('회원가입 입력 검증', () => {
 
   it('비밀번호가 8자 미만이면 거부한다', () => {
     expect(withField({ password: 'short7c', passwordConfirm: 'short7c' }).password).toBeTruthy();
+  });
+
+  it('비밀번호가 20자를 초과하면 거부한다', () => {
+    const password = 'valid-password-1234567';
+    expect(password).toHaveLength(22);
+    expect(withField({ password, passwordConfirm: password }).password).toBeTruthy();
   });
 
   it('비밀번호에 공백이 있으면 거부한다', () => {

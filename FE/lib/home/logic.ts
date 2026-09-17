@@ -87,7 +87,7 @@ export function toCalendarEntries(
       title: n.title,
       at: n.scheduledAt as string,
       place: n.place,
-      href: null, // 공지 상세 화면이 아직 없다.
+    href: `/notices/${n.id}`,
     }));
 
   return [...fromPerformances, ...fromNotices].sort(
@@ -174,7 +174,7 @@ export function toSlides(
     caption: n.scheduledAt ? formatDateTime(n.scheduledAt) : formatDayLabel(n.createdAt),
     body: n.content,
     imageUrl: n.coverImageUrl,
-    href: null,
+    href: `/notices/${n.id}`,
   }));
   // 지난 공연은 다가오는 공연이 하나도 없을 때만 뒤에 덧붙인다.
   const fallback = performances.length === 0 ? past.map(toPerformanceSlide('PAST_PERFORMANCE')) : [];
@@ -192,9 +192,12 @@ export function slideLabel(kind: Slide['kind']): string {
  * 로그인 후 돌아갈 경로를 안전하게 고른다.
  * 내부 절대경로만 허용한다 — `//evil.com` 같은 프로토콜 상대 URL은 외부로 나가므로 막는다.
  */
-export function safeNext(next: string | null | undefined, fallback = '/feed'): string {
-  if (!next || !next.startsWith('/') || next.startsWith('//')) {
+export function safeNext(next: string | null | undefined, fallback = '/'): string {
+  if (!next || !next.startsWith('/') || next.startsWith('//') || next.includes('\\')) {
     return fallback;
   }
+  const base = 'https://attacca.invalid';
+  const parsed = new URL(next, base);
+  if (parsed.origin !== base) return fallback;
   return next;
 }

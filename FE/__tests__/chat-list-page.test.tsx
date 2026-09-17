@@ -29,6 +29,17 @@ describe('ChatListPage', () => {
     render(<ChatListPage />);
     expect(await screen.findByText('홍길동')).toBeInTheDocument();
   });
+  it('모바일에서도 제목과 새 채팅 액션을 접근 가능한 헤더로 제공', async () => {
+    render(<ChatListPage />);
+
+    const main = await screen.findByRole('main', { name: '채팅' });
+    expect(main).toHaveClass('px-4', 'sm:px-6');
+
+    const heading = within(main).getByRole('heading', { name: '채팅', level: 1 });
+    expect(heading.parentElement).toHaveClass('flex', 'items-start', 'justify-between');
+    expect(within(main).getByRole('group', { name: '새 대화 시작' })).toBeInTheDocument();
+    expect(within(main).getByRole('group', { name: '그룹 만들기' })).toBeInTheDocument();
+  });
   it('방 클릭 시 대화창으로 push', async () => {
     render(<ChatListPage />);
     fireEvent.click(await screen.findByText('홍길동'));

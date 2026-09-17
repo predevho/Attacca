@@ -147,9 +147,12 @@ export default function ChatRoomPage() {
     ?? '';
 
   return (
-    <main className="mx-auto flex h-[calc(100vh-2rem)] max-w-xl flex-col px-4 pt-4">
+    <main className="mx-auto flex min-h-[100dvh] w-full max-w-xl flex-col px-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-4">
       <div className="mb-2 flex items-center gap-2">
-        <button type="button" onClick={() => router.push('/chat')} className="text-sm text-ink-muted">← 채팅</button>
+        <button type="button" aria-label="채팅 목록으로 돌아가기" onClick={() => router.push('/chat')}
+          className="shrink-0 px-1 py-2 text-sm text-ink-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+          <span aria-hidden="true">←</span><span className="ml-1">채팅</span>
+        </button>
         <h1 className="font-semibold">{headerName}</h1>
         {/*
           초대·나가기는 GROUP 방에만 둔다. DIRECT에 사람을 더하면 1:1의 의미가 깨지고
@@ -183,7 +186,7 @@ export default function ChatRoomPage() {
       {actionError && <p role="alert" className="mb-2 text-sm text-danger">{actionError}</p>}
       {connError && <p className="mb-2 rounded bg-surface-muted px-3 py-1 text-xs text-warn">실시간 연결이 끊겼습니다. 재연결 중…</p>}
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         {olderCursor != null && (
           <div className="flex justify-center py-2">
             <button type="button" onClick={loadOlder} disabled={loadingOlder}

@@ -21,7 +21,7 @@ import PerformanceDetailPage from '@/app/performances/[id]/page';
 const perf = {
   id: 1, organizer: { id: 5, nickname: '주최자', verified: true }, title: '가을 리사이틀',
   description: '설명', performedAt: '2026-09-01T19:30:00', venue: '예술의전당', program: '프로그램',
-  ticketInfo: '전석 3만원', ticketUrl: 'http://t', posterImageUrl: null, createdAt: 'x', updatedAt: 'x',
+  ticketInfo: '전석 3만원', ticketUrl: 'http://t', posterImageUrl: 'http://poster', createdAt: 'x', updatedAt: 'x',
 };
 
 beforeEach(() => {
@@ -44,8 +44,8 @@ describe('PerformanceDetailPage', () => {
 
   it('주최자 본인이면 수정/삭제 버튼을 보여준다', async () => {
     render(<PerformanceDetailPage />);
-    expect(await screen.findByRole('button', { name: '수정' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '삭제' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: '공연 수정' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '공연 삭제' })).toBeInTheDocument();
   });
 
   it('주최자가 아니면 수정/삭제가 없다', async () => {
@@ -56,7 +56,7 @@ describe('PerformanceDetailPage', () => {
     });
     render(<PerformanceDetailPage />);
     await screen.findByText('가을 리사이틀');
-    expect(screen.queryByRole('button', { name: '수정' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '공연 수정' })).not.toBeInTheDocument();
   });
 
   it('없는 공연이면 안내를 보여준다', async () => {
@@ -73,5 +73,22 @@ describe('PerformanceDetailPage', () => {
     searchParams = new URLSearchParams('posterFailed=1');
     render(<PerformanceDetailPage />);
     expect(await screen.findByText(/포스터 업로드에 실패/)).toBeInTheDocument();
+  });
+
+  it('좁은 화면에서도 제목과 작업 영역을 별도 flex 행으로 구성한다', async () => {
+    render(<PerformanceDetailPage />);
+    await screen.findByText('가을 리사이틀');
+    expect(screen.getByRole('heading', { name: '가을 리사이틀' }).parentElement).toHaveClass('flex-col', 'sm:flex-row');
+  });
+
+  it('상세 콘텐츠에 접근성 라벨과 스캔 가능한 메타 구조를 제공한다', async () => {
+    render(<PerformanceDetailPage />);
+    await screen.findByRole('heading', { name: '가을 리사이틀' });
+
+    expect(screen.getByRole('main', { name: '가을 리사이틀 공연 상세' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '공연 목록으로 돌아가기' })).toHaveClass('focus-visible:outline-2');
+    expect(screen.getByRole('img', { name: '가을 리사이틀 포스터' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '티켓 예매하기 (새 창)' })).toHaveAttribute('target', '_blank');
+    expect(screen.getByRole('link', { name: '티켓 예매하기 (새 창)' })).toHaveClass('focus-visible:outline-2');
   });
 });

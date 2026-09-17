@@ -21,6 +21,10 @@
   --danger: #dc2626;
   --warn: #b45309;
   --success: #15803d;
+  --warning: #b45309;
+  --info: #2563eb;
+  --focus: #1d4ed8;
+  --on-danger: #fff7f7;
 
   /*
    * 사진 위에 글자를 얹기 위한 어둠막. 라이트/다크가 같은 값이다 —
@@ -55,7 +59,56 @@
     --danger: #f87171;
     --warn: #fbbf24;
     --success: #4ade80;
+    --warning: #fbbf24;
+    --info: #93c5fd;
+    --focus: #93c5fd;
+    --on-danger: #2a1111;
   }
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+}
+
+[data-theme='light'] {
+  --paper: #f5f0e6;
+  --surface: #faf7f0;
+  --surface-muted: #ede6d8;
+  --ink: #171717;
+  --ink-muted: #5c574e;
+  --ink-faint: #6b655b;
+  --line: #ded5c4;
+  --brand: #4e6e8e;
+  --brand-strong: #3d5a80;
+  --on-brand: #f5f0e6;
+  --header: #3d5a80;
+  --on-header: #f5f0e6;
+  --danger: #dc2626;
+  --warning: #b45309;
+  --info: #2563eb;
+  --focus: #1d4ed8;
+  --on-danger: #fff7f7;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+  --paper: #1a1917;
+  --surface: #232120;
+  --surface-muted: #2c2a28;
+  --ink: #ede7da;
+  --ink-muted: #a8a296;
+  --ink-faint: #989188;
+  --line: #34312e;
+  --brand: #8fb0ce;
+  --brand-strong: #a9c6de;
+  --on-brand: #16211c;
+  --header: #8fb0ce;
+  --on-header: #16211c;
+  --danger: #f87171;
+  --warning: #fbbf24;
+  --info: #93c5fd;
+  --focus: #93c5fd;
+  --on-danger: #2a1111;
 }
 
 @theme inline {
@@ -76,6 +129,10 @@
   --color-danger: var(--danger);
   --color-warn: var(--warn);
   --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --color-focus: var(--focus);
+  --color-on-danger: var(--on-danger);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

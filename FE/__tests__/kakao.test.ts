@@ -37,10 +37,6 @@ describe('exchangeCode', () => {
       .toEqual({
         code: 'auth-code',
         redirectUri: 'http://localhost:3000/api/bff/oauth/kakao/callback',
-        // 동의는 카카오로 보내기 전에 받아 두었다가 여기서 함께 넘긴다.
-        // BE는 신규 가입일 때만 요구한다(DOMAIN-MEMBER-STATUTE §3.4).
-        agreedTerms: false,
-        agreedPrivacy: false,
       });
   });
 });

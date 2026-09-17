@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 
 const push = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
@@ -70,10 +70,27 @@ describe('PerformancesPage', () => {
   it('scope 탭을 바꾸면 해당 scope로 다시 조회', async () => {
     render(<PerformancesPage />);
     await screen.findByText('공연A');
-    fireEvent.click(screen.getByRole('button', { name: '지난' }));
+    fireEvent.click(screen.getByRole('tab', { name: '지난' }));
     await waitFor(() => {
       const called = getBff.mock.calls.map((c) => String(c[0]));
       expect(called.some((u) => u.includes('scope=PAST'))).toBe(true);
     });
+  });
+
+  it('범위 선택은 접근 가능한 탭으로 동작하고 화살표 키로 이동한다', async () => {
+    render(<PerformancesPage />);
+    const tablist = screen.getByRole('tablist', { name: '공연 범위' });
+    const upcoming = within(tablist).getByRole('tab', { name: '다가오는' });
+    const past = within(tablist).getByRole('tab', { name: '지난' });
+
+    expect(upcoming).toHaveAttribute('aria-selected', 'true');
+    expect(upcoming).toHaveAttribute('tabindex', '0');
+    expect(past).toHaveAttribute('aria-selected', 'false');
+    expect(past).toHaveAttribute('tabindex', '-1');
+
+    fireEvent.keyDown(upcoming, { key: 'ArrowRight' });
+    expect(past).toHaveFocus();
+    expect(past).toHaveAttribute('aria-selected', 'true');
+    await waitFor(() => expect(getBff).toHaveBeenCalledWith('/api/bff/public/performances?scope=PAST&page=0'));
   });
 });

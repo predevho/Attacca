@@ -17,6 +17,8 @@ export type AdminNotice = {
   coverImageUrl: string | null;
   createdAt: string;
   updatedAt: string;
+  sourceName: string | null;
+  sourceUrl: string | null;
 };
 
 /** 등록·수정 폼 값. 모두 문자열로 쥐고 보낼 때만 변환한다(빈 칸 = null). */
@@ -28,6 +30,8 @@ export type NoticeFormValues = {
   scheduledAt: string;
   place: string;
   pinned: boolean;
+  sourceName?: string;
+  sourceUrl?: string;
 };
 
 /** Spring Page 중 FE가 쓰는 것만. */

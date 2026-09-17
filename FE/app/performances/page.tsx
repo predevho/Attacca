@@ -50,6 +50,12 @@ export default function PerformancesPage() {
   const [scope, setScope] = useState<PerformanceScope>('UPCOMING');
   const [canRegister, setCanRegister] = useState(false);
 
+  const moveScope = (index: number) => {
+    const next = (index + TABS.length) % TABS.length;
+    setScope(TABS[next].key);
+    document.getElementById(`performance-tab-${TABS[next].key}`)?.focus();
+  };
+
   // 신원 조회는 '등록' 버튼을 보일지만 정한다. 실패해도 로그인으로 보내지 않는다 —
   // 이 화면은 비로그인도 볼 수 있어야 하고, 예전에는 여기서 튕겨 나가
   // 공개 API가 있는데도 아무도 공연을 볼 수 없었다(2026-09-09).
@@ -71,16 +77,38 @@ export default function PerformancesPage() {
         )}
       </div>
 
-      <div className="mb-4 flex gap-2">
-        {TABS.map((t) => (
+      <div role="tablist" aria-label="공연 범위" className="mb-4 flex gap-2 border-b border-line">
+        {TABS.map((t, index) => (
           <button key={t.key} type="button" onClick={() => setScope(t.key)}
-            className={`rounded-full px-3 py-1 text-sm ${scope === t.key ? 'bg-brand text-on-brand' : 'bg-surface-muted text-ink-muted'}`}>
+            id={`performance-tab-${t.key}`}
+            role="tab"
+            aria-selected={scope === t.key}
+            aria-controls="performance-tabpanel"
+            tabIndex={scope === t.key ? 0 : -1}
+            onKeyDown={(event) => {
+              if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+                event.preventDefault();
+                moveScope(index + 1);
+              } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+                event.preventDefault();
+                moveScope(index - 1);
+              } else if (event.key === 'Home') {
+                event.preventDefault();
+                moveScope(0);
+              } else if (event.key === 'End') {
+                event.preventDefault();
+                moveScope(TABS.length - 1);
+              }
+            }}
+            className={`border-b-2 px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${scope === t.key ? 'border-brand font-semibold text-brand' : 'border-transparent text-ink-muted hover:border-line hover:text-ink'}`}>
             {t.label}
           </button>
         ))}
       </div>
 
-      <ScopeList key={scope} scope={scope} />
+      <div id="performance-tabpanel" role="tabpanel" aria-labelledby={`performance-tab-${scope}`}>
+        <ScopeList key={scope} scope={scope} />
+      </div>
     </main>
   );
 }

@@ -20,6 +20,11 @@ export default function SignupPage() {
   const [pending, setPending] = useState(false);
 
   const errors: SignupErrors = validateSignup(form);
+  const passwordConfirmStatus = form.passwordConfirm.length === 0
+    ? null
+    : form.password === form.passwordConfirm
+      ? { message: '비밀번호가 일치합니다.', className: 'text-success' }
+      : { message: '비밀번호가 일치하지 않습니다.', className: 'text-danger' };
 
   // 글자 칸과 체크박스는 다루는 값이 다르다(문자열 / 불리언). 키 타입을 나눠
   // 체크박스 키가 글자 칸 helper 로 새는 것을 타입 수준에서 막는다.
@@ -63,12 +68,13 @@ export default function SignupPage() {
     else setError(res.message ?? '회원가입에 실패했습니다.');
   }
 
-  function field(key: TextKey, label: string, type = 'text', hint?: string) {
+  function field(key: TextKey, label: string, type = 'text', hint?: string, maxLength?: number) {
     const msg = messageFor(key);
     return (
       <label className="flex flex-col gap-1 text-sm">{label}
         <input
           type={type}
+          maxLength={maxLength}
           value={form[key]}
           onChange={update(key)}
           onBlur={blur(key)}
@@ -84,7 +90,11 @@ export default function SignupPage() {
         />
         {msg
           ? <span id={`${key}-error`} role="alert" className="text-xs text-danger">{msg}</span>
-          : hint && <span className="text-xs text-muted">{hint}</span>}
+          : key === 'passwordConfirm' && passwordConfirmStatus
+            ? <span aria-live="polite" className={`text-xs ${passwordConfirmStatus.className}`}>
+                {passwordConfirmStatus.message}
+              </span>
+            : hint && <span className="text-xs text-muted">{hint}</span>}
       </label>
     );
   }
@@ -108,9 +118,9 @@ export default function SignupPage() {
     <main className="mx-auto my-16 max-w-sm px-4">
       <h1 className="mb-6 text-2xl font-bold">회원가입</h1>
       <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
-        {field('loginId', '아이디', 'text', '영문 소문자·숫자·밑줄 4~20자')}
-        {field('password', '비밀번호', 'password', '8자 이상 64자 이하')}
-        {field('passwordConfirm', '비밀번호 확인', 'password')}
+        {field('loginId', '아이디', 'text', '영문 소문자·숫자·밑줄 8~20자', 20)}
+        {field('password', '비밀번호', 'password', '8자 이상 20자 이하', 20)}
+        {field('passwordConfirm', '비밀번호 확인', 'password', undefined, 20)}
         {field('email', '이메일', 'email')}
         {field('nickname', '닉네임', 'text', '2~20자')}
 

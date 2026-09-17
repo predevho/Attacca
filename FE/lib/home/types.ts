@@ -26,6 +26,8 @@ export type PublicNotice = {
   place: string | null;
   coverImageUrl: string | null;
   createdAt: string;
+  sourceName: string | null;
+  sourceUrl: string | null;
 };
 
 export type PublicPerformance = {

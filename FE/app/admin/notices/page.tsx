@@ -26,6 +26,8 @@ export default function AdminNoticesPage() {
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     const r = await getBff<SpringPage<AdminNotice>>('/api/bff/admin/notices?page=0&size=50');
     if (r.ok) setNotices((r.data as SpringPage<AdminNotice>).content);
     else setError(r.message ?? '공지를 불러오지 못했습니다.');
@@ -73,7 +75,7 @@ export default function AdminNoticesPage() {
     return (
       <main className="mx-auto mt-8 max-w-xl px-4">
         <button type="button" onClick={() => setMode({ kind: 'list' })}
-          className="mb-4 text-sm text-ink-muted">← 공지 관리</button>
+          className="mb-4 rounded text-sm text-ink-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">← 공지 관리</button>
         <h1 className="mb-6 text-2xl font-bold">{editing ? '공지 수정' : '공지 등록'}</h1>
         {error && <p role="alert" className="mb-4 text-sm text-danger">{error}</p>}
         <NoticeForm
@@ -88,44 +90,57 @@ export default function AdminNoticesPage() {
   }
 
   return (
-    <main className="mx-auto mt-8 max-w-xl px-4">
-      <div className="mb-6 flex items-center justify-between">
+    <main className="mx-auto mt-8 max-w-4xl px-4 pb-12">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <h1 className="text-2xl font-bold">공지 관리</h1>
         <button type="button" onClick={() => { setError(null); setMode({ kind: 'new' }); }}
-          className="rounded bg-brand px-3 py-1.5 text-sm text-on-brand">공지 등록</button>
+          className="rounded bg-brand px-3 py-1.5 text-sm text-on-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">공지 등록</button>
       </div>
 
-      {error && <p role="alert" className="mb-4 text-sm text-danger">{error}</p>}
-      {loading && <p className="py-8 text-center text-sm text-ink-faint">불러오는 중...</p>}
+      {error && (
+        <div role="alert" className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded border border-line bg-surface-muted px-4 py-3 text-sm">
+          <span>{error}</span>
+          <button type="button" onClick={() => void load()}
+            className="rounded text-sm font-medium text-ink underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+            공지 목록 다시 시도
+          </button>
+        </div>
+      )}
+      {loading && <p role="status" aria-live="polite" className="py-8 text-center text-sm text-ink-faint">불러오는 중...</p>}
 
       {!loading && notices.length === 0 && (
-        <p className="py-8 text-center text-sm text-ink-faint">등록된 공지가 없습니다.</p>
+        <div className="border-y border-line py-12 text-center">
+          <p className="text-sm text-ink-faint">등록된 공지가 없습니다.</p>
+          <p className="mt-1 text-xs text-ink-faint">새 공지를 등록하면 이곳에서 관리할 수 있습니다.</p>
+        </div>
       )}
 
-      <ul className="flex flex-col gap-3">
+      <ul aria-label="공지 목록" className="flex flex-col divide-y divide-line border-y border-line">
         {notices.map((n) => (
-          <li key={n.id} className="rounded border border-line p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
+          <li key={n.id} className="grid min-w-0 gap-4 px-1 py-4 sm:px-2 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-1.5">
                 <span className="rounded-full bg-surface-muted px-2 py-0.5 text-xs text-ink-muted">
                   {noticeLabel(n.type)}
                 </span>
                 {n.pinned && (
-                  <span className="ml-1 rounded-full bg-brand px-2 py-0.5 text-xs text-on-brand">고정</span>
+                  <span className="rounded-full bg-brand px-2 py-0.5 text-xs text-on-brand">고정</span>
                 )}
-                <h2 className="mt-2 truncate font-medium">{n.title}</h2>
-                <p className="mt-1 text-xs text-ink-faint">
-                  {n.scheduledAt ? formatDateTime(n.scheduledAt) : '일시 없음 · 달력에 표시되지 않음'}
-                  {n.place && ` · ${n.place}`}
-                </p>
               </div>
-              <div className="flex shrink-0 gap-2">
-                <button type="button" onClick={() => { setError(null); setMode({ kind: 'edit', notice: n }); }}
-                  className="text-xs text-ink-faint">수정</button>
-                <button type="button" onClick={() => remove(n)}
-                  className="text-xs text-danger">삭제</button>
-              </div>
+              <h2 className="mt-2 break-words font-medium">{n.title}</h2>
+              <p className="mt-1 break-words text-xs text-ink-faint">
+                {n.scheduledAt ? formatDateTime(n.scheduledAt) : '일시 없음 · 달력에 표시되지 않음'}
+                {n.place && ` · ${n.place}`}
+              </p>
             </div>
+            <div role="group" aria-label="공지 작업" className="flex flex-wrap gap-x-4 gap-y-2 md:justify-end">
+                <button type="button" onClick={() => { setError(null); setMode({ kind: 'edit', notice: n }); }}
+                  aria-label={`"${n.title}" 수정`}
+                  className="rounded text-xs text-ink-faint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">수정</button>
+                <button type="button" onClick={() => remove(n)}
+                  aria-label={`"${n.title}" 삭제`}
+                  className="rounded text-xs text-danger focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">삭제</button>
+              </div>
           </li>
         ))}
       </ul>

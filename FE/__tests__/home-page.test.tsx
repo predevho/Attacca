@@ -118,6 +118,44 @@ describe('홈', () => {
     expect(await screen.findByRole('heading', { name: '인증 연주자 심사 절차 변경' })).toBeInTheDocument();
   });
 
+  it('히어로 일부 조회가 실패해도 성공한 소식과 재시도 상태를 보여준다', async () => {
+    getBff.mockImplementation(async (path: string) => {
+      if (path.includes('notices')) throw new Error('공지 조회 실패');
+      if (path.startsWith('/api/bff/public/performances')) return { ok: true, data: page([PERFORMANCE]), message: null };
+      if (path.startsWith('/api/bff/public/feed/posts')) return { ok: true, data: page([LATEST_POST]), message: null };
+      if (path.startsWith('/api/bff/public/calendar')) return { ok: true, data: CALENDAR, message: null };
+      return { ok: false, message: 'x' };
+    });
+
+    render(<HomePage />);
+
+    expect(await screen.findByRole('heading', { name: '한강 체임버 오케스트라 정기연주회' })).toBeInTheDocument();
+    expect(await screen.findByText('주요 소식을 불러오지 못했습니다.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '주요 소식 다시 시도' })).toBeInTheDocument();
+  });
+
+  it('히어로 다시 시도는 세 공개 조회를 재실행하고 오류 상태를 해제한다', async () => {
+    let heroAttempt = 0;
+    getBff.mockImplementation(async (path: string) => {
+      if (path.includes('notices') && heroAttempt === 0) throw new Error('공지 조회 실패');
+      if (path.startsWith('/api/bff/public/performances')) return { ok: true, data: page([PERFORMANCE]), message: null };
+      if (path.startsWith('/api/bff/public/notices')) return { ok: true, data: page([NOTICE]), message: null };
+      if (path.startsWith('/api/bff/public/feed/posts')) return { ok: true, data: page([LATEST_POST]), message: null };
+      if (path.startsWith('/api/bff/public/calendar')) return { ok: true, data: CALENDAR, message: null };
+      return { ok: false, message: 'x' };
+    });
+
+    render(<HomePage />);
+    const retry = await screen.findByRole('button', { name: '주요 소식 다시 시도' });
+    const before = getBff.mock.calls.length;
+    heroAttempt = 1;
+    fireEvent.click(retry);
+
+    await waitFor(() => expect(screen.queryByText('주요 소식을 불러오지 못했습니다.')).not.toBeInTheDocument());
+    expect(getBff.mock.calls.length).toBeGreaterThanOrEqual(before + 3);
+    expect(screen.getByText('인증 연주자 심사 절차 변경')).toBeInTheDocument();
+  });
+
   it('최신글을 보여주고 상세는 인증 경로로 링크한다', async () => {
     render(<HomePage />);
     const link = await screen.findByRole('link', { name: /첫 독주회 프로그램 조언 부탁드려요/ });
@@ -128,7 +166,7 @@ describe('홈', () => {
     render(<HomePage />);
     await screen.findByText(/첫 독주회 프로그램 조언 부탁드려요/);
 
-    fireEvent.click(screen.getByRole('button', { name: '인기글' }));
+    fireEvent.click(screen.getByRole('tab', { name: '인기글' }));
 
     expect(await screen.findByText(/무대 공포증 이렇게 넘겼습니다/)).toBeInTheDocument();
     expect(getBff.mock.calls.some((c) => String(c[0]).includes('sort=POPULAR'))).toBe(true);

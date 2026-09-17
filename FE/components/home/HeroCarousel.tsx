@@ -24,16 +24,28 @@ const ADVANCE_MS = 6000;
  */
 export function HeroCarousel({ slides }: { slides: Slide[] }) {
   const [index, setIndex] = useState(0);
-  // 사용자가 한 번이라도 직접 넘기면 자동 전환을 끈다. 읽는 중에 화면이 스스로
-  // 바뀌면 방해가 되고, 되돌리려면 다시 쫓아가야 한다. 주도권을 넘긴 뒤엔 돌려받지 않는다.
+  const [reducedMotion, setReducedMotion] = useState(false);
   const [autoPlay, setAutoPlay] = useState(true);
+  const [failedImages, setFailedImages] = useState<Set<number>>(() => new Set());
   const count = slides.length;
 
   useEffect(() => {
-    if (count <= 1 || !autoPlay) return;
+    if (typeof window.matchMedia !== 'function') return;
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => {
+      setReducedMotion(media.matches);
+      setAutoPlay(!media.matches);
+    };
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
+
+  useEffect(() => {
+    if (count <= 1 || !autoPlay || reducedMotion) return;
     const timer = setInterval(() => setIndex((i) => (i + 1) % count), ADVANCE_MS);
     return () => clearInterval(timer);
-  }, [count, autoPlay]);
+  }, [count, autoPlay, reducedMotion]);
 
   if (count === 0) return null;
   // 목록이 짧아지면(재조회 등) 인덱스가 범위를 벗어날 수 있다.
@@ -57,11 +69,16 @@ export function HeroCarousel({ slides }: { slides: Slide[] }) {
               aria-hidden={i !== active}
               className="relative h-full w-full shrink-0"
             >
-              {slide.imageUrl && (
+              {slide.imageUrl && !failedImages.has(slide.id) && (
                 <>
                   {/* 공개 홈은 외부 저장소 URL을 그대로 쓴다(next/image 도메인 설정 없이). */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={slide.imageUrl} alt="" className="h-full w-full object-cover" />
+                  <img
+                    src={slide.imageUrl}
+                    alt={`${slide.title} 이미지`}
+                    onError={() => setFailedImages((current) => new Set(current).add(slide.id))}
+                    className="h-full w-full object-cover"
+                  />
                   {/* 사진 아래쪽을 어둡게 깔아 글자를 읽게 한다. */}
                   {/*
                     글이 얹히는 아래쪽은 70% 이상으로 덮는다 — 순백 사진 위에서도 6.6:1이라
@@ -69,6 +86,11 @@ export function HeroCarousel({ slides }: { slides: Slide[] }) {
                   */}
                   <div className="absolute inset-0 bg-gradient-to-t from-scrim/90 via-scrim/70 to-transparent" />
                 </>
+              )}
+              {slide.imageUrl && failedImages.has(slide.id) && (
+                <div className="absolute inset-0 flex items-center justify-center bg-surface-muted p-6 text-center text-sm text-ink-muted">
+                  이미지를 불러오지 못했습니다.
+                </div>
               )}
               {/*
                 사진이 없으면 어둠막을 씌우지 않는다 — 씌우면 아무것도 없는 검은 덩어리가 되고
@@ -123,6 +145,15 @@ export function HeroCarousel({ slides }: { slides: Slide[] }) {
           <div className="absolute right-3 top-3 flex gap-2">
             <button
               type="button"
+              aria-label={autoPlay ? '자동재생 일시정지' : '자동재생 재개'}
+              aria-pressed={!autoPlay}
+              onClick={() => setAutoPlay((playing) => !playing)}
+              className="flex h-9 items-center justify-center rounded-full bg-scrim/55 px-3 text-sm text-on-scrim transition-colors hover:bg-scrim/85"
+            >
+              {autoPlay ? '일시정지' : '재생'}
+            </button>
+            <button
+              type="button"
               aria-label="이전 소식"
               onClick={() => goTo(active - 1)}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-scrim/55 text-xl text-on-scrim transition-colors hover:bg-scrim/85"
@@ -142,7 +173,11 @@ export function HeroCarousel({ slides }: { slides: Slide[] }) {
       </div>
 
       {count > 1 && (
-        <ul className="flex items-center justify-center gap-2 pt-4">
+        <>
+          <p aria-live="polite" className="sr-only">
+            {active + 1}번째 소식: {slides[active].title}. {autoPlay ? '자동재생 중' : '자동재생 일시정지'}
+          </p>
+          <ul className="flex items-center justify-center gap-2 pt-4">
           {slides.map((slide, i) => (
             <li key={`${slide.kind}-${slide.id}`}>
               <button
@@ -158,7 +193,8 @@ export function HeroCarousel({ slides }: { slides: Slide[] }) {
               />
             </li>
           ))}
-        </ul>
+          </ul>
+        </>
       )}
     </section>
   );
