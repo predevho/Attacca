@@ -113,16 +113,16 @@ export function Header() {
             aria-expanded={menuOpen}
             aria-controls="mobile-navigation"
             onClick={() => setMenuOpen((open) => !open)}
-            className="inline-flex size-8 items-center justify-center rounded border border-on-header/40 text-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus md:hidden"
+            className="inline-flex size-8 items-center justify-center rounded border border-line text-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus md:hidden"
           >
             <span aria-hidden="true">{menuOpen ? '×' : '☰'}</span>
           </button>
         </div>
         </div>
 
-        <div id="mobile-navigation" hidden={!menuOpen} className="mt-3 border-t border-on-header/20 pt-3 md:hidden">
+        <div id="mobile-navigation" hidden={!menuOpen} className="mt-3 border-t border-line pt-3 md:hidden">
           <ul className="grid gap-3 text-sm">{navLinks}</ul>
-          {me !== undefined && <div className="mt-3 flex flex-wrap gap-3 border-t border-on-header/20 pt-3 text-sm">{accountLinks}</div>}
+          {me !== undefined && <div className="mt-3 flex flex-wrap gap-3 border-t border-line pt-3 text-sm">{accountLinks}</div>}
         </div>
       </nav>
     </header>

@@ -100,7 +100,7 @@ export default function PerformancesPage() {
                 moveScope(TABS.length - 1);
               }
             }}
-            className={`border-b-2 px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${scope === t.key ? 'border-brand font-semibold text-brand' : 'border-transparent text-ink-muted hover:border-line hover:text-ink'}`}>
+            className={`border-b-2 border-line px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${scope === t.key ? 'border-brand font-semibold text-brand' : 'border-transparent text-ink-muted hover:border-line hover:text-ink'}`}>
             {t.label}
           </button>
         ))}
