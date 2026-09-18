@@ -15,18 +15,19 @@ import com.back.global.exception.BusinessException;
 import com.back.global.exception.ErrorCode;
 import com.back.global.storage.FileService;
 import com.back.global.storage.StoredFile;
+import com.back.global.security.token.TokenIssuer;
+import com.back.domain.member.dto.TokenPairResponse;
 import java.util.Set;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * 회원 프로필 서비스. 프로필은 가입 시 만들지 않고 첫 수정/업로드 때 생성한다(lazy upsert).
  * 파일은 FileService만 경유한다(FileStorage 직접 호출 금지).
  */
 @Service
-@RequiredArgsConstructor
 public class MemberProfileService {
 
     private static final String PROFILE_IMAGE_DIRECTORY = "profile";
@@ -38,6 +39,27 @@ public class MemberProfileService {
     // 서비스 계층으로만 협력하고 그 엔티티는 직접 참조하지 않는다(도메인 경계 유지).
     private final VerifiedPerformerService verifiedPerformerService;
     private final MemberConsentService consentService;
+    private final TokenIssuer tokenIssuer;
+
+    public MemberProfileService(MemberRepository memberRepository,
+            MemberProfileRepository memberProfileRepository, FileService fileService,
+            VerifiedPerformerService verifiedPerformerService, MemberConsentService consentService) {
+        this(memberRepository, memberProfileRepository, fileService, verifiedPerformerService,
+                consentService, null);
+    }
+
+    @Autowired
+    public MemberProfileService(MemberRepository memberRepository,
+            MemberProfileRepository memberProfileRepository, FileService fileService,
+            VerifiedPerformerService verifiedPerformerService, MemberConsentService consentService,
+            TokenIssuer tokenIssuer) {
+        this.memberRepository = memberRepository;
+        this.memberProfileRepository = memberProfileRepository;
+        this.fileService = fileService;
+        this.verifiedPerformerService = verifiedPerformerService;
+        this.consentService = consentService;
+        this.tokenIssuer = tokenIssuer;
+    }
 
     @Transactional(readOnly = true)
     public MemberIdentityResponse getMyIdentity(Long memberId) {
@@ -51,6 +73,24 @@ public class MemberProfileService {
     /** 인증 principal의 회원만 대상으로 닉네임을 부분 수정한다. 중복은 기존 회원 에러 코드를 유지한다. */
     @Transactional
     public MemberIdentityResponse updateNickname(Long memberId, UpdateNicknameRequest request) {
+        Member member = completeNickname(memberId, request);
+        boolean verified = verifiedPerformerService.isVerified(memberId);
+        return new MemberIdentityResponse(member.getId(), member.getNickname(), member.getRole(), verified);
+    }
+
+    @Transactional
+    public TokenPairResponse completeOnboarding(Long memberId, UpdateNicknameRequest request) {
+        Member current = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+        if (current.isOnboardingComplete()) {
+            throw new BusinessException(ErrorCode.INVALID_TOKEN_TYPE, "이미 완료된 온보딩 티켓입니다.");
+        }
+        Member member = completeNickname(memberId, request);
+        TokenIssuer.IssuedTokens tokens = tokenIssuer.issue(member.getId(), member.getRole());
+        return new TokenPairResponse(tokens.accessToken(), tokens.refreshToken());
+    }
+
+    private Member completeNickname(Long memberId, UpdateNicknameRequest request) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
         String nickname = request.nickname().trim();
@@ -63,8 +103,7 @@ public class MemberProfileService {
             member.completeOnboarding();
         }
         member.changeNickname(nickname);
-        return new MemberIdentityResponse(member.getId(), member.getNickname(), member.getRole(),
-                verifiedPerformerService.isVerified(memberId));
+        return member;
     }
 
     @Transactional(readOnly = true)

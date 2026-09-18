@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -48,6 +49,12 @@ public class MemberProfileController {
     public ApiResponse<MemberIdentityResponse> updateMyNickname(@AuthenticationPrincipal Long memberId,
             @Valid @RequestBody UpdateNicknameRequest request) {
         return ApiResponse.success(memberProfileService.updateNickname(memberId, request));
+    }
+
+    @PostMapping("/me/onboarding")
+    public ApiResponse<TokenPairResponse> completeOnboarding(@AuthenticationPrincipal Long memberId,
+            @Valid @RequestBody UpdateNicknameRequest request) {
+        return ApiResponse.success(memberProfileService.completeOnboarding(memberId, request));
     }
 
     @GetMapping("/me/profile")

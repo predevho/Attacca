@@ -11,10 +11,12 @@ import com.back.domain.member.repository.SocialAccountRepository;
 import com.back.global.exception.BusinessException;
 import com.back.global.exception.ErrorCode;
 import com.back.global.security.token.TokenIssuer;
+import com.back.global.security.jwt.JwtProvider;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * 소셜(OAuth2) 로그인. provider 인가코드를 검증(OAuthClient)해 얻은 유저정보로
@@ -27,15 +29,26 @@ public class MemberOAuthService {
     private final SocialAccountRepository socialAccountRepository;
     private final TokenIssuer tokenIssuer;
     private final List<OAuthClient> oauthClients;
+    private final JwtProvider jwtProvider;
 
     public MemberOAuthService(MemberRepository memberRepository,
                               SocialAccountRepository socialAccountRepository,
                               TokenIssuer tokenIssuer,
                               List<OAuthClient> oauthClients) {
+        this(memberRepository, socialAccountRepository, tokenIssuer, oauthClients, null);
+    }
+
+    @Autowired
+    public MemberOAuthService(MemberRepository memberRepository,
+                              SocialAccountRepository socialAccountRepository,
+                              TokenIssuer tokenIssuer,
+                              List<OAuthClient> oauthClients,
+                              JwtProvider jwtProvider) {
         this.memberRepository = memberRepository;
         this.socialAccountRepository = socialAccountRepository;
         this.tokenIssuer = tokenIssuer;
         this.oauthClients = oauthClients;
+        this.jwtProvider = jwtProvider;
     }
 
     @Transactional
@@ -51,8 +64,13 @@ public class MemberOAuthService {
             member = linkOrCreate(provider, info);
         }
 
+        if (!member.isOnboardingComplete()) {
+            String ticket = jwtProvider.createOnboardingTicket(member.getId(), member.getRole());
+            return new TokenPairResponse(null, null, true, ticket);
+        }
+
         TokenIssuer.IssuedTokens tokens = tokenIssuer.issue(member.getId(), member.getRole());
-        return new TokenPairResponse(tokens.accessToken(), tokens.refreshToken(), !member.isOnboardingComplete());
+        return new TokenPairResponse(tokens.accessToken(), tokens.refreshToken());
     }
 
     private OAuthClient resolveClient(OAuthProvider provider) {

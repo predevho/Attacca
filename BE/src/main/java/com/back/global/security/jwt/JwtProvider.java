@@ -21,6 +21,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class JwtProvider {
 
+    private static final long ONBOARDING_TICKET_EXPIRY = 10 * 60 * 1000L;
+
     private final SecretKey key;
     private final long accessTokenExpiry;
     private final long refreshTokenExpiry;
@@ -33,6 +35,10 @@ public class JwtProvider {
 
     public String createAccessToken(Long userId, Role role) {
         return createToken(userId, role, "access", accessTokenExpiry, null);
+    }
+
+    public String createOnboardingTicket(Long userId, Role role) {
+        return createToken(userId, role, "onboarding", ONBOARDING_TICKET_EXPIRY, null);
     }
 
     /**
@@ -79,6 +85,9 @@ public class JwtProvider {
         Long userId = Long.valueOf(claims.getSubject());
         String role = claims.get("role", String.class);
         List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(role));
-        return new UsernamePasswordAuthenticationToken(userId, null, authorities);
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(userId, null, authorities);
+        authentication.setDetails(claims.get("type", String.class));
+        return authentication;
     }
 }

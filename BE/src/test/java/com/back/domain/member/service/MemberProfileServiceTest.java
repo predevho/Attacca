@@ -19,6 +19,10 @@ import com.back.global.exception.ErrorCode;
 import com.back.global.storage.FileMetadataRepository;
 import com.back.global.storage.FileService;
 import com.back.global.storage.FileStorage;
+import com.back.global.security.jwt.JwtProperties;
+import com.back.global.security.jwt.JwtProvider;
+import com.back.global.security.token.InMemoryRefreshTokenStore;
+import com.back.global.security.token.TokenIssuer;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -54,8 +58,11 @@ class MemberProfileServiceTest {
         fileStorage = new FakeFileStorage();
         FileService fileService = new FileService(fileStorage, fileMetadataRepository);
         verifiedPerformerService = new VerifiedPerformerService(verificationApplicationRepository);
+        JwtProvider jwtProvider = new JwtProvider(new JwtProperties(
+                "test-secret-key-that-is-long-enough-for-hs256-0123456789", 1800000L, 1209600000L));
         service = new MemberProfileService(memberRepository, memberProfileRepository, fileService,
-                verifiedPerformerService, new MemberConsentService(memberConsentRepository));
+                verifiedPerformerService, new MemberConsentService(memberConsentRepository),
+                new TokenIssuer(jwtProvider, new InMemoryRefreshTokenStore()));
     }
 
     private Member savedMember(String suffix) {

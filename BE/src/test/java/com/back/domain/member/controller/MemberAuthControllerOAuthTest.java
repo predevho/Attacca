@@ -49,7 +49,7 @@ class MemberAuthControllerOAuthTest {
     }
 
     @Test
-    void kakaoLogin_newVerifiedUser_returns200WithTokens() throws Exception {
+    void kakaoLogin_newVerifiedUser_returnsOnboardingTicket() throws Exception {
         when(kakaoOAuthClient.fetch(any(), any()))
                 .thenReturn(new OAuthUserInfo("kakao-1", "new@attacca.com", true, "카카오유저"));
 
@@ -58,8 +58,9 @@ class MemberAuthControllerOAuthTest {
                         .content(json(new OAuthLoginRequest("auth-code", "https://app/cb"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
-                .andExpect(jsonPath("$.data.refreshToken").isNotEmpty())
+                .andExpect(jsonPath("$.data.accessToken").doesNotExist())
+                .andExpect(jsonPath("$.data.refreshToken").doesNotExist())
+                .andExpect(jsonPath("$.data.onboardingTicket").isNotEmpty())
                 .andExpect(jsonPath("$.data.isNewMember").value(true));
     }
 
@@ -86,19 +87,23 @@ class MemberAuthControllerOAuthTest {
                 .andExpect(status().isOk())
                 .andReturn();
         String accessToken = objectMapper.readTree(login.getResponse().getContentAsString())
-                .path("data").path("accessToken").asText();
+                .path("data").path("onboardingTicket").asText();
 
         mockMvc.perform(get("/api/feed/posts").header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.error.message").value("닉네임과 필수 약관 동의를 완료해 주세요."));
 
-        mockMvc.perform(patch("/api/members/me")
+        MvcResult complete = mockMvc.perform(post("/api/members/me/onboarding")
                         .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"nickname\":\"완료닉\",\"agreedTerms\":true,\"agreedPrivacy\":true}"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andReturn();
 
-        mockMvc.perform(get("/api/feed/posts").header("Authorization", "Bearer " + accessToken))
+        String normalAccessToken = objectMapper.readTree(complete.getResponse().getContentAsString())
+                .path("data").path("accessToken").asText();
+
+        mockMvc.perform(get("/api/feed/posts").header("Authorization", "Bearer " + normalAccessToken))
                 .andExpect(status().isOk());
     }
 }

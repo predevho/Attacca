@@ -100,14 +100,14 @@ describe('GET /api/bff/oauth/kakao/callback', () => {
   it('isNewMember=true → 토큰 쿠키 설정 후 닉네임 설정 화면으로 이동한다', async () => {
     jar['oauth_state'] = 'S';
     vi.stubGlobal('fetch', vi.fn(async () => beJson(
-      { success: true, data: { accessToken: 'A', refreshToken: 'R', isNewMember: true }, error: null }, 200)));
+      { success: true, data: { onboardingTicket: 'T', isNewMember: true }, error: null }, 200)));
     const { GET } = await import('@/app/api/bff/oauth/kakao/callback/route');
 
     const res = await GET(new Request('http://localhost:3000/api/bff/oauth/kakao/callback?code=c&state=S&next=%2Fchat'));
 
     expect(locationOf(res)).toBe('/signup/nickname?next=%2Fchat');
-    expect(jar['access_token']).toBe('A');
-    expect(jar['refresh_token']).toBe('R');
+    expect(jar['access_token']).toBe('T');
+    expect(jar['refresh_token']).toBeUndefined();
   });
 
   it('isNewMember=false → next 경로로 이동한다', async () => {

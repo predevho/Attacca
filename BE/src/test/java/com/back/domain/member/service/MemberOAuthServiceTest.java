@@ -44,17 +44,19 @@ class MemberOAuthServiceTest {
     @BeforeEach
     void setUp() {
         service = new MemberOAuthService(memberRepository, socialAccountRepository, tokenIssuer,
-                List.of(fakeClient));
+                List.of(fakeClient), jwtProvider);
     }
 
     @Test
-    void newSocialUser_isCreatedAndLoggedIn() {
+    void newSocialUser_receivesOnboardingTicketInsteadOfNormalTokens() {
         fakeClient.next = new OAuthUserInfo("kakao-1", "new@attacca.com", true, "카카오유저");
 
         TokenPairResponse tokens = service.oauthLogin(OAuthProvider.KAKAO, "code", "https://app/cb");
 
-        assertThat(tokens.accessToken()).isNotBlank();
+        assertThat(tokens.accessToken()).isNull();
+        assertThat(tokens.refreshToken()).isNull();
         assertThat(tokens.isNewMember()).isTrue();
+        assertThat(tokens.onboardingTicket()).isNotBlank();
         Member created = memberRepository.findByEmail("new@attacca.com").orElseThrow();
         assertThat(created.getLoginId()).isNull();
         assertThat(created.getPassword()).isNull();

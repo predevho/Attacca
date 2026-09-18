@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { verifyState, clearState, readNext, clearNext } from '@/lib/server/oauthState';
 import { exchangeCode } from '@/lib/server/kakao';
-import { setAuthCookies } from '@/lib/server/cookies';
+import { setAccessCookie, setAuthCookies } from '@/lib/server/cookies';
 import { redirectTo } from '@/lib/server/redirect';
 
 export async function GET(request: Request) {
@@ -27,11 +27,15 @@ export async function GET(request: Request) {
     return redirectTo('/login?error=oauth');
   }
 
-  const { accessToken, refreshToken, isNewMember } = res.data as {
-    accessToken: string; refreshToken: string; isNewMember?: boolean;
+  const { accessToken, refreshToken, isNewMember, onboardingTicket } = res.data as {
+    accessToken?: string; refreshToken?: string; isNewMember?: boolean; onboardingTicket?: string;
   };
-  setAuthCookies(store, accessToken, refreshToken);
   const destination = next && next.startsWith('/') && !next.startsWith('//') ? next : '/';
-  if (isNewMember) return redirectTo(`/signup/nickname?next=${encodeURIComponent(destination)}`);
+  if (isNewMember && onboardingTicket) {
+    setAccessCookie(store, onboardingTicket);
+    return redirectTo(`/signup/nickname?next=${encodeURIComponent(destination)}`);
+  }
+  if (!accessToken || !refreshToken) return redirectTo('/login?error=oauth');
+  setAuthCookies(store, accessToken, refreshToken);
   return redirectTo(destination);
 }

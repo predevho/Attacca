@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { authedBeFetch } from '@/lib/server/session';
-import { clearAuthCookies } from '@/lib/server/cookies';
+import { clearAuthCookies, setAuthCookies } from '@/lib/server/cookies';
 import { bffResultJson } from '@/lib/server/bffProxy';
 
 /**
@@ -18,9 +18,26 @@ export async function DELETE() {
 
 export async function PATCH(request: Request) {
   const body = await request.text();
-  return bffResultJson(await authedBeFetch(await cookies(), '/api/members/me', {
+  const store = await cookies();
+  const res = await authedBeFetch(store, '/api/members/me', {
     method: 'PATCH',
     headers: { 'content-type': 'application/json' },
     body,
-  }));
+  });
+  return bffResultJson(res);
+}
+
+export async function POST(request: Request) {
+  const body = await request.text();
+  const store = await cookies();
+  const res = await authedBeFetch(store, '/api/members/me/onboarding', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body,
+  });
+  if (res.ok) {
+    const tokens = res.data as { accessToken?: string; refreshToken?: string } | null;
+    if (tokens?.accessToken && tokens.refreshToken) setAuthCookies(store, tokens.accessToken, tokens.refreshToken);
+  }
+  return bffResultJson(res);
 }

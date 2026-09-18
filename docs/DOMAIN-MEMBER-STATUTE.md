@@ -74,7 +74,7 @@ com.back.domain.member
 
 * `POST /api/auth/signup` : 자체 회원가입. body `{loginId, password, email, nickname}` → `SignupResponse{id, loginId, email, nickname, role}`. 인증 없이 접근 가능해야 하므로 `/api/auth/**`(permit) 아래 둔다.
 * `POST /api/auth/login` : 자체 로그인. body `{loginId, password}` → `TokenPairResponse{accessToken, refreshToken}`.
-* `POST /api/auth/oauth/kakao` : 카카오 소셜 로그인. body `{code, redirectUri}` → `TokenPairResponse`. 프론트가 카카오에서 받은 1회용 인가코드를 전달하면 백엔드가 교환한다. 신규 생성 또는 온보딩 미완료 계정이면 `isNewMember: true`를 돌려 닉네임 설정으로 보낸다.
+* `POST /api/auth/oauth/kakao` : 카카오 소셜 로그인. body `{code, redirectUri}` → 기존 완료 회원은 `TokenPairResponse`, 신규 또는 온보딩 미완료 회원은 짧은 수명의 `onboardingTicket`과 `isNewMember: true`를 반환한다. 프론트가 카카오에서 받은 1회용 인가코드를 전달하면 백엔드가 교환한다.
 * 위치: `com.back.domain.member`(controller/service/repository/entity/dto/oauth). `Member.role`은 `global.security.Role` 재사용.
 * 에러코드는 전역 `ErrorCode`에 추가한다(도메인 전용 enum 분리는 보류): `EMAIL_ALREADY_EXISTS`(409-01), `NICKNAME_ALREADY_EXISTS`(409-02), `LOGIN_ID_ALREADY_EXISTS`(409-03), `LOGIN_FAILED`(401-07), `OAUTH_EMAIL_UNVERIFIED`(401-08), `OAUTH_PROVIDER_ERROR`(502-01).
 * 자체 로그인 실패는 아이디 부재/비밀번호 없음(소셜 전용)/불일치를 구분하지 않고 `LOGIN_FAILED`(401-07)로 응답한다(계정 존재 여부 노출 방지).
@@ -87,7 +87,7 @@ com.back.domain.member
   3. 없음 + 신규 → `Member.createSocial(email, nickname)` 생성(nickname 충돌 시 유니크 생성) + `SocialAccount` 연결. 이때 `onboardingComplete=false`이며 닉네임 설정 화면으로 보낸다.
   * **이메일 미검증/미제공 → `OAUTH_EMAIL_UNVERIFIED` 거절** (미검증 이메일 자동연결은 계정 탈취 벡터이므로 금지)
 * 카카오 `client-id`/`client-secret`은 env(`KAKAO_CLIENT_ID`/`KAKAO_CLIENT_SECRET`) 주입, 커밋 금지.
-* 두 방식(자체/소셜) 모두 동일한 `JwtProvider` access+refresh 발급으로 수렴한다.
+* 기존 완료 회원과 자체 로그인은 `JwtProvider` access+refresh 발급으로 수렴한다. 신규 소셜 회원은 먼저 `purpose=SOCIAL_ONBOARDING` 온보딩 티켓을 받고, 닉네임·필수 동의 완료 뒤 정식 토큰으로 교환한다.
 
 ### 3.2 프로필 API (구현 완료, 2026-07-15 — 모두 인증 필요, principal = JWT 회원 id)
 
@@ -141,7 +141,7 @@ CHAT이 1:1 대화를 시작할 때 상대를 고르려면 닉네임으로 사�
 * 종류는 둘이며 **둘 다 필수**다: `TERMS`(이용약관), `PRIVACY`(개인정보 수집·이용).
   선택 동의(마케팅 등)는 두지 않는다 — 보내는 것이 없으므로 받을 이유가 없다.
 * 버전은 문서 상단의 날짜 문자열(`2026-09-09`)이고 상수로 관리한다. 문서를 고치면 버전을 올린다.
-* **가입 완료 시 동의가 없으면 거절한다.** 자체 가입은 가입 요청에서, 신규 소셜 가입은 닉네임 설정 요청에서 둘 다 확인한다. `CONSENT_REQUIRED`(400-04).
+* **가입 완료 시 동의가 없으면 거절한다.** 자체 가입은 가입 요청에서, 신규 소셜 가입은 온보딩 티켓을 사용한 닉네임 설정 요청에서 둘 다 확인한다. `CONSENT_REQUIRED`(400-04).
 * 소셜 경로: 카카오 로그인 버튼은 즉시 인가를 시작한다. 신규 회원은 자동 생성 뒤 닉네임 설정으로 이동하며, 그 화면에서 필수 동의와 닉네임을 함께 제출해야 `onboardingComplete=true`가 된다. 완료 전 상태로 다시 카카오 로그인하면 `isNewMember: true`로 닉네임 설정을 재개한다. 완료 전에는 `GET`/`PATCH /api/members/me` 외의 인증 API를 서버 필터가 403으로 차단한다.
 * 기존 회원(이 규칙 도입 전 가입자)은 동의 이력이 없다. 소급해 만들지 않는다 —
   받지 않은 동의를 있었던 것처럼 기록하는 것이 더 나쁘다.

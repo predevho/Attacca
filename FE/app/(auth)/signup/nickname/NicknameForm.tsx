@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { patchBff } from '@/lib/api';
+import { postBff } from '@/lib/api';
 import { safeNext } from '@/lib/home/logic';
 
 export function NicknameForm({ next = null }: { next?: string | null }) {
@@ -21,7 +21,7 @@ export function NicknameForm({ next = null }: { next?: string | null }) {
     }
     setPending(true);
     setError(null);
-    const res = await patchBff('/api/bff/members/me', {
+    const res = await postBff('/api/bff/members/me', {
       nickname: nickname.trim(), agreedTerms, agreedPrivacy,
     });
     setPending(false);

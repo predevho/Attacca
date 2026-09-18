@@ -33,11 +33,14 @@ public class OnboardingCompletionFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof Long memberId
+        boolean onboardingTicket = authentication != null
+                && "onboarding".equals(authentication.getDetails());
+        boolean incompleteMember = authentication != null
+                && authentication.getPrincipal() instanceof Long memberId
                 && memberRepository.findById(memberId)
                 .map(member -> !member.isOnboardingComplete())
-                .orElse(false)
-                && !isOnboardingRequest(request)) {
+                .orElse(false);
+        if ((onboardingTicket || incompleteMember) && !isOnboardingRequest(request)) {
             response.setStatus(ErrorCode.FORBIDDEN.getStatus().value());
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
             response.setCharacterEncoding("UTF-8");
@@ -50,7 +53,8 @@ public class OnboardingCompletionFilter extends OncePerRequestFilter {
 
     private boolean isOnboardingRequest(HttpServletRequest request) {
         String path = request.getRequestURI();
-        return "/api/members/me".equals(path)
-                && ("GET".equals(request.getMethod()) || "PATCH".equals(request.getMethod()));
+        return ("/api/members/me".equals(path)
+                && ("GET".equals(request.getMethod()) || "PATCH".equals(request.getMethod())))
+                || ("/api/members/me/onboarding".equals(path) && "POST".equals(request.getMethod()));
     }
 }
