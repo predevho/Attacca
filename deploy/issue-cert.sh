@@ -47,7 +47,7 @@ if [ "$here" != "$resolved" ]; then
   exit 1
 fi
 
-# www 도 같은 서버를 가리키면 함께 받는다. 나중에 추가하려면 재발급인데
+# www와 api도 같은 서버를 가리키면 함께 받는다. 나중에 추가하려면 재발급인데
 # 진짜 발급은 도메인당 주 5회 제한이라 처음에 한 번에 받는 편이 낫다.
 DOMAINS=("$SERVER_NAME")
 www_resolved=$(getent hosts "www.$SERVER_NAME" | awk '{print $1}' | head -1)
@@ -56,6 +56,14 @@ if [ "$www_resolved" = "$here" ]; then
   echo "  www.$SERVER_NAME 도 이 서버를 가리킨다 — 함께 발급한다"
 else
   echo "  www.$SERVER_NAME 는 건너뛴다(가리키는 곳: ${www_resolved:-없음})"
+fi
+
+api_resolved=$(getent hosts "api.$SERVER_NAME" | awk '{print $1}' | head -1)
+if [ "$api_resolved" = "$here" ]; then
+  DOMAINS+=("api.$SERVER_NAME")
+  echo "  api.$SERVER_NAME 도 이 서버를 가리킨다 — 함께 발급한다"
+else
+  echo "  api.$SERVER_NAME 는 건너뛴다(가리키는 곳: ${api_resolved:-없음})"
 fi
 
 # --- 2. 챌린지 경로가 실제로 서빙되는지 ---------------------------------------
