@@ -88,6 +88,7 @@ d_args=()
 for d in "${DOMAINS[@]}"; do d_args+=(-d "$d"); done
 ./deploy/dc.sh --profile tools run --rm certbot certonly \
   --webroot -w /var/www/certbot \
+  --expand \
   "${d_args[@]}" \
   --email "$CERTBOT_EMAIL" \
   --agree-tos --no-eff-email --non-interactive \
