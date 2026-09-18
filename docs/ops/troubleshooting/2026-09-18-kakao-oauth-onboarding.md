@@ -58,3 +58,29 @@ BusinessException: code=CONSENT_REQUIRED
 - `POST /api/members/me/onboarding`이 닉네임과 필수 동의를 한 트랜잭션으로 저장하고 정식 토큰 쌍을 발급한다. 이미 완료된 회원의 재호출은 `INVALID_TOKEN_TYPE`으로 거절한다.
 - FE 콜백은 티켓을 access 쿠키에 임시 저장하고 `/signup/nickname`으로 이동한다. 온보딩 BFF는 완료 응답의 정식 토큰을 httpOnly access/refresh 쿠키로 교체한다.
 - 기존 `PATCH /api/members/me`는 기존 신원 응답 계약을 유지해 일반 프로필 수정 흐름의 호환성을 보존한다.
+
+## 인프라 전환 후 회귀 검증
+
+Terraform state를 원격 S3 backend로 전환하고 기존 운영 자원 6개를 import한 뒤, 다음 검증을 다시 수행했다.
+
+| 영역 | 명령 | 결과 |
+| --- | --- | --- |
+| BE | `./gradlew test` | 통과 |
+| FE 타입 | `npm run typecheck` | 통과 |
+| FE lint | `npm run lint` | 오류 0건, 경고 5건 |
+| FE 단위 테스트 | `npm test` | 94개 파일, 554개 테스트 통과 |
+| 색상 토큰 | `npm run check:colors` | 통과 |
+| FE production build | `npm run build` | 통과 |
+
+lint의 5개 경고는 `ImportItemList.tsx`, `PerformanceCard.tsx` 등의 일반 `<img>` 사용에 대한
+Next.js 최적화 권고이며, 이번 OAuth·인프라 변경으로 새로 발생한 오류는 아니다. 후속 작업에서
+이미지 최적화 비용과 외부 이미지 loader 정책을 검토한다.
+
+Terraform 검증도 다음 기준을 통과했다.
+
+- state bucket: 버전 관리, 퍼블릭 접근 차단, AES256 암호화 확인
+- production import: `6 imported, 0 added, 0 changed, 0 destroyed`
+- import 후 plan: `No changes`
+
+환경변수는 운영 결정에 따라 EC2 SSH 접속 후 서버의 `.env.prod`에 직접 주입·변경하며,
+Git 저장소·Docker 이미지·GitHub Actions 로그에는 비밀값을 넣지 않는다.

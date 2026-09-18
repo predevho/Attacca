@@ -57,6 +57,26 @@ main() {
   # --- 2. 이미지 받기 -------------------------------------------------------
   $DC pull --quiet 2>&1 | grep -v '^$' || true
 
+  # CI가 기록한 커밋 라벨을 배포 전 확인한다. BE와 FE가 서로 다른 커밋이면
+  # API 계약이 어긋날 수 있으므로 컨테이너를 교체하지 않는다.
+  local be_ref fe_ref be_revision fe_revision
+  be_ref=$($DC config --images | grep 'attacca-be:' | head -1)
+  fe_ref=$($DC config --images | grep 'attacca-fe:' | head -1)
+  be_revision=$(docker image inspect "$be_ref" \
+    -f '{{ index .Config.Labels "org.opencontainers.image.revision" }}' 2>/dev/null || true)
+  fe_revision=$(docker image inspect "$fe_ref" \
+    -f '{{ index .Config.Labels "org.opencontainers.image.revision" }}' 2>/dev/null || true)
+  if [ -z "$be_revision" ] || [ -z "$fe_revision" ]; then
+    echo "경고: 이미지 커밋 라벨이 없어 배포를 중단한다. CI 이미지 재생성을 기다릴 것."
+    exit 1
+  fi
+  if [ "$be_revision" != "$fe_revision" ]; then
+    echo "경고: BE/FE 이미지 커밋이 다르다(be=$be_revision fe=$fe_revision)."
+    echo "경고: 두 이미지가 같은 커밋으로 생성된 뒤 다시 시도할 것."
+    exit 1
+  fi
+  echo "이미지 커밋 확인: $be_revision"
+
   # --- 3. 배포가 필요한가 ---------------------------------------------------
   local drifted
   drifted=$(drifted_services "$DC")
@@ -114,13 +134,18 @@ main() {
   # 29GB 디스크가 찬다.
   docker image prune -f >/dev/null
 
-  # 위 prune은 **태그 없는** 이미지만 지운다. 롤백할 때 받아 둔 `:<sha>` 이미지는
-  # 태그가 있어 남으므로, 롤백을 할 때마다 274MB짜리가 하나씩 영구히 쌓인다.
-  # 쓰이지 않는 attacca 이미지 중 :latest 가 아닌 것을 정리한다.
-  # 사용 중이면 docker가 거부하므로(롤백해 둔 상태) 그대로 남는다 — 그게 맞다.
-  docker images --format '{{.Repository}}:{{.Tag}}' \
-    | grep -E '^ghcr\.io/.*/attacca-(be|fe):' | grep -v ':latest$' \
-    | while read -r img; do docker rmi "$img" >/dev/null 2>&1 || true; done
+  # 태그가 있는 SHA 이미지도 무제한으로 쌓이지 않게, 사용하지 않는 이미지 중
+  # 7일보다 오래된 것만 정리한다. 현재 실행 중인 이미지와 최근 롤백 이미지는
+  # 보존하고, 오래된 이미지는 GHCR에서 다시 pull할 수 있다.
+  docker image prune -a -f --filter 'until=168h' >/dev/null
+
+  # Docker가 저장된 파일시스템의 여유 공간이 4GB 미만이면 다음 배포 전에
+  # 운영자가 확인할 수 있도록 경고한다. 자동 삭제로 운영 데이터를 훼손하지 않는다.
+  local available_kb
+  available_kb=$(df -Pk /var/lib/docker | awk 'NR == 2 { print $4 }')
+  if [ "${available_kb:-0}" -lt 4194304 ]; then
+    echo "경고: /var/lib/docker 여유 공간이 4GB 미만이다(${available_kb:-0}KB)."
+  fi
 
   echo "반영 완료: $(docker inspect --format '{{.Config.Image}}' "$be_cid")"
 }

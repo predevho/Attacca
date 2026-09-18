@@ -123,6 +123,10 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/attacca-${{ matrix.name }}:latest
             ghcr.io/${{ github.repository_owner }}/attacca-${{ matrix.name }}:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.title=attacca-${{ matrix.name }}
           # NEXT_PUBLIC_*은 번들에 박히므로 굽는 시점에 넣어야 한다. BE는 이 값을 무시한다.
           # 접속 주소가 바뀌면 저장소 Variables의 NEXT_PUBLIC_BE_WS_URL을 고칠 것.
           build-args: |

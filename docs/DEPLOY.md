@@ -377,10 +377,11 @@ sudo systemctl disable --now attacca-update.timer   # 자동 배포 중단
   컨테이너는 영영 옛 파일을 본다. `update.sh`가 컨테이너를 재생성하는 이유다.
   손으로 고칠 때도 `./deploy/dc.sh up -d --force-recreate nginx`를 쓸 것.
 * **이미지는 세 군데에 쌓인다.**
-  * **EC2 도커 이미지** — 배포마다 `update.sh`가 정리한다. 태그 없는 것은
-    `prune -f`로, 롤백 때 받아 둔 `:<sha>` 이미지는 이름으로 찾아 지운다
-    (`prune -f`는 태그가 있으면 안 지우므로 롤백마다 274MB씩 쌓였다).
-    사용 중인 이미지는 docker가 거부하므로 롤백해 둔 상태는 보존된다.
+  * **EC2 도커 이미지** — 배포마다 `update.sh`가 정리한다. 태그 없는 이미지와
+    사용하지 않는 7일 초과 이미지만 `docker image prune -a`로 지운다. 현재 실행 중인
+    이미지와 최근 롤백 이미지는 보존되며, Docker 저장 영역이 4GB 미만이면 경고한다.
+    과거에는 `latest`가 아닌 SHA 이미지를 전부 삭제하는 로직이 있어 롤백 보존 주석과
+    실제 동작이 달랐고, 이번에 7일 기준으로 수정했다.
   * **GHCR** — 커밋마다 `:<sha>` 태그가 생긴다. CI가 최근 10개만 남기고 지운다.
   * **업로드 파일**(`be-uploads` 볼륨) — **정리 장치가 없다.** 29GB 디스크에
     무한히 쌓이며, 지우는 기능도 용량 제한도 없다. 지금은 0건이라 문제가 아니지만
@@ -412,6 +413,34 @@ sudo systemctl disable --now attacca-update.timer   # 자동 배포 중단
   종료한다. 마이그레이션이 이미 돌았을 수 있어서 이미지만 되돌리는 것이 오히려
   위험하기 때문이다. 다만 **반쯤 적용된 상태는 방치하지 않는다** — 다음 실행이
   "돌고 있는 컨테이너가 제 이미지를 쓰는가"를 보고 다시 시도한다.
+
+* **이미지 용량 가드레일** — EC2 디스크는 약 29GB이므로 이미지·Docker 캐시·업로드
+  볼륨이 함께 증가하면 디스크 부족으로 배포가 실패할 수 있다. 확인 명령은 다음과 같다.
+
+  ```bash
+  df -h /var/lib/docker
+  docker system df
+  docker images --format '{{.Repository}}:{{.Tag}}\t{{.Size}}'
+  ```
+
+  업로드 파일(`be-uploads`)은 이미지 정리 대상이 아니므로 별도의 보존·S3 전환 정책이
+  필요하다.
+
+* **이미지 식별자** — CI는 BE/FE 이미지에 커밋 SHA 태그와 함께
+  `org.opencontainers.image.revision` 라벨을 기록한다. 운영에서 `latest`를 사용하더라도
+  실제 컨테이너 이미지의 커밋을 `docker inspect`로 확인할 수 있다. `update.sh`는 pull 뒤
+  BE와 FE 라벨이 모두 있고 서로 같은지 확인한 뒤에만 컨테이너를 교체한다. 기존 라벨 없는
+  이미지는 새 CI 이미지가 생성될 때까지 배포를 중단하지만, 이미 실행 중인 컨테이너는 유지한다.
+
+  ```bash
+  docker inspect -f '{{ index .Config.Labels "org.opencontainers.image.revision" }}' \
+    "$(docker compose -f docker-compose.prod.yml ps -q be)"
+  ```
+
+* **런타임 환경변수 운영 결정(2026-09-18)** — DB 자격증명·JWT·OAuth secret 등은
+  계속 EC2에 SSH 접속해 서버의 `.env.prod`에 직접 주입·변경한다. Git 저장소·Docker
+  이미지·GitHub Actions 로그에는 넣지 않는다. `NEXT_PUBLIC_*`처럼 브라우저 번들에
+  들어가는 값은 비밀값으로 취급하지 않는다.
 
 ---
 

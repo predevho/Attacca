@@ -1,0 +1,5 @@
+bucket       = "REPLACE_WITH_THE_BOOTSTRAPPED_STATE_BUCKET"
+key          = "attacca/production/terraform.tfstate"
+region       = "ap-northeast-2"
+profile      = "attacca-terraform"
+use_lockfile = true
