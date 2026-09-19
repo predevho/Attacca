@@ -48,7 +48,7 @@ describe('ChatRoomPage', () => {
     mockOk();
     render(<ChatRoomPage />);
     expect(await screen.findByRole('button', { name: '채팅 목록으로 돌아가기' })).toBeInTheDocument();
-    expect(screen.getByRole('main')).toHaveClass('flex-1', 'min-h-0');
+    expect(screen.getByRole('main')).toHaveClass('h-[calc(100dvh-3.5rem)]', 'min-h-0');
   });
 
   it('수신 메시지를 append', async () => {

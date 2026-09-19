@@ -82,6 +82,16 @@ describe('MessageComposer', () => {
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(onSend).toHaveBeenCalledWith('안녕');
   });
+  it('한글 조합 중 Enter는 전송하지 않는다', () => {
+    const onSend = vi.fn();
+    render(<MessageComposer onSend={onSend} />);
+    const input = screen.getByLabelText('메시지 입력');
+    fireEvent.change(input, { target: { value: '중복' } });
+
+    fireEvent.keyDown(input, { key: 'Enter', isComposing: true });
+
+    expect(onSend).not.toHaveBeenCalled();
+  });
   it('disabled면 전송 버튼 비활성 + onSend 미호출', () => {
     const onSend = vi.fn();
     render(<MessageComposer onSend={onSend} disabled />);

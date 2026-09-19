@@ -14,6 +14,9 @@ export function MessageComposer({ onSend, disabled = false }: { onSend: (content
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    // 한글 IME 조합 중 Enter는 마지막 글자를 확정하는 키다. 이때 전송하면
+    // 확정된 마지막 글자가 입력창에 남아 다음 전송에서 따로 보내질 수 있다.
+    if (e.nativeEvent.isComposing || e.key === 'Process') return;
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
   }
 
