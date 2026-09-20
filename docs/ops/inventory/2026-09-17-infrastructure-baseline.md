@@ -1,6 +1,6 @@
 # 2026-09-17 인프라 기준선
 
-> 수집 시각: 2026-09-17 KST
+> 수집 시각: 2026-09-18 KST
 >
 > 상태: **수집 진행 중. AWS 호출자와 실행 중 EC2 인스턴스는 확인했고, 나머지 import 식별자는 읽기 전용으로 수집한다.**
 
@@ -55,7 +55,8 @@ instance의 root block device로 함께 관리해야 하므로 별도 EBS resour
 | endpoint | `attacca-db.crc8q20oqyb9.ap-northeast-2.rds.amazonaws.com:3306` |
 | storage | `gp2`, 20 GiB, 암호화 켜짐, Multi-AZ 꺼짐, public access 꺼짐 |
 | 보안 그룹 | `sg-0452642da9fdafe45` (`attacca-rds-sg`) |
-| 자동 백업 | 보존 1일, 최근 `rds:attacca-db-2026-09-16-16-08` (2026-09-16 16:08 UTC, `available`) |
+| 자동 백업 | 보존 1일 |
+| 수동 스냅샷 | `versionupbeforesnapshot` (2026-09-13 11:39 UTC, 20 GiB, 암호화 켜짐, `available`, customer managed KMS key) |
 | 기본 그룹 | DB subnet group `default-vpc-0da3998132b39cea4`, parameter group `default.mysql8.4`, option group `default:mysql-8-4` |
 | 보호 설정 | deletion protection 꺼짐, snapshot 태그 복사 켜짐 |
 
@@ -108,4 +109,5 @@ S3에는 `pokade-storage`만 있고 Attacca state용 버킷은 없다. `infra/bo
 
 1. Vercel 프로젝트·도메인 소유권은 아직 이 기준선에서 확인하지 못했다. Vercel 사전 검증 단계에서 확인한다.
 2. Terraform state backend는 Attacca 전용 S3 버킷을 bootstrap으로 만들기 전, 버킷명과 IAM 권한을 계획에서 검토한다.
-3. 이 기준선은 AWS 식별자 수집을 완료했다. Terraform 코드, import block, AWS 변경, DNS 변경은 단계 1 계획을 검토한 뒤에만 만든다.
+3. IAM Identity Center 인스턴스는 운영 account에서 `ACTIVE`다. Terraform 전용 permission set과 named profile을 만들기 전에는 현재 장기 관리자 키로 Terraform을 실행하지 않는다.
+4. 이 기준선은 AWS 식별자 수집을 완료했다. Terraform 코드, import block, AWS 변경, DNS 변경은 단계 1 계획을 검토한 뒤에만 만든다.

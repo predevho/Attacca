@@ -452,3 +452,48 @@ sudo systemctl disable --now attacca-update.timer   # 자동 배포 중단
 - **DB 백업 정책** — RDS 자동 백업 보존 기간 확인
 - **무중단 배포** — 컨테이너 1벌이라 배포 중 약 30초 끊긴다. 블루-그린은 채팅의 Redis 릴레이 선행
 - **자동 롤백** — 지금은 헬스체크 실패 시 경고만. 마이그레이션이 이미 돌았을 수 있어 판단이 필요하다
+# 배포 완료 기준
+
+인프라 전환 완료로 판단하려면 기능 동작뿐 아니라 배포 중 서비스 연속성도 확인한다.
+
+- Terraform `plan`이 의도하지 않은 변경 없이 종료된다.
+- Vercel FE와 EC2 BE의 REST API, 카카오 OAuth, WebSocket 연결이 정상이다.
+- BE 배포 중 기존 요청이 실패하지 않거나 허용된 재시도 범위 안에서 복구된다.
+- WebSocket 클라이언트가 배포 중 끊겨도 자동 재연결한다.
+- 배포 전후 헬스체크와 핵심 API smoke test가 통과한다.
+
+무중단 배포 검증은 FE 제거 이후 최종 운영 전환 단계에서 수행하며, 검증 전에는 기존 FE 컨테이너를 삭제하지 않는다.
+
+## Vercel 운영 전환 관문 (2026-09-19)
+
+`staging.attacca.site`에서 카카오 OAuth, Next BFF, `https://api.attacca.site/api/**`,
+`wss://api.attacca.site/ws`와 채팅 송수신을 확인했다. 이는 Vercel 사전 배포 검증의 통과 기록이며,
+운영 apex 전환이나 EC2 FE 제거를 뜻하지는 않는다. 운영 전환은
+`docs/superpowers/plans/2026-09-19-vercel-production-cutover.md`의 DNS 전환·롤백·관찰 기준을
+충족하고 사용자가 전환 시점을 승인한 뒤에만 실행한다.
+
+Vercel Production에 `attacca.site`와 `www.attacca.site`를 연결한 뒤 표시된 가비아 DNS 값은 다음과
+같다. `api.attacca.site`와 `staging.attacca.site` 레코드는 이 전환에서 변경하지 않는다.
+
+| 도메인 | 타입 | 호스트 | 값 |
+|---|---|---|---|
+| `attacca.site` | A | `@` | `216.198.79.1` |
+| `www.attacca.site` | CNAME | `www` | `335cd7f1e6a8d4bc.vercel-dns-017.com.` |
+
+2026-09-19 사용자 승인으로 가비아에 위 레코드를 저장했다. 저장 직후 공개 DNS 조회에서 apex는
+`216.198.79.1`, `www`는 위 CNAME, `api`는 기존 `3.39.184.71`, `staging`은 기존 CNAME으로
+확인됐다. Vercel Domains의 `Valid Configuration`과 운영 HTTPS smoke를 확인하기 전에는 EC2 FE
+제거를 시작하지 않는다.
+
+Vercel Domains 화면에서 `attacca.site`, `www.attacca.site`, `staging.attacca.site`, 기본 Vercel
+도메인이 모두 `Valid Configuration`으로 확인됐다. 이제 운영 도메인 기능 smoke와 rollback 관찰이
+남았으며, 이 과정에서도 EC2 FE는 유지한다.
+
+2026-09-20 사용자는 운영 도메인에서 홈 표시, 카카오 로그인, 강제 새로고침 후 세션 유지와 보호
+데이터 동선이 정상이라고 확인했다. 이 결과는 FE 전환 smoke 통과로 기록하되, EC2 FE 제거의 근거는
+아니다. rollback 관찰 기간과 절차 점검이 선행돼야 한다.
+
+같은 날 EC2에서 `attacca-fe-1`이 `Up 19 hours`와 `3000/tcp` 상태로 유지되는 것을 확인했다.
+이 컨테이너는 rollback 준비 상태이며, 운영 문제가 없더라도 별도 승인 전 제거하지 않는다.
+
+같은 날 현재 Production이 아닌 이전 `Ready` deployment의 Vercel 메뉴에서 `Promote`가 활성화된 것을 확인했다. 실제 Promote는 실행하지 않았다. Vercel 장애 시 해당 deployment를 Promote하고, DNS 장애 시에만 가비아의 `@`와 `www`를 각각 `A -> 3.39.184.71`로 되돌린다. `api` 레코드는 이 FE rollback에서 변경하지 않는다.

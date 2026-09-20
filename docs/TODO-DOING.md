@@ -21,5 +21,16 @@
   * 결정: 기존 Paid Plan account의 서울 운영 자원을 유지하고 비용 가드레일을 적용한다. 새 Free Plan project는 서울 리전 이전 대상에서 제외했으며, 이때 만든 `migration-operator` IAM user도 삭제했다. 새 Advanced account로의 계정 간 이전은 별도 사용자 요청과 마이그레이션 계획이 있을 때만 재개한다.
   * 2026-09-18 비용 가드레일 적용: 월 전체 비용 예산 `$40`, 실제 비용 50%·100% 및 예상 비용 75% 이메일 알림을 생성했다. 기존 서비스별 비용 이상 탐지 구독은 예상 추가 지출 `$10` 및 40% 초과 조건의 일일 이메일 요약으로 조정했다. 알림은 청구 데이터 지연이 있으므로 절대 결제 상한선이 아니다.
   * Terraform 실행 주체 준비 완료: IAM Identity Center `AttaccaTerraformOperator` permission set과 `predevho-terraform` 사용자를 운영 account에 할당했고, 로컬 `attacca-terraform` SSO profile의 임시 역할 STS 인증을 확인했다. 기존 `default` 장기 키는 SSO 기반 작업이 안정화될 때까지 유지한다.
-  * 2026-09-18 Terraform 안전망 완료: `infra/bootstrap`으로 계정 전용 S3 state bucket을 생성하고 버전 관리·퍼블릭 접근 차단·AES256 암호화·`prevent_destroy`를 확인했다. `infra/production`을 원격 S3 backend에 연결하고 Attacca EC2, EIP/association, 보안 그룹 2개, RDS를 import했다. 적용 결과 `6 imported, 0 added, 0 changed, 0 destroyed`, 후속 `terraform plan`도 `No changes`였다.
-  * 다음 단계: API subdomain·Nginx 분리 설계와 읽기 전용 DNS/서버 기준선 확인 후, 승인된 범위에서 `api.attacca.site`와 Vercel FE 사전 배포를 진행한다.
+  * 2026-09-18 Terraform state 안전망 완료: `attacca-terraform-state-530310463238`을 생성하고 버전 관리·퍼블릭 접근 차단·AES256 암호화를 확인했다. production을 원격 S3 backend에 연결한 뒤 EC2, EIP/association, 보안 그룹 2개, RDS를 import했고, 결과는 `6 imported, 0 added, 0 changed, 0 destroyed`, 후속 plan은 `No changes`였다.
+  * 2026-09-18 이미지 용량 위험 기록: 약 29GB EC2 디스크에서 GHCR SHA 이미지, Docker 캐시, `be-uploads` 볼륨이 함께 증가할 수 있다. `update.sh`는 사용하지 않는 7일 초과 이미지만 정리하고 4GB 미만 여유 공간을 경고하도록 수정했으며, 업로드 볼륨은 별도 보존·S3 전환 정책이 필요하다.
+  * 2026-09-18 운영 결정: 런타임 환경변수는 EC2 SSH 접속 후 서버 `.env.prod`에 직접 주입·변경한다. 인프라 작업 후 BE 테스트, FE 타입체크·lint·테스트·빌드, 운영 스모크 검증을 수행하고 결과와 트러블슈팅을 문서에 기록한다.
+  * 2026-09-18 배포 게이트 강화: CI가 이미지에 커밋 SHA 라벨을 기록하고, `update.sh`가 pull 후 BE/FE 라벨 존재 및 동일 커밋 여부를 확인한 뒤 컨테이너를 교체하도록 했다. 기존 라벨 없는 이미지는 새 CI 이미지가 생성될 때까지 교체하지 않는다.
+  * 2026-09-19 사전 배포 검증: `api.attacca.site` 공개 API 응답, `staging.attacca.site`의 카카오 로그인·BFF 요청·WebSocket 101 handshake와 채팅 송수신을 확인했다. 채팅 입력창은 뷰포트 하단에 고정했고 한글 IME 조합 중 Enter 전송을 막아 마지막 글자 중복 전송을 해소했다.
+  * 2026-09-19 Vercel Production DNS 전환: 사용자 승인 뒤 가비아에서 `A @ -> 216.198.79.1`, `CNAME www -> 335cd7f1e6a8d4bc.vercel-dns-017.com.`으로 저장했다. 공개 DNS 조회에서 `@`와 `www`의 Vercel 대상, `api -> 3.39.184.71`, 기존 `staging` CNAME 유지를 확인했다.
+  * 2026-09-19 Vercel 도메인 검증: `attacca.site`, `www.attacca.site`, `staging.attacca.site`, 기본 Vercel 도메인이 모두 `Valid Configuration`인 것을 확인했다.
+  * 2026-09-20 운영 smoke: 사용자가 운영 도메인의 홈, 카카오 로그인, 강제 새로고침 후 세션 유지, 보호 화면과 데이터 동선이 정상이라고 확인했다.
+  * 2026-09-20 rollback 보존 확인: EC2에서 `attacca-fe-1`이 `Up 19 hours` 상태이며 `3000/tcp`로 실행 중인 것을 확인했다.
+  * 2026-09-20 rollback 경로 검증: 현재 Production이 아닌 이전 `Ready` deployment에서 Vercel `Promote`가 활성화된 것을 확인했다. 실제 Promote와 DNS rollback은 실행하지 않았으며, DNS 복구값은 `A @ -> 3.39.184.71`, `A www -> 3.39.184.71`이고 `api`는 유지한다.
+  * 2026-09-20 staging 실효성 점검: 원격 Git에는 `main`만 있고 `staging` 브랜치는 없으며, Vercel의 `staging.attacca.site`도 Production deployment로 연결돼 있다. `BE_BASE_URL`, `NEXT_PUBLIC_BE_WS_URL`, `KAKAO_REDIRECT_URI`는 Production과 Preview에 같은 값으로 주입돼 같은 EC2 API/WS를 바라본다. 따라서 현재 staging은 독립 검증 환경이 아니라 Production의 추가 호스트다. Git branch·Vercel Preview·BE/DB 격리 정책을 먼저 결정해야 한다.
+  * 2026-09-20 staging 폐기 설계 승인: 별도 개발 인프라를 만들지 않고 `staging.attacca.site`와 그 전용 DNS·Vercel·카카오 콜백·WebSocket Origin 참조만 제거한다. `attacca.site`, `www.attacca.site`, `api.attacca.site`와 운영 자원은 유지한다. 실행 전 상세 순서와 검증/롤백 기준은 `docs/superpowers/specs/2026-09-20-staging-domain-retirement-design.md`에 고정했다.
+  * 다음 관문: 운영 관찰을 계속한 뒤 사용자 별도 승인으로만 EC2 FE 제거 여부를 판단한다. 승인 전 `attacca-fe`와 관련 route/image publish를 변경하지 않는다.

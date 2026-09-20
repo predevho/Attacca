@@ -123,6 +123,7 @@ AWS 기본 RDS subnet/parameter/option group은 공유 또는 AWS 소유이므�
 * `infra/production`은 S3 backend의 `use_lockfile = true`를 쓴다. DynamoDB lock은 현재 Terraform 문서에서 deprecated이므로 새로 만들지 않는다.
 * backend 버킷 이름·리전만 backend partial configuration으로 주고, AWS 자격증명은 로컬 프로필 또는 CI OIDC 환경으로 공급한다.
 * DB 비밀번호, JWT, OAuth secret, KOPIS 키는 `.tf`, `.tfvars`, state, GitHub 변수에 넣지 않는다. 기존 EC2 `.env.prod`가 계속 런타임 정본이다.
+* 현재 `default` AWS CLI profile은 `AdministratorAccess`가 붙은 장기 access key이므로 Terraform apply에 사용하지 않는다. IAM Identity Center의 임시 자격 증명을 쓰는 `attacca-terraform` named profile을 먼저 만들고, 최소 권한 permission set을 적용한다.
 
 ### 5.3 Terraform 범위
 
