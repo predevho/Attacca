@@ -39,3 +39,4 @@
   * 목이 "연결 전 구독 금지"라는 프로토콜 제약을 흉내내지 않아 테스트가 통과시켰음 → 목에 제약을 넣어 재현 후 수정
   * BE는 잘못된 쿼리 파라미터가 500으로 나가던 결함 수정(400-01로 매핑)
   * 교훈: 테스트 통과 ≠ 완료. 목으로 대체한 구간(실시간·외부 연동)은 실기동 확인 전까지 미검증으로 취급
+* **2026-09-21 staging 도메인 폐기**: `staging.attacca.site`는 Production과 같은 `main` 배포·EC2 API·RDS·Redis를 공유하는 추가 호스트라 독립 검증 환경이 아니었다. Vercel·카카오 OAuth·가비아 DNS·WebSocket Origin의 staging 참조를 제거하고, 공개 DNS/API·BE health·인증 채팅까지 확인했다. 운영 도메인과 EC2 rollback FE는 유지한다.

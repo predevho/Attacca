@@ -126,3 +126,15 @@
 ### 기동 환경(이 PC 한정)
 * 시스템 기본 JDK가 25 → Gradle 8.11.1이 실패. `JAVA_HOME`을 JDK 21로 고정해야 한다.
 * 8080/3000은 다른 프로젝트가 점유 → Attacca는 BE 8081 / FE 3001로 기동(포트 override + `FE/.env.local`).
+
+---
+
+## 2026-09-21 — 독립 환경이 아닌 staging 도메인 폐기
+
+### 결정
+* `staging.attacca.site`는 `main` 기반 Vercel Production deployment와 동일 EC2 API·RDS·Redis를 공유해 독립 개발/검증 환경이 아니었다. 별도 인프라 비용을 추가하지 않는 현재 운영 방향에 따라 staging 호스트를 유지하지 않고 폐기했다.
+* 운영 경로 `attacca.site`, `www.attacca.site`, `api.attacca.site`와 EC2 rollback FE 컨테이너는 유지했다.
+
+### 실행과 검증
+* Vercel Domain, 카카오 OAuth 리다이렉트 URI, 가비아 `staging` CNAME, EC2 `WS_ALLOWED_ORIGINS`의 staging 참조를 제거했다.
+* BE만 재생성해 `healthy`를 확인했고, 공개 DNS의 staging 미조회, 공개 API 성공 응답, 운영 로그인 상태 채팅 WebSocket 연결과 입력창 노출까지 확인했다.

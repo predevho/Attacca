@@ -4,6 +4,11 @@
 
 ---
 
+* [x] (2026-09-21) `staging.attacca.site` 운영 연결 폐기.
+  * 현재 staging은 독립 branch·배포·데이터 환경이 아니라 Production의 추가 호스트였으므로, 별도 개발 인프라를 만들지 않는 운영 결정에 따라 폐기했다.
+  * Vercel Domain, 카카오 OAuth 리다이렉트 URI, 가비아 `staging` CNAME, EC2 `WS_ALLOWED_ORIGINS`의 staging 참조를 제거했다. `attacca.site`, `www.attacca.site`, `api.attacca.site`와 EC2의 rollback FE 컨테이너는 유지했다.
+  * 검증: 공개 DNS 리졸버에서 staging CNAME 미조회, `attacca.site` 공개 홈과 `api.attacca.site/api/public/performances` 성공 응답, BE `healthy`, 운영 브라우저의 로그인 상태 WebSocket 채팅 연결 및 입력창 노출을 확인했다.
+
 * [x] (2026-09-17) 회원가입 아이디·비밀번호 길이 규칙 조정.
   * 자체 로그인 아이디와 비밀번호를 모두 8~20자로 통일했다. 서버 `@Valid`, 화면 즉시 검증, 입력 칸의 최대 길이, MEMBER 도메인 규칙을 같은 값으로 유지한다.
   * 기존 통합 테스트의 준비용 아이디도 새 최소 길이에 맞췄다. 탈퇴·비밀번호 변경·동의 검증의 목적은 바꾸지 않았다.
