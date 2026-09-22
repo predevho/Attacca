@@ -15,8 +15,8 @@
 * 보안: Spring Security
   * 자체 회원가입: JWT 기반 인증
   * 소셜 로그인: OAuth2 (카카오/구글 등)
-* 실시간 채팅: WebSocket(STOMP) + Redis Pub/Sub
-* 파일 저장: `FileStorage` 인터페이스로 추상화 — 로컬 디스크(기본값, 개발용) / AWS S3 서울 리전(opt-in, `storage.type=s3`) 두 구현체
+* 실시간 채팅: WebSocket(STOMP) + 단일 인스턴스 Simple Broker. Redis는 refresh 토큰 allowlist에 사용하며 STOMP broker가 아니다.
+* 파일 저장: `FileStorage` 인터페이스로 추상화 — 현재 EC2 로컬 Docker volume / AWS S3 서울 리전(opt-in, `storage.type=s3`) 두 구현체. S3는 운영 기동 검증 전이다.
 * 외부 반입: Spring `RestClient` + `jackson-dataformat-xml`(KOPIS XML) + `jsoup`(대학 서버 렌더링 HTML)
 * 작업 스케줄링: Spring Scheduling(`@EnableScheduling`), 단일 서버의 원천별 메모리 잠금. 분산 잠금은 도입하지 않는다.
 
@@ -85,7 +85,7 @@ com.back
 
 * 클라이언트-서버 실시간 통신은 WebSocket(STOMP)으로 한다.
 * **현재 구현은 단일 BE 인스턴스의 Simple Broker와 인메모리 `PresenceRegistry`다.** Redis는 refresh 토큰 화이트리스트에만 쓴다.
-* 블루/그린처럼 BE 인스턴스가 겹치는 배포를 시작하기 전, STOMP Broker Relay와 Redis 기반 `PresenceRegistry`로 바꿔 메시지·접속 상태를 공유한다. 전환 전에는 BE 두 벌을 동시에 운영하지 않는다.
+* 블루/그린처럼 BE 인스턴스가 겹치는 배포를 시작하기 전, RabbitMQ 또는 ActiveMQ 같은 외부 STOMP broker relay와 공유 `PresenceRegistry`를 설계·구현해 메시지·접속 상태를 공유한다. Redis는 presence 보조 저장소 후보일 뿐 `enableStompBrokerRelay`의 직접 대상이 아니다. 전환 전에는 BE 두 벌을 동시에 운영하지 않는다.
 * 채팅 메시지는 DB에 영속화한다. (히스토리 조회 지원)
 
 ---
@@ -94,7 +94,7 @@ com.back
 
 * 목표 운영 구조는 Vercel FE와 EC2 BE를 분리한다. `https://attacca.site`는 Vercel(Next.js+BFF), `https://api.attacca.site`는 EC2(Nginx+BE+Redis+로컬 파일)다.
 * 브라우저 REST 요청은 `attacca.site/api/bff/**`로 Vercel BFF에 보내고, BFF가 서버 간 통신으로 `api.attacca.site`의 BE를 호출한다. WebSocket과 파일 URL만 브라우저가 `api.attacca.site`에 직접 연결한다.
-* EC2 BE 배포는 건강 검증을 마친 대기 색상으로 Nginx upstream을 원자적으로 전환하는 블루/그린 방식으로 한다. 전환 때 WebSocket은 재연결될 수 있으며, 배포 전후의 DB 마이그레이션은 구·신 버전 호환이 가능한 expand/contract 방식만 허용한다.
+* 현재 EC2 BE는 단일 Compose 서비스로 배포한다. Blue/Green은 외부 STOMP broker relay, 공유 presence, EC2 메모리 측정, Nginx upstream 전환 절차를 설계·검증한 뒤에만 도입한다. 전환 때 WebSocket은 재연결될 수 있으며, 배포 전후의 DB 마이그레이션은 구·신 버전 호환이 가능한 expand/contract 방식만 허용한다.
 * AWS 기존 자원은 Terraform으로 새로 만들지 않고 import해 관리한다. 상태는 버전 관리된 S3 원격 backend와 S3 lockfile로 보관하며, 런타임 비밀값은 Terraform 상태나 저장소에 넣지 않는다.
 * 상세 전환 설계와 순서는 `docs/superpowers/specs/2026-09-17-vercel-api-blue-green-terraform-design.md`를 정본으로 한다. 구현 전까지 현재 단일 Compose 배포가 운영 정본이다.
 

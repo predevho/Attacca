@@ -1,8 +1,19 @@
 # 배포
 
-> **전환 상태 (2026-09-17)**: 이 문서는 현재 EC2에서 FE·BE를 함께 실행하는 운영 절차를 설명한다. 목표 구조는 Vercel FE + `api.attacca.site` EC2 BE + Terraform import-first + BE 블루/그린이며, 아직 구현·전환하지 않았다. 전환 설계와 승인 전 작업 순서는 [2026-09-17-vercel-api-blue-green-terraform-design.md](superpowers/specs/2026-09-17-vercel-api-blue-green-terraform-design.md)를 따른다. 이 문서의 기존 Compose 명령은 전환 완료 전까지 유효하다.
+> **현재 운영 상태 (2026-09-22)**: `attacca.site`와 `www.attacca.site`의 FE는 Vercel Production이 제공하고, `api.attacca.site`의 BE·WebSocket·파일은 EC2가 제공한다. EC2의 `attacca-fe`는 Vercel 장애 시에만 쓰는 rollback 후보로 유지한다. `staging.attacca.site`는 폐기했으며 운영 경로가 아니다. `attacca-update.timer`는 `enabled`·`active`이고 최근 service는 성공 상태로 완료됐다.
+>
+> 아래 1·2단계는 초기 구축 당시의 절차를 보존한 기록이다. 현재 운영 변경은 이 문서의 "운영 중 자주 하는 것"과 "자동 배포"를 기준으로 한다.
 
-> 2026-09-08. **AWS EC2 1대 + RDS**. 1단계는 도메인 없이 IP + HTTP로 띄우고, 2단계에서 도메인·HTTPS를 붙인다.
+## 현재 운영 주소
+
+| 역할 | 주소 | 2026-09-21 공개 DNS 확인 |
+|---|---|---|
+| 웹 | `https://attacca.site` | Vercel A `216.198.79.1` |
+| 웹 별칭 | `https://www.attacca.site` | Vercel CNAME `335cd7f1e6a8d4bc.vercel-dns-017.com.` |
+| API·WebSocket | `https://api.attacca.site` / `wss://api.attacca.site/ws` | EC2 A `3.39.184.71` |
+| staging | 사용하지 않음 | A·CNAME 미조회 |
+
+`WS_ALLOWED_ORIGINS`는 `https://attacca.site,https://www.attacca.site`만 허용한다. 런타임 비밀값은 EC2 `.env.prod`에서만 관리하며 Git·이미지·Actions 로그에 넣지 않는다.
 
 ## AWS 계정 준비
 
@@ -33,15 +44,16 @@ IAM 사용자 권한은 1인 프로젝트 기준 `AdministratorAccess` + MFA가 
 **BE 컨테이너는 1벌이다.** 채팅의 STOMP 브로커가 인메모리 Simple Broker이고 `PresenceRegistry`도
 인메모리라, BE를 2벌 이상 띄우면 **A서버에 붙은 사용자와 B서버에 붙은 사용자 사이에 메시지가 오가지
 않는다.** 그래서 이 문서는 스케일아웃과 블루-그린 무중단 배포를 **의도적으로 포기**한다.
-확장이 필요해지면 그때 Redis를 먼저 넣는다(`enableStompBrokerRelay` 교체 + Redis `PresenceRegistry`,
-**도메인 코드는 바뀌지 않는다**).
+확장이 필요해지면 RabbitMQ 또는 ActiveMQ 같은 외부 STOMP broker relay와 공유
+`PresenceRegistry`를 먼저 설계·구현한다. Redis는 refresh token allowlist와 presence 보조 저장소 후보이며,
+`enableStompBrokerRelay`의 직접 대상이 아니다. **도메인 코드는 `SimpMessagingTemplate` 경계를 유지한다.**
 
 **스키마는 Flyway가 만든다**(`ddl-auto: validate`). 엔티티를 바꾸고 마이그레이션을 안 쓰면
 **기동이 실패한다** — 운영 DB에서 Hibernate가 조용히 스키마를 바꾸는 것보다 낫다는 판단이다.
 
 ---
 
-## 1단계 — IP + HTTP로 띄우기
+## 초기 구축 기록: 1단계 — IP + HTTP로 띄우기
 
 ### 1-1. RDS
 
@@ -165,7 +177,7 @@ docker compose -f docker-compose.prod.yml logs -f be
 
 ---
 
-## 2단계 — 도메인 + HTTPS
+## 초기 구축 기록: 2단계 — 도메인 + HTTPS
 
 도메인: **attacca.site** (가비아, 2026-09-08 등록). 서버: Elastic IP `3.39.184.71`(`attacca-eip`).
 
@@ -236,7 +248,8 @@ Redirect URI를 `https://attacca.site/api/bff/oauth/kakao/callback`로 등록한
 
 | 변수 | 1단계 예시 | 설명 |
 |---|---|---|
-| `PUBLIC_ORIGIN` | `http://13.0.0.0` | 외부에서 보이는 주소. WS 허용 origin·파일 URL·카카오 콜백이 이걸로 조립된다 |
+| `PUBLIC_ORIGIN` | `http://13.0.0.0` | 서비스의 대표 웹 주소. 파일 URL·카카오 콜백이 이 값으로 조립된다 |
+| `WS_ALLOWED_ORIGINS` | `http://13.0.0.0` | 브라우저가 직접 연결할 수 있는 WebSocket origin 목록(쉼표 구분). 대표 주소와 별도로 관리하며, 운영에서 허용한 웹 도메인만 넣는다 |
 | `NEXT_PUBLIC_BE_WS_URL` | `ws://13.0.0.0/ws` | **빌드 시점에 박힌다.** 바꾸면 `--build` 필수 |
 | `DB_URL` | `jdbc:mysql://<endpoint>:3306/attacca` | RDS 엔드포인트 |
 | `DB_USERNAME` / `DB_PASSWORD` | | RDS 자격증명 |
@@ -248,7 +261,7 @@ Redirect URI를 `https://attacca.site/api/bff/oauth/kakao/callback`로 등록한
 | `SERVER_NAME` | (2단계) | 도메인. 인증서 경로에도 쓰인다 |
 
 BE는 그 외에 `DDL_AUTO`(=`validate`, 바꾸지 말 것), `FLYWAY_ENABLED`(=`true`),
-`WS_ALLOWED_ORIGINS`(compose가 `PUBLIC_ORIGIN`으로 채운다)를 읽는다.
+`WS_ALLOWED_ORIGINS`(Compose가 명시 목록을 주입한다)를 읽는다.
 FE의 `BE_BASE_URL`은 컨테이너 네트워크 이름(`http://be:8080`)이라 손댈 일이 없다.
 
 ---
@@ -446,10 +459,8 @@ sudo systemctl disable --now attacca-update.timer   # 자동 배포 중단
 
 ## 아직 안 한 것
 
-- **HTTPS** — 도메인 확보 후 2단계
 - **S3 실연동** — 코드는 있으나 실자격증명으로 확인한 적이 없다
 - **로그·모니터링** — 지금은 컨테이너 로그가 전부. CloudWatch 등으로 모을지 결정 필요
-- **DB 백업 정책** — RDS 자동 백업 보존 기간 확인
 - **무중단 배포** — 컨테이너 1벌이라 배포 중 약 30초 끊긴다. 블루-그린은 채팅의 Redis 릴레이 선행
 - **자동 롤백** — 지금은 헬스체크 실패 시 경고만. 마이그레이션이 이미 돌았을 수 있어 판단이 필요하다
 # 배포 완료 기준
@@ -464,36 +475,10 @@ sudo systemctl disable --now attacca-update.timer   # 자동 배포 중단
 
 무중단 배포 검증은 FE 제거 이후 최종 운영 전환 단계에서 수행하며, 검증 전에는 기존 FE 컨테이너를 삭제하지 않는다.
 
-## Vercel 운영 전환 관문 (2026-09-19)
+## Vercel 운영 상태 (2026-09-21)
 
-`staging.attacca.site`에서 카카오 OAuth, Next BFF, `https://api.attacca.site/api/**`,
-`wss://api.attacca.site/ws`와 채팅 송수신을 확인했다. 이는 Vercel 사전 배포 검증의 통과 기록이며,
-운영 apex 전환이나 EC2 FE 제거를 뜻하지는 않는다. 운영 전환은
-`docs/superpowers/plans/2026-09-19-vercel-production-cutover.md`의 DNS 전환·롤백·관찰 기준을
-충족하고 사용자가 전환 시점을 승인한 뒤에만 실행한다.
+Vercel Production에는 `attacca.site`, `www.attacca.site`, 기본 Vercel 도메인만 연결한다. `staging.attacca.site`는 Vercel·카카오·DNS·WebSocket Origin에서 모두 제거했다.
 
-Vercel Production에 `attacca.site`와 `www.attacca.site`를 연결한 뒤 표시된 가비아 DNS 값은 다음과
-같다. `api.attacca.site`와 `staging.attacca.site` 레코드는 이 전환에서 변경하지 않는다.
+운영 smoke로 홈, 카카오 로그인, 새로고침 후 세션 유지, 보호 데이터 동선, WebSocket 채팅 연결과 입력창을 확인했다. 공개 API `https://api.attacca.site/api/public/performances`도 성공 응답을 반환한다.
 
-| 도메인 | 타입 | 호스트 | 값 |
-|---|---|---|---|
-| `attacca.site` | A | `@` | `216.198.79.1` |
-| `www.attacca.site` | CNAME | `www` | `335cd7f1e6a8d4bc.vercel-dns-017.com.` |
-
-2026-09-19 사용자 승인으로 가비아에 위 레코드를 저장했다. 저장 직후 공개 DNS 조회에서 apex는
-`216.198.79.1`, `www`는 위 CNAME, `api`는 기존 `3.39.184.71`, `staging`은 기존 CNAME으로
-확인됐다. Vercel Domains의 `Valid Configuration`과 운영 HTTPS smoke를 확인하기 전에는 EC2 FE
-제거를 시작하지 않는다.
-
-Vercel Domains 화면에서 `attacca.site`, `www.attacca.site`, `staging.attacca.site`, 기본 Vercel
-도메인이 모두 `Valid Configuration`으로 확인됐다. 이제 운영 도메인 기능 smoke와 rollback 관찰이
-남았으며, 이 과정에서도 EC2 FE는 유지한다.
-
-2026-09-20 사용자는 운영 도메인에서 홈 표시, 카카오 로그인, 강제 새로고침 후 세션 유지와 보호
-데이터 동선이 정상이라고 확인했다. 이 결과는 FE 전환 smoke 통과로 기록하되, EC2 FE 제거의 근거는
-아니다. rollback 관찰 기간과 절차 점검이 선행돼야 한다.
-
-같은 날 EC2에서 `attacca-fe-1`이 `Up 19 hours`와 `3000/tcp` 상태로 유지되는 것을 확인했다.
-이 컨테이너는 rollback 준비 상태이며, 운영 문제가 없더라도 별도 승인 전 제거하지 않는다.
-
-같은 날 현재 Production이 아닌 이전 `Ready` deployment의 Vercel 메뉴에서 `Promote`가 활성화된 것을 확인했다. 실제 Promote는 실행하지 않았다. Vercel 장애 시 해당 deployment를 Promote하고, DNS 장애 시에만 가비아의 `@`와 `www`를 각각 `A -> 3.39.184.71`로 되돌린다. `api` 레코드는 이 FE rollback에서 변경하지 않는다.
+Vercel 장애 시 이전 `Ready` deployment를 `Promote`할 수 있다. DNS 장애에서만 가비아의 `@`와 `www`를 EC2로 되돌리는 절차를 검토하며, `api` 레코드는 FE rollback과 무관하므로 유지한다. EC2 `attacca-fe`는 별도 승인 전 삭제하지 않는다.

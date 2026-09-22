@@ -85,7 +85,7 @@ com.back.global.websocket        # WebSocket 인프라(도메인 아님)
 * 엔드포인트: `/ws`(네이티브 WebSocket). 브라우저 폴백이 필요하면 SockJS는 FE 이터레이션에서 검토(범위 밖).
 * application prefix(클라→서버): `/app`.
 * broker prefix(서버→클라 구독): `/topic`, `/user`. 이번엔 인메모리 Simple Broker(`enableSimpleBroker("/topic", "/user")`).
-* **Redis 교체 지점**: 다중 서버 시 `enableStompBrokerRelay(...)`로 이 설정만 바꾸면 된다. 도메인 코드는 `SimpMessagingTemplate`만 사용하므로 영향 없음.
+* **다중 서버 교체 지점**: RabbitMQ 또는 ActiveMQ 같은 외부 STOMP broker를 `enableStompBrokerRelay(...)`에 연결한다. Redis는 `PresenceRegistry`의 공유 저장소 후보로 별도 검토한다. 도메인 코드는 `SimpMessagingTemplate`만 사용하므로 브로커 교체의 영향을 받지 않는다.
 
 ### 3.2 목적지(Destination)
 

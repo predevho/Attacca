@@ -61,9 +61,9 @@
   * 남은 범위 밖: 관심/북마크, 피드 카드 노출, 곡목 구조화, 좌석/예매, 공개 조회, 태그/장르 필터.
 * [x] ~~RECRUITMENT: 구인 공고 + 지원~~ — 2026-07-23 BE 구현 완료(TDD, 서브에이전트 주도 8태스크). 구인만(구직은 범위 밖). 엔티티 2종(공고 soft delete + 지원 상태머신) + 리포지토리(scope/instrument `member of` 필터) + 서비스 2종(등록=인증 회원 누구나, 지원 게이팅/상태전이) + 컨트롤러 2종 + MEMBER 배치 협력. 에러코드 404-08/09·409-07~10. instruments N+1은 `@BatchSize`로 해결. 전체 266/266 통과, 최종 리뷰 통과.
   * 남은 범위 밖: 구직 공고, PERFORMANCE 연결(`performanceId`), 지원 첨부파일, 지원자↔작성자 메시징(CHAT), 키워드/태그 검색, 알림, 마감 자동화 배치, `applicationCount` 응답, 공통 `PageResponse<T>` DTO(코드베이스 공통 BACKLOG).
-* [x] ~~CHAT: WebSocket(STOMP)+Redis 기반 1:1 / 1:N 채팅~~ — 2026-07-27 BE 구현 완료(TDD, 서브에이전트 주도 14태스크), **main 병합 완료(커밋 `7b5cff4`)**. 통합 방 모델(1:1 directKey 유일성+find-or-create, 그룹 평평한 모델), 인메모리 Simple Broker, CONNECT 프레임 JWT 인증, 읽음/안읽은수·presence·typing. 에러코드 404-10/404-11/403-03/400-03. 전체 307/307 통과.
+* [x] ~~CHAT: WebSocket(STOMP) 기반 1:1 / 1:N 채팅~~ — 2026-07-27 BE 구현 완료(TDD, 서브에이전트 주도 14태스크), **main 병합 완료(커밋 `7b5cff4`)**. 통합 방 모델(1:1 directKey 유일성+find-or-create, 그룹 평평한 모델), 인메모리 Simple Broker, CONNECT 프레임 JWT 인증, 읽음/안읽은수·presence·typing. 에러코드 404-10/404-11/403-03/400-03. 전체 307/307 통과.
   * 남은 범위 밖: FE 화면(채팅 UI), 메시지 수정/삭제, 파일 첨부, 메시지 검색, 알림 푸시, RECRUITMENT/PERFORMANCE 채팅 연계.
-  * Redis 이연: 다중 서버 확장 시 `enableStompBrokerRelay`로 브로커 교체 + Redis 기반 `PresenceRegistry`(현재 인메모리·단일서버만 정확). refresh 로테이션은 2026-09-08에 먼저 들어갔고 **Redis 인스턴스가 이미 떠 있으므로**, 남은 것은 브로커·presence 교체뿐이다.
+  * 다중 서버 이연: RabbitMQ 또는 ActiveMQ 같은 외부 STOMP broker를 `enableStompBrokerRelay`에 연결하고 공유 `PresenceRegistry`를 구현한다(현재 인메모리·단일서버만 정확). Redis는 refresh token allowlist에 이미 쓰며 presence 보조 저장소 후보로만 검토한다.
   * 리뷰 이연(Minor): (1)DIRECT 방 2스레드 실경합 통합테스트(REQUIRES_NEW 구조는 correct-by-construction, 테스트만 이연), (2)`WebSocketConfig.setAllowedOriginPatterns("*")`를 프로덕션 시 FE origin으로 좁히기, (3)WS 통합테스트 `@AfterEach` 세션 disconnect/`stompClient.stop()` 정리(누수·공유 채널 인터셉터 변경창 하드닝), (4)`StompAuthChannelInterceptor` 미사용 import·`ChatPresenceEventListener` Principal FQN→import 정리.
 * [x] ~~FE: MEMBER 프로필 화면(조회/수정/이미지)~~ — 2026-07-16 완료(조회/수정 모드, 이미지 즉시 업로드, beFetch 멀티파트 지원). 라이브 수동 검증까지 성공(멀티파트 실체인: 브라우저→BFF→Spring @RequestPart→디스크→/files/** 서빙→DB key 저장·새로고침 유지). 실이미지 S3 검증만 별개 BACKLOG.
 * [x] ~~FE: 카카오 실제 로그인 왕복 수동 검증~~ — 2026-07-15 완료. 실제 카카오 앱 키/Client Secret/Redirect URI/이메일 동의로 브라우저 왕복 성공(로그인→/dashboard). 개인 개발자 비즈 앱 전환, redirect_uri는 `/config/callback`에 등록.
@@ -154,7 +154,7 @@
 ### A. 배포 전 반드시 결정해야 하는 것 (블로커) — 2026-09-08 전부 해소
 
 * [x] ~~**`ddl-auto` 정책 확정**~~ — 2026-09-08 완료. `validate`로 내리고 **Flyway 도입**(`V1__baseline_schema.sql`, 기존 `update` 스키마 19테이블 추출). 기존 DB는 `baseline-on-migrate`로 흡수, 빈 DB에서는 실제로 마이그레이션이 돌아 앱이 뜨는 것까지 확인(컨테이너 포함). 테스트는 `src/test/resources/application.properties`에서 Flyway를 끄고 `create-drop`을 쓴다. 원문: — 현재 `${DDL_AUTO:update}`. 운영 DB에서 Hibernate가 스키마를 자기 판단으로 바꾸고, 컬럼 삭제·타입 변경은 반영조차 안 해 코드/스키마가 조용히 어긋난다. RDS 전환 시 `validate`로 내리고 **Flyway 도입**(현재 마이그레이션 도구 없음 — 2026-08-18 확인). 초기 스키마는 현재 `update`로 생성된 DDL을 베이스라인으로 추출.
-* [x] ~~**단일 인스턴스 운영 여부 확정**~~ — **1대로 확정(2026-09-08)**. 채팅이 그대로 동작하는 것이 결정적이었다. 스케일아웃·블루그린은 의도적으로 포기하고, 필요해지면 Redis를 먼저 넣는다. `docker-compose.prod.yml`과 `docs/DEPLOY.md` 첫머리에 이 전제를 못박아 뒀다. 원문: — 지금 채팅은 **다중 서버에서 동작하지 않는다**. STOMP가 인메모리 Simple Broker라 A서버 사용자와 B서버 사용자 간 메시지가 오가지 않고, `PresenceRegistry`도 인메모리라 단일 서버에서만 정확. 스케일아웃이나 무중단(블루-그린) 배포를 할 거면 **그 전에 Redis 선행**(`enableStompBrokerRelay` 교체 + Redis 기반 `PresenceRegistry`, 도메인 코드는 불변). 1대 운영이면 현행 유지 가능.
+* [x] ~~**단일 인스턴스 운영 여부 확정**~~ — **1대로 운영(2026-09-08, 2026-09-22 정정)**. 현재 채팅은 STOMP Simple Broker와 `PresenceRegistry`가 모두 인메모리여서 다중 서버에서 정확하지 않다. 스케일아웃·Blue/Green은 지금 도입하지 않으며, 필요해질 때 RabbitMQ 또는 ActiveMQ 같은 외부 STOMP broker relay와 공유 presence를 먼저 설계·검증한다. Redis는 refresh token allowlist와 presence 보조 저장소 후보이며 `enableStompBrokerRelay`의 직접 대상이 아니다.
 * [x] ~~**WS origin 좁히기**~~ — 2026-09-08 완료. `app.ws.allowed-origins`(`WS_ALLOWED_ORIGINS`)로 환경변수화. 기본값은 로컬 주소뿐이고 운영에서는 FE origin으로 좁힌다. 원문: — `WebSocketConfig.setAllowedOriginPatterns("*")`(BE/src/main/java/com/back/global/websocket/WebSocketConfig.java:24)를 실제 FE origin으로 제한. 프로덕션 노출 전 필수.
 
 ### B. 인프라 구성

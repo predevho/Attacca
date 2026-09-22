@@ -55,16 +55,19 @@ BE는 도메인별 범위 조회만 제공합니다. 이런 판단과 근거는 
 
 **백엔드** — Spring Boot 3.4.5 / Java 21 / MySQL 8.4 / Gradle 8.11.1
 
-- Spring Security + JWT(access·refresh 무상태) + OAuth2(카카오)
-- WebSocket(STOMP) — 인메모리 Simple Broker
+- Spring Security + JWT access token + Redis allowlist 기반 refresh token rotation + OAuth2(카카오)
+- WebSocket(STOMP) — 단일 BE 인스턴스의 인메모리 Simple Broker
 - Spring Data JPA, Bean Validation
-- 파일 저장 추상화(`FileStorage`): 로컬 기본, S3 opt-in
+- 파일 저장 추상화(`FileStorage`): 현재 EC2 Docker volume의 로컬 저장, S3 구현은 opt-in 후보
 
 **프론트엔드** — Next.js 16(App Router) / React 19 / TypeScript / Tailwind CSS v4 / Vitest
 
 - **BFF 3계층**으로 토큰을 UI에서 격리 (`lib/server/*` → `app/api/bff/**` → UI)
 - 통신은 네이티브 `fetch`. HTTP 라이브러리를 두지 않았습니다
 - 실시간 채팅만 예외적으로 `@stomp/stompjs` 사용
+
+**운영 인프라** — Vercel(Next.js+BFF) / EC2(Nginx+Spring BE+WebSocket+Redis+로컬 업로드 볼륨) /
+RDS MySQL / Docker Compose / GitHub Actions + GHCR / systemd pull timer
 
 ---
 
@@ -173,15 +176,16 @@ cd FE && npm test           # 353개
 
 ## 현재 상태
 
-BE 7개 도메인과 FE 전 화면이 동작하고, 실환경(MySQL + BE + FE 동시 기동) 브라우저 검증을 마쳤습니다.
-**아직 배포 전**이며, 배포 전에 결정해야 할 것들은 `docs/TODO-BACKLOG.md`의 "배포" 절에 정리돼 있습니다.
+BE 7개 도메인과 FE 전 화면이 동작하고, 운영 경로(`attacca.site` / `api.attacca.site`)에서
+카카오 로그인, 세션 유지, 보호 경로, 채팅 연결을 브라우저로 검증했습니다.
+현재 운영 경계와 검증 근거는 `docs/ops/inventory/2026-09-21-production-state.md`를 기준으로 합니다.
 
 알려진 제약:
 
-- **채팅은 단일 서버에서만 정확합니다.** STOMP가 인메모리 Simple Broker이고 presence도 인메모리라,
-  스케일아웃하려면 Redis(`enableStompBrokerRelay`) 도입이 선행돼야 합니다. 도메인 코드는 그대로 둡니다.
-- 스키마는 `ddl-auto: update`입니다. 운영 전환 시 `validate` + Flyway로 내려야 합니다.
-- S3 연동은 코드만 있고 실자격증명 검증 전입니다.
+- **채팅은 단일 BE 인스턴스에서만 정확합니다.** STOMP와 presence가 인메모리이므로,
+  다중 인스턴스나 Blue/Green은 외부 STOMP broker relay와 공유 presence 설계가 선행돼야 합니다.
+- 운영 스키마는 Flyway와 `ddl-auto: validate`를 사용합니다.
+- S3 구현은 있으나 운영 자격증명과 기동 검증을 마치지 않았습니다. 현재 업로드는 EC2 로컬 볼륨에 저장됩니다.
 
 ---
 

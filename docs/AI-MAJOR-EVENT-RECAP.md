@@ -4,6 +4,7 @@
 
 ---
 
+* **2026-09-22 운영 정본화**: 웹은 Vercel, API·WebSocket·파일은 EC2로 분리 운영한다. 채팅은 단일 BE의 Simple Broker이고 Redis는 refresh token allowlist 용도다. 현재 업로드는 EC2 Docker volume이며 S3는 후보 상태다. Blue/Green은 외부 STOMP broker relay와 공유 presence 설계·검증 전까지 도입하지 않는다.
 * **2026-07-05 프로젝트 시작**: Attacca(음악인 커뮤니티 SNS) 설계 확정.
   * 도메인 6개: 회원 / 인증 연주자 / 피드 / 연주회 / 구인·구직 / 채팅
   * BE: Spring Boot 3.4.x · Java 21 · MySQL · JWT+OAuth2 · WebSocket+Redis · S3

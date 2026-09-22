@@ -23,7 +23,7 @@
 | EC2 Compose는 `be`·`fe`·`nginx`·`redis`를 함께 실행한다. | `docker-compose.prod.yml` | FE를 Vercel로 옮겨도 EC2의 `fe`는 Vercel 검증이 끝날 때까지 제거하지 않는다. |
 | 로그인·피드 등 브라우저 REST는 `/api/bff/**`의 Next BFF를 거친다. | `FE/app/api/bff/**`, `ARCHITECTURE-STATUTE §1` | Vercel에서도 BFF 경로를 그대로 유지해 토큰 httpOnly 쿠키 경계를 보존한다. |
 | 채팅 WebSocket은 BFF가 아닌 BE `/ws`에 직접 연결한다. | `FE/lib/chat/stompClient.ts`, `BE/src/main/java/com/back/global/websocket/WebSocketConfig.java` | `NEXT_PUBLIC_BE_WS_URL`은 `wss://api.attacca.site/ws`가 되어야 하고 `WS_ALLOWED_ORIGINS`는 운영·고정 staging origin만 정확히 허용한다. |
-| 채팅 브로커와 presence는 인메모리다. | `WebSocketConfig.enableSimpleBroker`, `InMemoryPresenceRegistry` | 색상 두 BE가 겹치면 서로 다른 색상에 붙은 사용자의 채팅과 접속 상태가 분리된다. Redis relay·공유 presence가 선행 조건이다. |
+| 채팅 브로커와 presence는 인메모리다. | `WebSocketConfig.enableSimpleBroker`, `InMemoryPresenceRegistry` | 색상 두 BE가 겹치면 서로 다른 색상에 붙은 사용자의 채팅과 접속 상태가 분리된다. 외부 STOMP broker relay와 공유 presence가 선행 조건이다. Redis는 presence 보조 저장소 후보로만 검토한다. |
 | 업로드는 EC2 Docker volume의 로컬 파일 저장소다. | `docker-compose.prod.yml`의 `be-uploads`, `STORAGE_LOCAL_BASE_URL` | 두 색상은 같은 업로드 volume을 공유하고, 공개 URL은 `api.attacca.site/files/**`로 유지해야 한다. |
 | Flyway가 기동 시 스키마를 검증·반영한다. | `docs/DEPLOY.md`, BE migration 설정 | 구·신 BE가 겹치는 동안 깨지지 않는 expand/contract 마이그레이션만 허용한다. |
 
@@ -171,7 +171,7 @@ DNS 사업자에서 관리하므로 Terraform provider로 무단 이전하지 �
 
 ### 단계 5 — BE 이중 실행 선행 조건
 
-1. STOMP Simple Broker를 Redis broker relay로, `InMemoryPresenceRegistry`를 Redis 구현으로 교체한다.
+1. STOMP Simple Broker를 RabbitMQ 또는 ActiveMQ 같은 외부 broker relay로 교체하고, `InMemoryPresenceRegistry`의 공유 구현을 설계한다. Redis는 presence 보조 저장소 후보로 별도 검토한다.
 2. 단일 BE와 두 BE 환경에서 방 메시지·읽음·typing·presence와 재연결을 통합 테스트한다.
 3. Redis 장애 시 인증·채팅 각각의 실패 정책을 문서·테스트로 고정한다.
 

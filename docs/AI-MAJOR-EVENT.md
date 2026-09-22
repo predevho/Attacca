@@ -4,6 +4,19 @@
 
 ---
 
+## 2026-09-22 — 운영 기술 스택과 Blue/Green 선행 조건 정본화
+
+### 현재 운영 사실
+* 웹은 Vercel의 `attacca.site`/`www.attacca.site`, API·WebSocket·파일은 EC2의 `api.attacca.site`가 제공한다.
+* 채팅은 Spring STOMP `SimpleBroker`와 `PresenceRegistry`가 모두 단일 BE 인스턴스 메모리에 있다. Redis는 refresh token allowlist에 사용하며 STOMP broker가 아니다.
+* 업로드는 EC2 Docker volume에 저장한다. `S3FileStorage` 구현은 남아 있지만 운영 자격증명과 기동 검증 전이므로 현재 운영 스택으로 표현하지 않는다.
+
+### Blue/Green 판단
+* 단일 EC2에서 REST Blue/Green은 Nginx upstream 전환으로 가능하지만, 현재 채팅 브로커에서는 색상 간 메시지와 presence가 분리된다.
+* 따라서 Blue/Green 착수 전에 RabbitMQ 또는 ActiveMQ 같은 외부 STOMP broker relay와 공유 presence를 설계·검증한다. Redis는 presence 보조 저장소 후보일 뿐 `enableStompBrokerRelay`의 직접 대상이 아니다.
+
+---
+
 ## 2026-07-05 — 프로젝트 초기 설계 확정
 
 ### 서비스 정의

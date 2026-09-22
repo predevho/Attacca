@@ -9,8 +9,8 @@
 * **외부 공연(KOPIS)·입시 공지 반입(IMPORT)** — 2026-09-13 대학 17곳 조사 반영 후 사양 승인. `DOMAIN-IMPORT-CONSTITUTION/STATUTE` 신설, NOTICE·아키텍처·배포 문서 개정, 구현 계획 `docs/superpowers/plans/2026-09-13-external-import-implementation.md` 작성 완료. 구현 착수 대기.
   * 사용자 조치: KOPIS 인증키 발급, User-Agent에 넣을 `IMPORT_CONTACT` 값 결정. 값이 없어도 테스트 더블과 대학 설정 검증부터 구현할 수 있다.
 
-* **Vercel FE 분리·EC2 BE 블루/그린·Terraform 전환 설계** — `attacca.site`는 Vercel, `api.attacca.site`는 EC2 BE/Nginx/WebSocket/파일로 분리하는 방향을 사용자와 합의했다. 현행 단일 Compose를 유지한 채, Terraform import-first→API subdomain→Vercel 사전 검증→apex DNS 전환→채팅 Redis relay→BE 블루/그린 순서로 진행한다. 설계 초안: `docs/superpowers/specs/2026-09-17-vercel-api-blue-green-terraform-design.md`.
-  * 단계 0 수집 진행: 로컬 Compose·Git·DNS 기준선과 AWS 호출자(`530310463238`, IAM user `predevho`), Attacca EC2(`i-0c04da18f6eb5292d`)를 읽기 전용으로 확인했다. `api.attacca.site`·`staging.attacca.site`는 NXDOMAIN이다.
+* **Vercel FE 분리·EC2 BE 블루/그린·Terraform 전환 설계** — `attacca.site`는 Vercel, `api.attacca.site`는 EC2 BE/Nginx/WebSocket/파일로 분리하는 방향을 사용자와 합의했다. 현행 단일 Compose를 유지한 채, Terraform import-first→API subdomain→Vercel 사전 검증→apex DNS 전환→외부 STOMP broker relay·공유 presence 설계→BE 블루/그린 순서로 진행한다. 설계 초안: `docs/superpowers/specs/2026-09-17-vercel-api-blue-green-terraform-design.md`.
+  * 단계 0 수집은 2026-09-17 당시 DNS 스냅샷이다. 현재 운영 주소·DNS는 `docs/ops/inventory/2026-09-21-production-state.md`를 기준으로 한다.
   * 다음 읽기 전용 수집: Attacca EIP/security group/subnet/volume/instance profile, RDS·snapshot, Route 53, S3 state backend 후보를 확인한다. Terraform/DNS/AWS 변경은 import 대상과 계획 검토 전까지 금지한다.
   * 보안 게이트: 현재 `default` CLI profile은 MFA가 있는 `predevho` IAM user지만 permissions boundary 없이 `AdministratorAccess` 장기 키를 쓴다. state bucket 생성·Terraform apply 전, IAM Identity Center 임시 자격 증명 기반 `attacca-terraform` profile을 사용하도록 전환 계획을 작성했다: `docs/superpowers/plans/2026-09-17-terraform-state-and-import.md`.
   * 2026-09-18 비용 영향: IAM Identity Center 활성화 중 AWS Organization이 생성돼 Free 플랜이 Paid 플랜으로 전환됐다. Free Tier 크레딧은 만료된 것으로 보고, Billing Support 확인 전까지 새 계정을 크레딧 회피 수단이나 Terraform 대상 계정으로 가정하지 않는다. Attacca 운영 자원은 현 account에 있으므로 계정 이전은 별도 마이그레이션 결정이 필요하다.
@@ -34,4 +34,7 @@
   * 2026-09-20 staging 실효성 점검: 원격 Git에는 `main`만 있고 `staging` 브랜치는 없으며, Vercel의 `staging.attacca.site`도 Production deployment로 연결돼 있다. `BE_BASE_URL`, `NEXT_PUBLIC_BE_WS_URL`, `KAKAO_REDIRECT_URI`는 Production과 Preview에 같은 값으로 주입돼 같은 EC2 API/WS를 바라본다. 따라서 현재 staging은 독립 검증 환경이 아니라 Production의 추가 호스트다. Git branch·Vercel Preview·BE/DB 격리 정책을 먼저 결정해야 한다.
   * 2026-09-20 staging 폐기 설계 승인: 별도 개발 인프라를 만들지 않고 `staging.attacca.site`와 그 전용 DNS·Vercel·카카오 콜백·WebSocket Origin 참조만 제거한다. `attacca.site`, `www.attacca.site`, `api.attacca.site`와 운영 자원은 유지한다. 실행 전 상세 순서와 검증/롤백 기준은 `docs/superpowers/specs/2026-09-20-staging-domain-retirement-design.md`에 고정했다.
   * 2026-09-21 staging 폐기 완료: Vercel·카카오·가비아의 staging 전용 항목을 제거하고 EC2 `WS_ALLOWED_ORIGINS`도 운영 두 도메인으로 축소했다. BE만 재생성해 `healthy`를 확인했으며, 운영 브라우저에서 로그인 상태의 WebSocket 채팅 연결과 입력창도 정상 확인했다. 상세 완료 기록은 `TODO-DONE`과 `AI-ACTION-LOGS`를 따른다.
+  * 2026-09-21 배포 파이프라인 정적 재검토: `.github/workflows/ci.yml`은 BE 테스트 → FE 타입검사·테스트·lint·색 토큰 검사·build → 동일 SHA BE/FE GHCR publish 순서를 유지한다. `deploy/update.sh`와 Compose 문법 검증도 통과했고, SHA 라벨 대조·BE health 대기·이미지 용량 경고·수동 rollback 기준을 확인했다.
+  * 2026-09-22 EC2 `attacca-update.timer` 운영 확인: timer는 `enabled`·`active`이고 다음 실행 주기가 등록돼 있다. 직후 service의 `Result=success`, `ExecMainStatus=0`을 확인했다. `ExecMainCode=1`은 systemd의 정상 종료 유형(`CLD_EXITED`)이며 실패 코드가 아니다.
+  * 2026-09-22 WebSocket origin 정본화 결정: `PUBLIC_ORIGIN`은 카카오 콜백·파일 URL을 위한 대표 주소로 유지하고, `WS_ALLOWED_ORIGINS`는 허용할 브라우저 origin 목록으로 별도 관리한다. 단일 대표 주소 주입은 단순하지만 다중 도메인 허용 정책을 표현하지 못하므로 기각했다. 전체 허용(`*`)은 origin 방어층을 없애므로 기각했다.
   * 다음 관문: 운영 관찰을 계속한 뒤 사용자 별도 승인으로만 EC2 FE 제거 여부를 판단한다. 승인 전 `attacca-fe`와 관련 route/image publish를 변경하지 않는다.
