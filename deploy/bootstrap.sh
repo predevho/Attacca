@@ -53,6 +53,7 @@ cat <<'NEXT'
   1) SSH 재접속 (docker 그룹 적용)
   2) cp .env.prod.example .env.prod && vi .env.prod
      - PUBLIC_ORIGIN=http://<Elastic IP>
+     - WS_ALLOWED_ORIGINS=http://<Elastic IP>
      - NEXT_PUBLIC_BE_WS_URL=ws://<Elastic IP>/ws
      - DB_URL=jdbc:mysql://<RDS 엔드포인트>:3306/attacca
      - DB_USERNAME / DB_PASSWORD
