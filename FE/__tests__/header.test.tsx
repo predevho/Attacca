@@ -133,7 +133,7 @@ describe('Header', () => {
 
   it('테마 control이 현재 모드와 다음 모드를 접근 가능하게 노출한다', async () => {
     render(<Header />);
-    expect(await screen.findByRole('button', { name: /시스템 테마/ })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /라이트 테마/ })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '라이트 테마' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '다크 테마' })).not.toBeInTheDocument();
   });

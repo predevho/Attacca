@@ -6,33 +6,33 @@
  * 다크는 아래 미디어쿼리에서 값만 교체하므로 컴포넌트는 다크를 알지 못한다.
  */
 :root {
-  --paper: #f5f0e6;
-  --surface: #faf7f0;
-  --surface-muted: #ede6d8;
-  --ink: #171717;
-  --ink-muted: #5c574e;
-  --ink-faint: #6b655b;  /* AA(4.5:1). 예전 #8a8378은 paper 위 3.3:1로 본문 기준 미달이었다 */
-  --line: #ded5c4;
-  --brand: #4e6e8e;
-  --brand-strong: #3d5a80;
-  --on-brand: #f5f0e6;
-  --header: #3d5a80;
-  --on-header: #f5f0e6;
-  --danger: #dc2626;
-  --warn: #b45309;
-  --success: #15803d;
-  --warning: #b45309;
-  --info: #2563eb;
-  --focus: #1d4ed8;
-  --on-danger: #fff7f7;
+  --paper: #f7f8fa;
+  --surface: #ffffff;
+  --surface-muted: #f2f4f6;
+  --ink: #191f28;
+  --ink-muted: #4e5968;
+  --ink-faint: #667085;
+  --line: #e5e8eb;
+  --brand: #1b64da;
+  --brand-strong: #1459c1;
+  --on-brand: #ffffff;
+  --header: #ffffff;
+  --on-header: #191f28;
+  --danger: #d92d20;
+  --warn: #b54708;
+  --success: #067647;
+  --warning: #b54708;
+  --info: #175cd3;
+  --focus: #1b64da;
+  --on-danger: #ffffff;
 
   /*
    * 사진 위에 글자를 얹기 위한 어둠막. 라이트/다크가 같은 값이다 —
    * 뒤에 있는 것이 페이지 배경이 아니라 사진이라 테마와 무관하게 같은 처리가 필요하다.
    * 히어로는 75% 알파로 쓰는데, 순백 사진 위에서도 on-scrim이 7.9:1이라 안전하다.
    */
-  --scrim: #14110c;
-  --on-scrim: #faf7f0;
+  --scrim: #101828;
+  --on-scrim: #ffffff;
 }
 
 /*
@@ -42,7 +42,7 @@
  * 대비가 2.5:1까지 떨어져 기준(4.5)에 못 미친다. 그래서 바 색 자체를 반전시킨다.
  */
 @media (prefers-color-scheme: dark) {
-  :root {
+  [data-theme='system'] {
     --paper: #1a1917;
     --surface: #232120;
     --surface-muted: #2c2a28;
@@ -71,23 +71,23 @@
 }
 
 [data-theme='light'] {
-  --paper: #f5f0e6;
-  --surface: #faf7f0;
-  --surface-muted: #ede6d8;
-  --ink: #171717;
-  --ink-muted: #5c574e;
-  --ink-faint: #6b655b;
-  --line: #ded5c4;
-  --brand: #4e6e8e;
-  --brand-strong: #3d5a80;
-  --on-brand: #f5f0e6;
-  --header: #3d5a80;
-  --on-header: #f5f0e6;
-  --danger: #dc2626;
-  --warning: #b45309;
-  --info: #2563eb;
-  --focus: #1d4ed8;
-  --on-danger: #fff7f7;
+  --paper: #f7f8fa;
+  --surface: #ffffff;
+  --surface-muted: #f2f4f6;
+  --ink: #191f28;
+  --ink-muted: #4e5968;
+  --ink-faint: #6b7684;
+  --line: #e5e8eb;
+  --brand: #1b64da;
+  --brand-strong: #1459c1;
+  --on-brand: #ffffff;
+  --header: #ffffff;
+  --on-header: #191f28;
+  --danger: #d92d20;
+  --warning: #b54708;
+  --info: #175cd3;
+  --focus: #1b64da;
+  --on-danger: #ffffff;
 }
 
 [data-theme='dark'] {
@@ -105,6 +105,8 @@
   --header: #8fb0ce;
   --on-header: #16211c;
   --danger: #f87171;
+  --warn: #fbbf24;
+  --success: #4ade80;
   --warning: #fbbf24;
   --info: #93c5fd;
   --focus: #93c5fd;

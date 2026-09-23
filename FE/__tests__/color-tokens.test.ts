@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 /**
- * 라이트(:root)와 다크(prefers-color-scheme) 블록은 서로 독립된 목록이라
+ * 라이트(:root)와 명시 다크(data-theme) 블록은 서로 독립된 목록이라
  * 한쪽에만 토큰을 추가해도 빌드가 통과한다. 다크에서 빠뜨린 토큰은 라이트 값을 그대로
  * 쓰게 되는데, 대개는 "다크 값을 깜빡한 것"이라 이름 집합이 어긋나지 않는지 지킨다.
  * 색 값 자체는 검증 대상이 아니다.
@@ -29,9 +29,8 @@ function lightBlock(): string {
 }
 
 function darkBlock(): string {
-  const start = css.indexOf('@media (prefers-color-scheme: dark)');
-  const rootStart = css.indexOf(':root {', start);
-  return css.slice(rootStart, css.indexOf('}', rootStart));
+  const start = css.indexOf("[data-theme='dark'] {");
+  return css.slice(start, css.indexOf('}', start));
 }
 
 describe('색 토큰', () => {

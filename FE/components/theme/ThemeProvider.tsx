@@ -1,36 +1,35 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
 export type ThemeMode = 'system' | 'light' | 'dark';
 const STORAGE_KEY = 'attacca-theme';
 const ThemeContext = createContext<{ mode: ThemeMode; setMode: (mode: ThemeMode) => void } | null>(null);
 
 function readMode(): ThemeMode {
-  if (typeof window === 'undefined') return 'system';
+  if (typeof window === 'undefined') return 'light';
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY);
-    return stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
+    return stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'light';
   } catch {
-    return 'system';
+    return 'light';
   }
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  // 서버와 첫 클라이언트 렌더를 system으로 맞춰 저장된 테마 때문에 hydration이
+  // 서버와 첫 클라이언트 렌더를 light로 맞춰 저장된 테마 때문에 hydration이
   // 어긋나지 않게 한다. 저장값은 마운트 후 복원한다.
-  const [mode, setModeState] = useState<ThemeMode>('system');
+  const [mode, setModeState] = useState<ThemeMode>('light');
   const [restored, setRestored] = useState(false);
+  const userSelected = useRef(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      const storedMode = readMode();
-      if (storedMode !== mode) setModeState(storedMode);
+      if (!userSelected.current) setModeState(readMode());
       setRestored(true);
     }, 0);
     return () => window.clearTimeout(timer);
   // 최초 마운트에서만 저장값을 읽는다.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -44,6 +43,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [mode, restored]);
 
   function setMode(next: ThemeMode) {
+    userSelected.current = true;
     setModeState(next);
   }
 

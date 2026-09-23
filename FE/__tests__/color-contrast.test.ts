@@ -12,10 +12,12 @@ import { join } from 'node:path';
 
 const css = readFileSync(join(process.cwd(), 'app/globals.css'), 'utf8');
 
-/** `:root { ... }` 블록에서 토큰을 읽는다. 다크는 미디어쿼리 안의 두 번째 블록. */
+/** 기본(:root)과 명시 다크 블록에서 토큰을 읽는다. */
 function tokens(theme: 'light' | 'dark'): Record<string, string> {
-  const blocks = [...css.matchAll(/:root\s*\{([^}]*)\}/g)].map((m) => m[1]);
-  const block = theme === 'light' ? blocks[0] : blocks[1];
+  const light = css.match(/:root\s*\{([^}]*)\}/)?.[1];
+  const dark = css.match(/\[data-theme='dark'\]\s*\{([^}]*)\}/)?.[1];
+  const block = theme === 'light' ? light : dark;
+  if (!block) throw new Error(`${theme} 색상 토큰 블록을 찾을 수 없습니다.`);
   const out: Record<string, string> = {};
   for (const m of block.matchAll(/--([\w-]+):\s*(#[0-9a-fA-F]{6})/g)) out[m[1]] = m[2];
   return out;

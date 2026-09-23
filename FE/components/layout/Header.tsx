@@ -76,7 +76,7 @@ export function Header() {
   const accountLinks = me === null ? (
     <>
       <Link href="/login" onClick={() => setMenuOpen(false)} className="opacity-80">로그인</Link>
-      <Link href="/signup" onClick={() => setMenuOpen(false)} className="rounded bg-on-header px-2.5 py-1 font-semibold text-header">
+      <Link href="/signup" onClick={() => setMenuOpen(false)} className="rounded bg-brand px-2.5 py-1 font-semibold text-on-brand">
         회원가입
       </Link>
     </>
@@ -84,7 +84,7 @@ export function Header() {
     <>
       <Link href="/profile" onClick={() => setMenuOpen(false)} className="inline-flex items-center gap-1.5 font-semibold">
         {me.nickname}
-        {me.verified && <span className="rounded-full bg-on-header px-1.5 py-0.5 text-xs font-semibold text-header">인증</span>}
+        {me.verified && <span className="rounded-full bg-surface-muted px-1.5 py-0.5 text-xs font-semibold text-brand-strong">인증</span>}
       </Link>
       {me.role === 'ADMIN' && (
         <>
@@ -98,7 +98,7 @@ export function Header() {
   ) : null;
 
   return (
-    <header className="bg-header text-on-header">
+    <header className="border-b border-line bg-header text-on-header">
       <nav className="mx-auto max-w-5xl px-4 py-3">
         <div className="flex min-h-8 items-center gap-4">
         <Link href="/" className="text-lg font-bold tracking-tight">Attacca</Link>

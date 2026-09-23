@@ -21,9 +21,9 @@ describe('테마 시스템', () => {
     document.documentElement.removeAttribute('data-theme');
   });
 
-  it('기본값은 system이고 선택값을 복원한다', async () => {
+  it('기본값은 light이고 선택값을 복원한다', async () => {
     render(<ThemeProvider><Probe /></ThemeProvider>);
-    expect(screen.getByTestId('mode')).toHaveTextContent('system');
+    expect(screen.getByTestId('mode')).toHaveTextContent('light');
 
     window.localStorage.setItem('attacca-theme', 'dark');
     render(<ThemeProvider><Probe /></ThemeProvider>);
@@ -33,10 +33,9 @@ describe('테마 시스템', () => {
   it('명시 테마 선택 시 문서 속성과 저장값을 갱신한다', async () => {
     const user = userEvent.setup();
     render(<ThemeProvider><ThemeControl /></ThemeProvider>);
-    const control = screen.getByRole('button', { name: /시스템 테마/ });
+    const control = screen.getByRole('button', { name: /라이트 테마/ });
     await user.click(control);
-    await user.click(screen.getByRole('button', { name: /라이트 테마/ }));
-    expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
+    await waitFor(() => expect(document.documentElement).toHaveAttribute('data-theme', 'dark'));
     expect(window.localStorage.getItem('attacca-theme')).toBe('dark');
   });
 });

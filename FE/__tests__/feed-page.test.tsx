@@ -36,14 +36,11 @@ describe('FeedPage', () => {
     expect(screen.getByText('글2')).toBeInTheDocument();
   });
 
-  it('작성하면 목록 맨 앞에 추가된다', async () => {
-    postBff.mockResolvedValue({ ok: true, data: post(9, { content: '새글' }), message: null });
+  it('게시하기 버튼은 작성 화면으로 이동한다', async () => {
     render(<FeedPage />);
     await screen.findByText('글3');
-    fireEvent.change(screen.getByPlaceholderText(/무슨 생각/), { target: { value: '새글' } });
-    fireEvent.click(screen.getByRole('button', { name: '게시' }));
-    await waitFor(() => expect(postBff).toHaveBeenCalledWith('/api/bff/feed/posts', { content: '새글' }));
-    expect(await screen.findByText('새글')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '게시하기' }));
+    expect(push).toHaveBeenCalledWith('/feed/new');
   });
 
   it('좋아요 실패 시 롤백한다', async () => {
