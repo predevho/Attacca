@@ -13,7 +13,13 @@ import { StatusMessage } from '@/components/ui/StatusMessage';
 export default function AdminImportsPage() {
   const router = useRouter(); const [status, setStatus] = useState<ImportStatus>('NEW'); const [source, setSource] = useState<ImportSource | ''>(''); const [page, setPage] = useState(0); const [items, setItems] = useState<ImportedItem[]>([]); const [runs, setRuns] = useState<ImportRunStatus[]>([]); const [review, setReview] = useState<ImportedItem | null>(null); const [pending, setPending] = useState(false); const [loading, setLoading] = useState(true); const [error, setError] = useState<string | null>(null);
   const load = useCallback(async () => { const q = new URLSearchParams({ status, page: String(page), size: '50' }); if (source) q.set('source', source); const r = await getBff<ImportPage>(`/api/bff/admin/imports?${q}`); if (r.ok) setItems((r.data as ImportPage).content); else setError(r.message ?? '목록을 불러오지 못했습니다.'); setLoading(false); }, [status, source, page]);
-  const loadRuns = useCallback(async () => { const r = await getBff<ImportRunStatus[]>('/api/bff/admin/imports/runs/latest'); if (r.ok) setRuns(r.data as ImportRunStatus[]); }, []);
+  const loadRuns = useCallback(async () => {
+    const results = await Promise.all((['KOPIS', 'UNIV_NOTICE'] as ImportSource[]).map(async (source) => {
+      const response = await getBff<ImportRunStatus | null>(`/api/bff/admin/imports/runs/latest?source=${source}`);
+      return response.ok && response.data ? response.data as ImportRunStatus : null;
+    }));
+    setRuns(results.filter((run): run is ImportRunStatus => run !== null));
+  }, []);
   useEffect(() => { getBff<Me>('/api/bff/me/identity').then((r) => { if (!r.ok) router.push('/login'); else if ((r.data as Me).role !== 'ADMIN') router.push('/'); else { void load(); void loadRuns(); } }); }, [router, load, loadRuns]);
   useEffect(() => { const running = runs.some((r) => !r.finishedAt); if (!running) return undefined; const timer = window.setInterval(() => { void loadRuns(); }, 5000); return () => window.clearInterval(timer); }, [runs, loadRuns]);
   async function run(s: ImportSource) { setPending(true); const r = await postBff(`/api/bff/admin/imports/runs?source=${s}`); setPending(false); if (!r.ok) setError(r.message ?? '실행하지 못했습니다.'); else void loadRuns(); }
