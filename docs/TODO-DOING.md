@@ -10,7 +10,7 @@
 
 ---
 
-* **외부 공연(KOPIS)·입시 공지 반입(IMPORT)** — 수집·승인 API, BFF, 어드민 심사 화면은 이미 `main`에 구현돼 있다. 2026-09-23에 IMPORT BE 선택 테스트와 IMPORT UI 테스트, BFF 경로 계약 테스트를 다시 통과시켰다. 같은 날 운영 어드민 화면이 `runs/latest`의 단일 객체·`null` 계약을 배열로 오해해 렌더링에 실패한 문제를 고쳤다. 화면은 이제 KOPIS·대학 공지 상태를 각각 병렬 조회하고, 실행 이력이 없으면 빈 상태로 표현한다. 수동 실행은 비동기 접수(`ACCEPTED`)이므로, 실행 기록이 저장될 때까지 해당 원천의 최신 상태를 재조회하고 요청 확인 상태를 표시하도록 보정했다. 현재 Task 12 운영 검증 단계로, 키 없는 KOPIS `SKIPPED`, 대학 수동 실행·상태/목록/승인·거절 로컬 smoke, 운영 EC2의 `KOPIS_SERVICE_KEY`·`IMPORT_CONTACT` 수동 주입 및 실제 KOPIS·HTTPS·포스터 호스트 검증이 남아 있다. 정본: `docs/superpowers/plans/2026-09-13-external-import-implementation.md`.
+* **외부 공연(KOPIS)·입시 공지 반입(IMPORT)** — 수집·승인 API, BFF, 어드민 심사 화면은 이미 `main`에 구현돼 있다. 2026-09-23에 IMPORT BE 선택 테스트와 IMPORT UI 테스트, BFF 경로 계약 테스트를 다시 통과시켰다. 같은 날 운영 어드민 화면이 `runs/latest`의 단일 객체·`null` 계약을 배열로 오해해 렌더링에 실패한 문제를 고쳤다. 화면은 이제 KOPIS·대학 공지 상태를 각각 병렬 조회하고, 실행 이력이 없으면 빈 상태로 표현한다. 수동 실행은 비동기 접수(`ACCEPTED`)이므로, 실행 기록이 저장될 때까지 해당 원천의 최신 상태를 재조회하고 요청 확인 상태를 표시하도록 보정했다. 운영 로그에서 MySQL 예약어 `trigger`로 인한 실행 기록 INSERT SQL 1064를 확인해, Flyway V5와 엔티티를 `run_trigger`로 전환했다. 현재 Task 12 운영 검증 단계로, 수정 배포 후 KOPIS 수동 실행의 결과·신규 건수·후보 목록을 확인해야 한다. 정본: `docs/superpowers/plans/2026-09-13-external-import-implementation.md`.
   * 사용자 조치: KOPIS 인증키 발급, User-Agent에 넣을 `IMPORT_CONTACT` 값 결정. 값이 없어도 테스트 더블과 대학 설정 검증부터 구현할 수 있다.
 
 * **Vercel FE 분리·EC2 BE 블루/그린·Terraform 전환 설계** — `attacca.site`는 Vercel, `api.attacca.site`는 EC2 BE/Nginx/WebSocket/파일로 분리하는 방향을 사용자와 합의했다. 현행 단일 Compose를 유지한 채, Terraform import-first→API subdomain→Vercel 사전 검증→apex DNS 전환→외부 STOMP broker relay·공유 presence 설계→BE 블루/그린 순서로 진행한다. 설계 초안: `docs/superpowers/specs/2026-09-17-vercel-api-blue-green-terraform-design.md`.

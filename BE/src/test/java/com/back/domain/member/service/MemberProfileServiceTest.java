@@ -16,6 +16,7 @@ import com.back.domain.verifiedperformer.repository.VerificationApplicationRepos
 import com.back.domain.verifiedperformer.service.VerifiedPerformerService;
 import com.back.global.exception.BusinessException;
 import com.back.global.exception.ErrorCode;
+import com.back.global.storage.AttachmentFilePolicy;
 import com.back.global.storage.FileMetadataRepository;
 import com.back.global.storage.FileService;
 import com.back.global.storage.FileStorage;
@@ -56,7 +57,8 @@ class MemberProfileServiceTest {
     @BeforeEach
     void setUp() {
         fileStorage = new FakeFileStorage();
-        FileService fileService = new FileService(fileStorage, fileMetadataRepository);
+        FileService fileService = new FileService(fileStorage, fileMetadataRepository,
+                new AttachmentFilePolicy());
         verifiedPerformerService = new VerifiedPerformerService(verificationApplicationRepository);
         JwtProvider jwtProvider = new JwtProvider(new JwtProperties(
                 "test-secret-key-that-is-long-enough-for-hs256-0123456789", 1800000L, 1209600000L));

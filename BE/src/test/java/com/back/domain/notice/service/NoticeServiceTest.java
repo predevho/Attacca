@@ -17,6 +17,7 @@ import com.back.domain.verifiedperformer.service.VerifiedPerformerService;
 import com.back.global.common.PageResponse;
 import com.back.global.exception.BusinessException;
 import com.back.global.exception.ErrorCode;
+import com.back.global.storage.AttachmentFilePolicy;
 import com.back.global.storage.FileMetadataRepository;
 import com.back.global.storage.FileService;
 import com.back.global.storage.FileStorage;
@@ -51,7 +52,8 @@ class NoticeServiceTest {
         MemberQueryService memberQueryService =
                 new MemberQueryService(memberRepository, verifiedPerformerService);
         storage = new FakeFileStorage();
-        FileService fileService = new FileService(storage, fileMetadataRepository);
+        FileService fileService = new FileService(storage, fileMetadataRepository,
+                new AttachmentFilePolicy());
         service = new NoticeService(noticeRepository, memberQueryService, fileService);
 
         Member admin = memberRepository.save(

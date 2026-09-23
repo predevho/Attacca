@@ -15,6 +15,7 @@ import com.back.domain.verifiedperformer.repository.VerificationApplicationRepos
 import com.back.domain.verifiedperformer.service.VerifiedPerformerService;
 import com.back.global.exception.BusinessException;
 import com.back.global.exception.ErrorCode;
+import com.back.global.storage.AttachmentFilePolicy;
 import com.back.global.storage.FileMetadataRepository;
 import com.back.global.storage.FileService;
 import com.back.global.storage.FileStorage;
@@ -48,7 +49,8 @@ class PerformanceServiceTest {
         verifiedPerformerService = new VerifiedPerformerService(verificationApplicationRepository);
         MemberQueryService memberQueryService =
                 new MemberQueryService(memberRepository, verifiedPerformerService);
-        FileService fileService = new FileService(new FakeFileStorage(), fileMetadataRepository);
+        FileService fileService = new FileService(new FakeFileStorage(), fileMetadataRepository,
+                new AttachmentFilePolicy());
         service = new PerformanceService(performanceRepository, memberQueryService,
                 verifiedPerformerService, fileService);
 

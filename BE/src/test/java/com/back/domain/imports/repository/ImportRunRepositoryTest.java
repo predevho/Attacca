@@ -7,6 +7,8 @@ import com.back.domain.imports.entity.ImportRunResult;
 import com.back.domain.imports.entity.ImportSource;
 import com.back.domain.imports.entity.ImportTrigger;
 import java.time.LocalDateTime;
+import jakarta.persistence.Column;
+import java.lang.reflect.Field;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -16,6 +18,13 @@ class ImportRunRepositoryTest {
 
     @Autowired
     private ImportRunRepository repository;
+
+    @Test
+    void 실행_유형은_MySQL_예약어가_아닌_컬럼에_저장한다() throws NoSuchFieldException {
+        Field trigger = ImportRun.class.getDeclaredField("trigger");
+
+        assertThat(trigger.getAnnotation(Column.class).name()).isEqualTo("run_trigger");
+    }
 
     @Test
     void 원천별_가장_최근에_시작한_실행을_조회한다() {

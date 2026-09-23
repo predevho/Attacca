@@ -2,6 +2,7 @@ package com.back.domain.recruitment.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
 
 import com.back.domain.member.entity.Instrument;
 import com.back.domain.member.entity.Member;
@@ -12,11 +13,13 @@ import com.back.domain.recruitment.dto.RecruitmentApplicationResponse;
 import com.back.domain.recruitment.dto.RecruitmentPostingRequest;
 import com.back.domain.recruitment.entity.RecruitmentApplicationStatus;
 import com.back.domain.recruitment.repository.RecruitmentApplicationRepository;
+import com.back.domain.recruitment.repository.RecruitmentPostingAttachmentRepository;
 import com.back.domain.recruitment.repository.RecruitmentPostingRepository;
 import com.back.domain.verifiedperformer.repository.VerificationApplicationRepository;
 import com.back.domain.verifiedperformer.service.VerifiedPerformerService;
 import com.back.global.exception.BusinessException;
 import com.back.global.exception.ErrorCode;
+import com.back.global.storage.FileService;
 import java.time.LocalDateTime;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +36,7 @@ class RecruitmentApplicationServiceTest {
     @Autowired RecruitmentApplicationRepository applicationRepository;
     @Autowired MemberRepository memberRepository;
     @Autowired VerificationApplicationRepository verificationApplicationRepository;
+    @Autowired RecruitmentPostingAttachmentRepository postingAttachmentRepository;
 
     private RecruitmentPostingService postingService;
     private RecruitmentApplicationService service;
@@ -43,7 +47,8 @@ class RecruitmentApplicationServiceTest {
     void setUp() {
         MemberQueryService memberQueryService = new MemberQueryService(memberRepository,
                 new VerifiedPerformerService(verificationApplicationRepository));
-        postingService = new RecruitmentPostingService(postingRepository, memberQueryService);
+        postingService = new RecruitmentPostingService(postingRepository, memberQueryService,
+                postingAttachmentRepository, mock(FileService.class));
         service = new RecruitmentApplicationService(applicationRepository, postingService,
                 memberQueryService);
 

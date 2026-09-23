@@ -33,7 +33,7 @@ public class ImportRun extends BaseEntity {
     private ImportSource source;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(name = "run_trigger", nullable = false, length = 20)
     private ImportTrigger trigger;
 
     @Column(name = "started_at", nullable = false)
