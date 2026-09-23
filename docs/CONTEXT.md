@@ -6,7 +6,7 @@
 
 ## 현재 상태
 
-* **디자인 시스템(2026-08-18)**: 헨레 악보 모티프. `globals.css`에 시맨틱 색 토큰 15종(`paper`/`surface`/`surface-muted`/`ink`/`ink-muted`/`ink-faint`/`line`/`brand`/`brand-strong`/`on-brand`/`header`/`on-header`/`danger`/`warn`/`success`)을 Tailwind v4 `@theme inline`으로 정의. **컴포넌트는 의미로만 색을 쓰고 다크를 모른다** — 다크는 `prefers-color-scheme`에서 값만 교체. 헤더만 명암이 반전된다(라이트=짙은 표지 #3d5a80, 다크=밝은 표지 #8fb0ce). 새 색이 필요하면 하드코딩하지 말고 토큰을 추가할 것. `npm run check:colors`가 하드코딩 색·테두리 색 미지정을 잡는다. 라이트/다크 토큰 집합 일치는 `__tests__/color-tokens.test.ts`가 지킨다. 예외 1건: 카카오 버튼(`bg-[#FEE500]` + `text-black`)은 외부 브랜드 식별색이라 치환 대상 아님.
+* **디자인 시스템(2026-09-23)**: 밝은 콘텐츠 중심을 기본값으로 둔다. `globals.css`의 시맨틱 색 토큰 15종(`paper`/`surface`/`surface-muted`/`ink`/`ink-muted`/`ink-faint`/`line`/`brand`/`brand-strong`/`on-brand`/`header`/`on-header`/`danger`/`warn`/`success`)을 Tailwind v4 `@theme inline`으로 정의하며, 컴포넌트는 토큰만 사용한다. 기본과 초기 로딩은 라이트, 사용자가 `system`을 선택했을 때만 OS 테마를 따른다. 수동 다크는 유지하되 헤더는 라이트에서 흰 배경과 얇은 구분선으로 표현한다. 새 색이 필요하면 하드코딩하지 말고 토큰을 추가한다. `npm run check:colors`와 `__tests__/color-tokens.test.ts`가 토큰 사용·완전성을 검증한다. 카카오 버튼의 `#FEE500`은 외부 브랜드 식별색 예외다.
 * **전역 헤더(2026-08-18)**: `components/layout/Header.tsx`. 루트 레이아웃에 있고 인증 화면(`/login`·`/signup`)에서는 스스로 렌더를 건너뛴다(신원 요청도 안 보냄). 판정 로직은 `lib/layout/header.ts`(`NAV_ITEMS`/`isActive`/`shouldShowHeader`). 활성 경로는 접두 일치. 신원 조회 실패·fetch reject 시 렌더하지 않는다. **홈은 `/feed`이고 `/dashboard`는 제거됐다.**
 * 단계: BE 6개 도메인 + **FE 전 도메인 화면 완료, 전부 main 병합 완료**(피드·공연 FE도 main에 있음 — 2026-08-18 확인, 과거 "병합 대기" 기술은 오기였음). **2026-08-18 첫 실환경 통합 스모크 검증 완료**(BE+MySQL+FE 동시 기동, 전 도메인 브라우저 실왕복 통과, WS 실왕복 포함). 검증에서 결함 2건 발견·수정(채팅 실시간 수신 불가 / BE 파라미터 바인딩 500). **남은 건 배포·인프라와 BACKLOG의 정리 항목**.
 * FE 공연(PERFORMANCE): `/performances`(scope 탭·무한스크롤)/`/performances/new`(2단계 마법사·등록 자격 게이팅)/`/performances/[id]`(상세)/`/performances/[id]/edit`(수정)/포스터. BFF `/api/bff/performances/**`, BE 오프셋 페이징을 `useInfiniteList`+`toCursorPage`로 커서 인터페이스처럼 재사용. (2026-08-02, 8태스크 TDD, main 병합 완료.)
@@ -28,6 +28,8 @@
 * 이 PC 기동 편의: `BE/gradle.properties`에 `org.gradle.java.home`(graalvm-jdk-21) 고정해 뒀다(커밋 대상 아님). 그래서 `export JAVA_HOME` 없이 `./gradlew`가 동작한다. `.claude/launch.json`의 `be`는 preview 샌드박스 권한 문제로 실패하므로 BE는 셸에서 직접 띄운다.
 
 ## 주의
+
+* **문서 참고 자료 규칙(2026-09-22)**: 외부 자료가 설계·계획·트러블슈팅의 의사결정에 영향을 주면 문서에 `참고 자료` 섹션을 두고 원본 URL, 적용 범위, 적용하지 않는 범위를 기록한다. 외부 자료가 없으면 그 사실을 명시한다.
 
 * BE 스택: Spring Boot 3.4.5 / Gradle 8.11.1 / JDK 21(toolchain). Gradle 9는 Boot 3.4 미지원이므로 래퍼 올리지 말 것.
   * ⚠️ 이 개발 PC의 기본 `java`는 **JDK 25**라 Gradle 8.11.1이 Kotlin DSL 컴파일 단계에서 실패한다(에러 메시지가 "What went wrong: 25"로만 나와 원인 파악이 어렵다). 빌드 전 `export JAVA_HOME=/Users/predevho/Library/Java/JavaVirtualMachines/graalvm-jdk-21.0.7/Contents/Home` 필요.

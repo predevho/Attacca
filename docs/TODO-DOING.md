@@ -2,6 +2,8 @@
 
 현재 진행 중인 작업.
 
+* **밝은 콘텐츠 커뮤니티 UI·게시글 첨부** — 피드 인라인 작성 폼을 `/feed/new` 독립 흐름으로 옮기고, 기본 밝은 전역 UI와 피드·구인 임시 첨부 업로드(ID 연결)를 구현했다. JPG/PNG/WebP/PDF, 파일당 10MB, 최대 5개를 검증하고 실패 파일은 사유 표시와 개별 재시도가 가능하다. 자동 검증(BE 전체 테스트, FE 전체 테스트·타입검사·lint·색 토큰 검사·build)은 통과했다. 실제 브라우저에서 신규 작성·첨부 조회·실패 재시도 스모크 검증과 배포는 남아 있다. 설계: `docs/superpowers/specs/2026-09-22-content-community-attachments-ui-design.md`, 계획: `docs/superpowers/plans/2026-09-22-content-community-attachments-ui-implementation.md`.
+
 * **카카오 신규 소셜 회원 온보딩 티켓** — 카카오 인증 후 신규 회원이 `CONSENT_REQUIRED`로 `/login?error=oauth`에 떨어지는 문제를 해결한다. 설계: `docs/superpowers/specs/2026-09-18-social-onboarding-ticket-design.md`, 트러블슈팅: `docs/ops/troubleshooting/2026-09-18-kakao-oauth-onboarding.md`. 문서 작성 완료, BE/FE 구현 진행 중.
 
 ---
