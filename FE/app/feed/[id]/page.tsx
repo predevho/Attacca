@@ -9,6 +9,7 @@ import { AuthorBadge } from '@/components/feed/AuthorBadge';
 import { LikeButton } from '@/components/feed/LikeButton';
 import { ComposeForm } from '@/components/feed/ComposeForm';
 import { CommentItem } from '@/components/feed/CommentItem';
+import { AttachmentList } from '@/components/files/AttachmentList';
 import type { Comment, CursorPage, Me, Post } from '@/lib/feed/types';
 
 export default function FeedDetailPage() {
@@ -127,6 +128,8 @@ export default function FeedDetailPage() {
         ) : (
           <p className="whitespace-pre-wrap text-sm">{post.content}</p>
         )}
+
+        <AttachmentList attachments={post.attachments} />
 
         <div className="mt-3"><LikeButton liked={post.likedByMe} count={post.likeCount} onToggle={likePost} /></div>
       </article>

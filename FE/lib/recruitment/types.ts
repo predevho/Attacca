@@ -1,4 +1,4 @@
-import type { Author } from '@/lib/feed/types';
+import type { AttachmentFile, Author } from '@/lib/feed/types';
 
 export type RecruitmentScope = 'OPEN' | 'CLOSED' | 'ALL';
 export type RecruitmentStatus = 'OPEN' | 'CLOSED';
@@ -16,6 +16,7 @@ export type Posting = {
   deadline: string | null; // null=상시모집
   status: RecruitmentStatus;
   closed: boolean; // BE 파생 마감판정
+  attachments?: AttachmentFile[];
   createdAt: string;
   updatedAt: string;
 };

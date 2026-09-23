@@ -10,12 +10,20 @@ import com.back.domain.member.service.MemberQueryService;
 import com.back.domain.recruitment.dto.RecruitmentPostingRequest;
 import com.back.domain.recruitment.dto.RecruitmentPostingResponse;
 import com.back.domain.recruitment.dto.RecruitmentScope;
+import com.back.domain.recruitment.repository.RecruitmentPostingAttachmentRepository;
 import com.back.domain.recruitment.repository.RecruitmentPostingRepository;
 import com.back.domain.verifiedperformer.repository.VerificationApplicationRepository;
 import com.back.domain.verifiedperformer.service.VerifiedPerformerService;
 import com.back.global.exception.BusinessException;
 import com.back.global.exception.ErrorCode;
+import com.back.global.storage.AttachmentFilePolicy;
+import com.back.global.storage.FileMetadata;
+import com.back.global.storage.FileMetadataRepository;
+import com.back.global.storage.FileService;
+import com.back.global.storage.FileStorage;
+import java.io.InputStream;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,6 +37,8 @@ class RecruitmentPostingServiceTest {
     @Autowired RecruitmentPostingRepository postingRepository;
     @Autowired MemberRepository memberRepository;
     @Autowired VerificationApplicationRepository verificationApplicationRepository;
+    @Autowired FileMetadataRepository fileMetadataRepository;
+    @Autowired RecruitmentPostingAttachmentRepository recruitmentPostingAttachmentRepository;
 
     private RecruitmentPostingService service;
     private Long authorId;
@@ -38,7 +48,9 @@ class RecruitmentPostingServiceTest {
     void setUp() {
         MemberQueryService memberQueryService = new MemberQueryService(memberRepository,
                 new VerifiedPerformerService(verificationApplicationRepository));
-        service = new RecruitmentPostingService(postingRepository, memberQueryService);
+        service = new RecruitmentPostingService(postingRepository, memberQueryService,
+                recruitmentPostingAttachmentRepository,
+                new FileService(new FakeFileStorage(), fileMetadataRepository, new AttachmentFilePolicy()));
 
         authorId = memberRepository.save(Member.createLocal("author", "pw", "a@x.com", "작성자"))
                 .getId();
@@ -63,6 +75,26 @@ class RecruitmentPostingServiceTest {
         assertThat(res.author().nickname()).isEqualTo("작성자");
         assertThat(res.instruments()).containsExactly(Instrument.CELLO);
         assertThat(res.closed()).isFalse();
+    }
+
+    @Test
+    void 임시_첨부를_포함해_등록하면_표시순서대로_귀속하고_응답한다() {
+        FileMetadata first = fileMetadataRepository.save(FileMetadata.createTemporary(
+                "attachments/first.png", "first.png", "image/png", 10L, authorId));
+        FileMetadata second = fileMetadataRepository.save(FileMetadata.createTemporary(
+                "attachments/second.pdf", "second.pdf", "application/pdf", 20L, authorId));
+        RecruitmentPostingRequest request = new RecruitmentPostingRequest("첨부 공고", "설명",
+                Set.of(Instrument.CELLO), 2, "서울", "회당 5만원", LocalDateTime.now().plusDays(7),
+                List.of(second.getId(), first.getId()));
+
+        RecruitmentPostingResponse response = service.register(authorId, request);
+
+        assertThat(response.attachments()).extracting(attachment -> attachment.id())
+                .containsExactly(second.getId(), first.getId());
+        assertThat(recruitmentPostingAttachmentRepository
+                .findByPostingIdOrderByDisplayOrder(response.id()))
+                .extracting(attachment -> attachment.getFileMetadata().getId())
+                .containsExactly(second.getId(), first.getId());
     }
 
     @Test
@@ -111,5 +143,22 @@ class RecruitmentPostingServiceTest {
 
         service.deletePosting(otherId, true, created.id()); // 어드민 모더레이션
         assertThat(postingRepository.findByIdAndDeletedAtIsNull(created.id())).isEmpty();
+    }
+
+    private static class FakeFileStorage implements FileStorage {
+
+        @Override
+        public String upload(String key, InputStream content, long size, String contentType) {
+            return key;
+        }
+
+        @Override
+        public void delete(String key) {
+        }
+
+        @Override
+        public String getUrl(String key) {
+            return "https://files.example/" + key;
+        }
     }
 }

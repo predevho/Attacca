@@ -21,10 +21,10 @@ export default function NewRecruitmentPage() {
     });
   }, [router]);
 
-  async function submit(v: PostingFormValues) {
+  async function submit(v: PostingFormValues, attachmentIds: number[]) {
     setSubmitting(true);
     setError(null);
-    const r = await postBff<Posting>('/api/bff/recruitments', toPostingRequest(v));
+    const r = await postBff<Posting>('/api/bff/recruitments', toPostingRequest(v, attachmentIds));
     setSubmitting(false);
     if (r.ok && r.data) router.push(`/recruitments/${r.data.id}`);
     else setError(r.message ?? '등록에 실패했습니다.');

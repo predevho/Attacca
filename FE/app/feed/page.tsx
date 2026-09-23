@@ -6,7 +6,6 @@ import { getBff, postBff, deleteBff } from '@/lib/api';
 import { useInfiniteList } from '@/lib/feed/useInfiniteList';
 import { toggleLike } from '@/lib/feed/logic';
 import { PostCard } from '@/components/feed/PostCard';
-import { ComposeForm } from '@/components/feed/ComposeForm';
 import type { CursorPage, Post } from '@/lib/feed/types';
 
 export default function FeedPage() {
@@ -26,12 +25,6 @@ export default function FeedPage() {
 
   const { items, setItems, isLoading, error, loaded, hasMore, sentinelRef } = useInfiniteList<Post>(fetchPage);
 
-  async function createPost(content: string): Promise<boolean> {
-    const r = await postBff<Post>('/api/bff/feed/posts', { content });
-    if (r.ok) setItems((prev) => [r.data as Post, ...prev]);
-    return r.ok;
-  }
-
   async function like(post: Post) {
     const after = toggleLike(post);
     setItems((prev) => prev.map((p) => (p.id === post.id ? after : p)));
@@ -43,9 +36,15 @@ export default function FeedPage() {
 
   return (
     <main className="mx-auto mt-8 max-w-xl px-4">
-      <h1 className="mb-4 text-2xl font-bold">피드</h1>
-      <div className="mb-6 rounded-lg border border-line p-4">
-        <ComposeForm placeholder="무슨 생각을 하고 있나요?" maxLength={2000} buttonLabel="게시" onSubmit={createPost} />
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold">피드</h1>
+        <button
+          type="button"
+          onClick={() => router.push('/feed/new')}
+          className="rounded bg-brand px-4 py-2 text-sm text-on-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+        >
+          게시하기
+        </button>
       </div>
 
       {error && <p className="mb-4 text-sm text-danger">{error}</p>}

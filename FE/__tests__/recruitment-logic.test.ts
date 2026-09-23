@@ -40,7 +40,7 @@ describe('applicationStatusLabel', () => {
 describe('toPostingRequest', () => {
   it('빈 값은 null, 인원은 숫자, deadline 빈 값은 null', () => {
     expect(toPostingRequest({ ...base, description: '', location: '', fee: '', recruitCount: '', deadline: '' }))
-      .toEqual({ title: base.title, description: null, instruments: ['PIANO'], recruitCount: null, location: null, fee: null, deadline: null });
+      .toEqual({ title: base.title, description: null, instruments: ['PIANO'], recruitCount: null, location: null, fee: null, deadline: null, attachmentIds: [] });
   });
   it('deadline 값은 그대로 전달', () =>
     expect(toPostingRequest({ ...base, deadline: '2026-09-01T19:30' }).deadline).toBe('2026-09-01T19:30'));

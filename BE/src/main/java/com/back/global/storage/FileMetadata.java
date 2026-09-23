@@ -3,6 +3,8 @@ package com.back.global.storage;
 import com.back.global.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -42,17 +44,39 @@ public class FileMetadata extends BaseEntity {
     @Column(name = "uploader_id")
     private Long uploaderId;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private AttachmentState state;
+
     private FileMetadata(String storageKey, String originalName, String contentType,
-                         long size, Long uploaderId) {
+                         long size, Long uploaderId, AttachmentState state) {
         this.storageKey = storageKey;
         this.originalName = originalName;
         this.contentType = contentType;
         this.size = size;
         this.uploaderId = uploaderId;
+        this.state = state;
     }
 
-    public static FileMetadata create(String storageKey, String originalName, String contentType,
-                                      long size, Long uploaderId) {
-        return new FileMetadata(storageKey, originalName, contentType, size, uploaderId);
+    /** 프로필·포스터처럼 업로드 직후 사용하는 기존 도메인 파일을 만든다. */
+    public static FileMetadata createAttached(String storageKey, String originalName,
+                                              String contentType, long size, Long uploaderId) {
+        return new FileMetadata(storageKey, originalName, contentType, size, uploaderId,
+                AttachmentState.ATTACHED);
+    }
+
+    /** 게시글 저장 전 임시 업로드 파일을 만든다. */
+    public static FileMetadata createTemporary(String storageKey, String originalName,
+                                               String contentType, long size, Long uploaderId) {
+        return new FileMetadata(storageKey, originalName, contentType, size, uploaderId,
+                AttachmentState.TEMPORARY);
+    }
+
+    public void attach() {
+        this.state = AttachmentState.ATTACHED;
+    }
+
+    public boolean isTemporary() {
+        return state == AttachmentState.TEMPORARY;
     }
 }

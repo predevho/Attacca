@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { AttachmentPicker } from '@/components/files/AttachmentPicker';
 import { validatePosting } from '@/lib/recruitment/logic';
 import { InstrumentPicker } from '@/components/recruitment/InstrumentPicker';
+import { useTemporaryAttachments } from '@/lib/attachments/useTemporaryAttachments';
 import type { InstrumentOption, PostingFormValues } from '@/lib/recruitment/types';
 
 const EMPTY: PostingFormValues = {
@@ -16,10 +18,11 @@ export function PostingForm({
   initial?: Partial<PostingFormValues>;
   submitting: boolean;
   submitLabel: string;
-  onSubmit: (v: PostingFormValues) => void;
+  onSubmit: (v: PostingFormValues, attachmentIds: number[]) => void | Promise<void>;
 }) {
   const [v, setV] = useState<PostingFormValues>({ ...EMPTY, ...initial });
   const [error, setError] = useState<string | null>(null);
+  const attachments = useTemporaryAttachments();
 
   function field<K extends keyof PostingFormValues>(key: K) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -35,11 +38,13 @@ export function PostingForm({
     }));
   }
 
-  function submit() {
+  async function submit() {
     const err = validatePosting(v);
     if (err) { setError(err); return; }
     setError(null);
-    onSubmit(v);
+    const upload = await attachments.upload();
+    if (!upload.ok) return;
+    await onSubmit(v, upload.attachmentIds);
   }
 
   return (
@@ -81,9 +86,18 @@ export function PostingForm({
           className="h-32 rounded border border-line px-3 py-2" />
       </label>
 
+      <AttachmentPicker
+        items={attachments.items}
+        error={attachments.error}
+        disabled={submitting || attachments.uploading}
+        onAdd={attachments.addFiles}
+        onRemove={attachments.remove}
+        onRetry={attachments.retry}
+      />
+
       {error && <p className="text-sm text-danger">{error}</p>}
 
-      <button type="button" onClick={submit} disabled={submitting}
+      <button type="button" onClick={submit} disabled={submitting || attachments.uploading}
         className="rounded bg-brand px-4 py-2 text-on-brand disabled:opacity-40">
         {submitting ? '처리 중...' : submitLabel}
       </button>

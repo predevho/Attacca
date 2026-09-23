@@ -4,7 +4,7 @@ spring:
   servlet:
     multipart:
       max-file-size: 10MB
-      max-request-size: 10MB
+      max-request-size: 50MB
   datasource:
     url: ${DB_URL:jdbc:mysql://localhost:3306/attacca}
     username: ${DB_USERNAME:attacca}
@@ -147,3 +147,7 @@ storage:
     access-key: ${AWS_ACCESS_KEY_ID:}
     secret-key: ${AWS_SECRET_ACCESS_KEY:}
     base-url: ${S3_BASE_URL:}          # CloudFront/R2 교체 지점
+  temporary-cleanup:
+    cron: ${STORAGE_TEMPORARY_CLEANUP_CRON:0 15 * * * *}
+    retention: ${STORAGE_TEMPORARY_CLEANUP_RETENTION:PT24H}
+    zone: ${STORAGE_TEMPORARY_CLEANUP_ZONE:Asia/Seoul}

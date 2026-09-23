@@ -23,6 +23,7 @@ export function PostCard({ post, onLike, onOpen }: { post: Post; onLike: () => v
       <div className="relative z-10 mt-3 flex items-center gap-4 text-sm text-ink-muted">
         <LikeButton liked={post.likedByMe} count={post.likeCount} onToggle={onLike} />
         <span>댓글 {post.commentCount}</span>
+        {(post.attachments?.length ?? 0) > 0 && <span>첨부 {post.attachments!.length}</span>}
       </div>
     </article>
   );

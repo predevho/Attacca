@@ -35,11 +35,11 @@ export default function EditRecruitmentPage() {
     if (me && posting && !canEdit(me, posting.author.id)) router.push(`/recruitments/${posting.id}`);
   }, [me, posting, router]);
 
-  async function submit(v: PostingFormValues) {
+  async function submit(v: PostingFormValues, attachmentIds: number[]) {
     if (!posting) return;
     setSubmitting(true);
     setError(null);
-    const r = await putBff<Posting>(`/api/bff/recruitments/${posting.id}`, toPostingRequest(v));
+    const r = await putBff<Posting>(`/api/bff/recruitments/${posting.id}`, toPostingRequest(v, attachmentIds));
     setSubmitting(false);
     if (r.ok) router.push(`/recruitments/${posting.id}`);
     else setError(r.message ?? '수정에 실패했습니다.');

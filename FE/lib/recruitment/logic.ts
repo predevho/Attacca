@@ -22,7 +22,7 @@ export function validatePosting(v: PostingFormValues): string | null {
 }
 
 /** 폼 값 → BE 요청 본문. 빈 문자열은 null, 인원은 숫자 또는 null, deadline 빈 값은 null(상시모집). */
-export function toPostingRequest(v: PostingFormValues) {
+export function toPostingRequest(v: PostingFormValues, attachmentIds: number[] = []) {
   return {
     title: v.title,
     description: v.description.trim() === '' ? null : v.description,
@@ -31,6 +31,7 @@ export function toPostingRequest(v: PostingFormValues) {
     location: v.location.trim() === '' ? null : v.location,
     fee: v.fee.trim() === '' ? null : v.fee,
     deadline: v.deadline === '' ? null : v.deadline,
+    attachmentIds,
   };
 }
 

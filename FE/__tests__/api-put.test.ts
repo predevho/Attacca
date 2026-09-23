@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { putBff, putBffForm } from '@/lib/api';
+import { postBffForm, putBff, putBffForm } from '@/lib/api';
 
 afterEach(() => { vi.unstubAllGlobals(); });
 
@@ -33,6 +33,22 @@ describe('client put helpers', () => {
     expect(res.ok).toBe(true);
     const init = fetchMock.mock.calls[0][1] as RequestInit;
     expect(init.method).toBe('PUT');
+    expect(init.body).toBe(fd);
+    expect(init.headers).toBeUndefined();
+  });
+
+  it('postBffForm은 FormData를 content-type 없이 POST한다', async () => {
+    const fetchMock = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) =>
+      json({ ok: true, data: { attachmentId: 1 }, message: null }));
+    vi.stubGlobal('fetch', fetchMock);
+    const fd = new FormData();
+    fd.append('file', new Blob(['x'], { type: 'application/pdf' }), 'score.pdf');
+
+    const res = await postBffForm('/api/bff/files/attachments', fd);
+
+    expect(res.ok).toBe(true);
+    const init = fetchMock.mock.calls[0][1] as RequestInit;
+    expect(init.method).toBe('POST');
     expect(init.body).toBe(fd);
     expect(init.headers).toBeUndefined();
   });

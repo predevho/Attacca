@@ -7,11 +7,19 @@ import com.back.domain.recruitment.dto.RecruitmentPostingRequest;
 import com.back.domain.recruitment.dto.RecruitmentPostingResponse;
 import com.back.domain.recruitment.dto.RecruitmentScope;
 import com.back.domain.recruitment.entity.RecruitmentPosting;
+import com.back.domain.recruitment.entity.RecruitmentPostingAttachment;
 import com.back.domain.recruitment.entity.RecruitmentStatus;
+import com.back.domain.recruitment.repository.RecruitmentPostingAttachmentRepository;
 import com.back.domain.recruitment.repository.RecruitmentPostingRepository;
 import com.back.global.exception.BusinessException;
 import com.back.global.exception.ErrorCode;
+import com.back.global.storage.AttachmentResponse;
+import com.back.global.storage.FileMetadata;
+import com.back.global.storage.FileService;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -31,12 +39,15 @@ public class RecruitmentPostingService {
 
     private final RecruitmentPostingRepository postingRepository;
     private final MemberQueryService memberQueryService;
+    private final RecruitmentPostingAttachmentRepository attachmentRepository;
+    private final FileService fileService;
 
     @Transactional
     public RecruitmentPostingResponse register(Long authorId, RecruitmentPostingRequest request) {
         RecruitmentPosting saved = postingRepository.save(RecruitmentPosting.create(authorId,
                 request.title(), request.description(), request.instruments(),
                 request.recruitCount(), request.location(), request.fee(), request.deadline()));
+        attachTemporaryFiles(saved, authorId, request.attachmentIds());
         return toResponse(saved);
     }
 
@@ -58,7 +69,10 @@ public class RecruitmentPostingService {
         Set<Long> authorIds = page.getContent().stream()
                 .map(RecruitmentPosting::getAuthorId).collect(Collectors.toSet());
         Map<Long, MemberDisplay> authors = memberQueryService.findDisplaysByIds(authorIds);
-        return page.map(p -> RecruitmentPostingResponse.of(p, authors.get(p.getAuthorId()), now));
+        Map<Long, List<AttachmentResponse>> attachmentsByPostingId = attachmentsByPostingIds(
+                page.getContent().stream().map(RecruitmentPosting::getId).toList());
+        return page.map(p -> RecruitmentPostingResponse.of(p, authors.get(p.getAuthorId()), now,
+                attachmentsByPostingId.getOrDefault(p.getId(), List.of())));
     }
 
     @Transactional
@@ -68,6 +82,7 @@ public class RecruitmentPostingService {
         requireAuthor(posting, editorId);
         posting.edit(request.title(), request.description(), request.instruments(),
                 request.recruitCount(), request.location(), request.fee(), request.deadline());
+        attachTemporaryFiles(posting, editorId, request.attachmentIds());
         return toResponse(posting);
     }
 
@@ -119,6 +134,32 @@ public class RecruitmentPostingService {
         MemberDisplay author = memberQueryService
                 .findDisplaysByIds(Set.of(posting.getAuthorId()))
                 .get(posting.getAuthorId());
-        return RecruitmentPostingResponse.of(posting, author, LocalDateTime.now());
+        return RecruitmentPostingResponse.of(posting, author, LocalDateTime.now(),
+                attachmentsByPostingIds(List.of(posting.getId()))
+                        .getOrDefault(posting.getId(), List.of()));
+    }
+
+    private void attachTemporaryFiles(RecruitmentPosting posting, Long authorId,
+            List<Long> attachmentIds) {
+        if (attachmentIds == null || attachmentIds.isEmpty()) {
+            return;
+        }
+        List<FileMetadata> files = fileService.claimTemporaryFiles(attachmentIds, authorId);
+        List<RecruitmentPostingAttachment> attachments = new ArrayList<>();
+        for (int index = 0; index < files.size(); index++) {
+            attachments.add(RecruitmentPostingAttachment.create(posting, files.get(index), index));
+        }
+        attachmentRepository.saveAll(attachments);
+    }
+
+    private Map<Long, List<AttachmentResponse>> attachmentsByPostingIds(List<Long> postingIds) {
+        Map<Long, List<AttachmentResponse>> attachmentsByPostingId = new HashMap<>();
+        for (RecruitmentPostingAttachment attachment : attachmentRepository
+                .findByPostingIdInOrderByPostingIdAscDisplayOrderAsc(postingIds)) {
+            attachmentsByPostingId.computeIfAbsent(attachment.getPosting().getId(), ignored -> new ArrayList<>())
+                    .add(AttachmentResponse.of(attachment.getFileMetadata(),
+                            fileService.getUrl(attachment.getFileMetadata().getStorageKey())));
+        }
+        return attachmentsByPostingId;
     }
 }

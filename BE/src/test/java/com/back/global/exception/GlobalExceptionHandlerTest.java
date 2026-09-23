@@ -1,5 +1,6 @@
 package com.back.global.exception;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
@@ -94,6 +96,15 @@ class GlobalExceptionHandlerTest {
         mockMvc.perform(multipart("/test/part"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.resultCode").value("400-01"));
+    }
+
+    @Test
+    void multipart_용량초과는_첨부_용량초과_오류로_응답한다() {
+        var response = new GlobalExceptionHandler()
+                .handleMaxUploadSizeExceededException(new MaxUploadSizeExceededException(10L));
+
+        assertThat(response.getStatusCode()).isEqualTo(org.springframework.http.HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody().getError().code()).isEqualTo("ATTACHMENT_TOO_LARGE");
     }
 
     // 쿼리 파라미터를 enum으로 변환하지 못하는 경우(예: ?scope=open, 실제 상수는 OPEN).

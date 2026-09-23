@@ -7,6 +7,7 @@ import { canEdit, canDelete } from '@/lib/feed/logic';
 import { AuthorBadge } from '@/components/feed/AuthorBadge';
 import { ApplyPanel } from '@/components/recruitment/ApplyPanel';
 import { ApplicantList } from '@/components/recruitment/ApplicantList';
+import { AttachmentList } from '@/components/files/AttachmentList';
 import { formatDeadline } from '@/lib/recruitment/logic';
 import { instrumentText, toLabelMap, type InstrumentLabels } from '@/lib/recruitment/instruments';
 import type { Me } from '@/lib/feed/types';
@@ -147,6 +148,7 @@ export default function RecruitmentDetailPage() {
         <div><dt className="text-ink-muted">마감</dt><dd>{formatDeadline(posting.deadline)}</dd></div>
       </dl>
       {posting.description && <div className="mt-5 border-t border-line pt-4 text-sm"><p className="text-ink-muted">설명</p><p className="mt-1 whitespace-pre-wrap">{posting.description}</p></div>}
+      <AttachmentList attachments={posting.attachments} />
       </section>
 
       {isAuthor ? (

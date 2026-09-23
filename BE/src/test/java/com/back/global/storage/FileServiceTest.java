@@ -3,21 +3,26 @@ package com.back.global.storage;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.back.global.config.JpaAuditingConfig;
 import com.back.global.exception.BusinessException;
 import com.back.global.exception.ErrorCode;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.mock.web.MockMultipartFile;
 
 // FileStorage 를 Fake 로 대체해 디스크/AWS 를 건드리지 않고, 메타데이터 영속화는 실제 H2 로 검증한다.
 @DataJpaTest
+@Import(JpaAuditingConfig.class)
 class FileServiceTest {
 
     @Autowired
@@ -29,7 +34,8 @@ class FileServiceTest {
     @BeforeEach
     void setUp() {
         fileStorage = new FakeFileStorage();
-        fileService = new FileService(fileStorage, fileMetadataRepository);
+        fileService = new FileService(fileStorage, fileMetadataRepository,
+                new AttachmentFilePolicy());
     }
 
     private MockMultipartFile pngFile() {
@@ -136,6 +142,70 @@ class FileServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .extracting(e -> ((BusinessException) e).getErrorCode())
                 .isEqualTo(ErrorCode.FILE_NOT_FOUND);
+    }
+
+    @Test
+    void 임시_첨부를_업로드하면_TEMPORARY_상태로_저장한다() {
+        StoredFile stored = fileService.uploadTemporary(attachmentPng(), 7L);
+
+        assertThat(fileMetadataRepository.findById(stored.id()))
+                .get()
+                .satisfies(meta -> assertThat(meta.getState())
+                        .isEqualTo(AttachmentState.TEMPORARY));
+    }
+
+    @Test
+    void 본인이_올린_임시_첨부만_귀속할_수_있다() {
+        StoredFile stored = fileService.uploadTemporary(attachmentPng(), 7L);
+
+        List<FileMetadata> claimed = fileService.claimTemporaryFiles(List.of(stored.id()), 7L);
+
+        assertThat(claimed).singleElement()
+                .satisfies(meta -> assertThat(meta.getState()).isEqualTo(AttachmentState.ATTACHED));
+    }
+
+    @Test
+    void 다른_사용자의_임시_첨부는_귀속할_수_없다() {
+        StoredFile stored = fileService.uploadTemporary(attachmentPng(), 7L);
+
+        assertThatThrownBy(() -> fileService.claimTemporaryFiles(List.of(stored.id()), 8L))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode())
+                .isEqualTo(ErrorCode.ATTACHMENT_NOT_OWNED);
+    }
+
+    @Test
+    void 임시_첨부는_최대_5개까지만_귀속할_수_있다() {
+        List<Long> fileIds = java.util.stream.IntStream.range(0, 6)
+                .mapToObj(index -> fileMetadataRepository.save(FileMetadata.createTemporary(
+                        "feed/2026/09/22/" + index + ".png", index + ".png", "image/png", 10L, 7L)))
+                .map(FileMetadata::getId)
+                .toList();
+
+        assertThatThrownBy(() -> fileService.claimTemporaryFiles(fileIds, 7L))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode())
+                .isEqualTo(ErrorCode.ATTACHMENT_LIMIT_EXCEEDED);
+    }
+
+    @Test
+    void 만료된_임시_첨부만_저장소와_메타데이터에서_정리한다() {
+        StoredFile temporary = fileService.uploadTemporary(attachmentPng(), 7L);
+        StoredFile attached = fileService.uploadTemporary(attachmentPng(), 7L);
+        fileService.claimTemporaryFiles(List.of(attached.id()), 7L);
+
+        int deletedCount = fileService.deleteExpiredTemporaryFiles(LocalDateTime.now().plusMinutes(1));
+
+        assertThat(deletedCount).isEqualTo(1);
+        assertThat(fileStorage.stored).doesNotContainKey(temporary.storageKey());
+        assertThat(fileMetadataRepository.findById(temporary.id())).isEmpty();
+        assertThat(fileStorage.stored).containsKey(attached.storageKey());
+        assertThat(fileMetadataRepository.findById(attached.id())).isPresent();
+    }
+
+    private MockMultipartFile attachmentPng() {
+        return new MockMultipartFile("file", "attachment.png", "image/png",
+                new byte[] {(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A});
     }
 
     /** 디스크/AWS 없이 FileService 를 검증하기 위한 인메모리 저장소. */

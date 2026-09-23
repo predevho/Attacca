@@ -54,4 +54,13 @@ describe('ComposeForm', () => {
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('첫 글'));
     await waitFor(() => expect(ta.value).toBe(''));
   });
+
+  it('첨부 형식 오류를 파일 입력에 연결해 표시한다', () => {
+    render(<ComposeForm placeholder="무슨 생각" maxLength={2000} buttonLabel="게시" allowAttachments onSubmit={async () => true} />);
+    const input = screen.getByLabelText('첨부 파일');
+    fireEvent.change(input, { target: { files: [new File(['memo'], 'memo.txt', { type: 'text/plain' })] } });
+
+    expect(input).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByRole('alert')).toHaveTextContent('JPG, PNG, WebP 또는 PDF 파일만 첨부할 수 있습니다.');
+  });
 });

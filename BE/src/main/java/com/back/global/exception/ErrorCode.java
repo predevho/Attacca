@@ -52,7 +52,12 @@ public enum ErrorCode {
 
     // --- 파일 저장 ---
     INVALID_FILE("400-02", HttpStatus.BAD_REQUEST, "올바르지 않은 파일입니다."),
+    INVALID_ATTACHMENT_TYPE("400-08", HttpStatus.BAD_REQUEST, "지원하지 않는 첨부 파일 형식입니다."),
+    ATTACHMENT_TOO_LARGE("400-09", HttpStatus.BAD_REQUEST, "첨부 파일 크기가 제한을 초과했습니다."),
+    ATTACHMENT_LIMIT_EXCEEDED("400-10", HttpStatus.BAD_REQUEST, "첨부 파일은 최대 5개까지 추가할 수 있습니다."),
     FILE_NOT_FOUND("404-01", HttpStatus.NOT_FOUND, "파일을 찾을 수 없습니다."),
+    ATTACHMENT_NOT_OWNED("403-04", HttpStatus.FORBIDDEN, "본인이 업로드한 첨부 파일만 사용할 수 있습니다."),
+    ATTACHMENT_NOT_TEMPORARY("409-13", HttpStatus.CONFLICT, "게시글에 연결할 수 없는 첨부 파일입니다."),
     FILE_UPLOAD_FAILED("500-02", HttpStatus.INTERNAL_SERVER_ERROR, "파일 업로드에 실패했습니다."),
 
     // --- FEED ---

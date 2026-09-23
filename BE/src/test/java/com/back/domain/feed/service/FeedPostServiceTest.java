@@ -7,6 +7,7 @@ import com.back.domain.feed.dto.CreatePostRequest;
 import com.back.domain.feed.dto.CursorPage;
 import com.back.domain.feed.dto.PostResponse;
 import com.back.domain.feed.dto.UpdatePostRequest;
+import com.back.domain.feed.repository.FeedPostAttachmentRepository;
 import com.back.domain.feed.entity.PostLike;
 import com.back.domain.feed.repository.CommentRepository;
 import com.back.domain.feed.repository.PostLikeRepository;
@@ -18,6 +19,13 @@ import com.back.domain.verifiedperformer.repository.VerificationApplicationRepos
 import com.back.domain.verifiedperformer.service.VerifiedPerformerService;
 import com.back.global.exception.BusinessException;
 import com.back.global.exception.ErrorCode;
+import com.back.global.storage.AttachmentFilePolicy;
+import com.back.global.storage.FileMetadata;
+import com.back.global.storage.FileMetadataRepository;
+import com.back.global.storage.FileService;
+import com.back.global.storage.FileStorage;
+import java.io.InputStream;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +39,8 @@ class FeedPostServiceTest {
     @Autowired CommentRepository commentRepository;
     @Autowired MemberRepository memberRepository;
     @Autowired VerificationApplicationRepository verificationApplicationRepository;
+    @Autowired FileMetadataRepository fileMetadataRepository;
+    @Autowired FeedPostAttachmentRepository feedPostAttachmentRepository;
 
     private FeedPostService service;
     private Long authorId;
@@ -40,7 +50,8 @@ class FeedPostServiceTest {
         VerifiedPerformerService vps = new VerifiedPerformerService(verificationApplicationRepository);
         MemberQueryService memberQueryService = new MemberQueryService(memberRepository, vps);
         service = new FeedPostService(postRepository, postLikeRepository, commentRepository,
-                memberQueryService);
+                memberQueryService, feedPostAttachmentRepository,
+                new FileService(new FakeFileStorage(), fileMetadataRepository, new AttachmentFilePolicy()));
         Member author = memberRepository.save(Member.createLocal("w", "pw", "w@x.com", "글쓴이"));
         authorId = author.getId();
     }
@@ -58,6 +69,23 @@ class FeedPostServiceTest {
         assertThat(response.likeCount()).isZero();
         assertThat(response.commentCount()).isZero();
         assertThat(response.likedByMe()).isFalse();
+    }
+
+    @Test
+    void 임시_첨부를_포함해_작성하면_표시순서대로_귀속하고_응답한다() {
+        FileMetadata first = fileMetadataRepository.save(FileMetadata.createTemporary(
+                "attachments/first.png", "first.png", "image/png", 10L, authorId));
+        FileMetadata second = fileMetadataRepository.save(FileMetadata.createTemporary(
+                "attachments/second.pdf", "second.pdf", "application/pdf", 20L, authorId));
+
+        PostResponse response = service.createPost(authorId,
+                new CreatePostRequest("첨부 글", List.of(second.getId(), first.getId())));
+
+        assertThat(response.attachments()).extracting(attachment -> attachment.id())
+                .containsExactly(second.getId(), first.getId());
+        assertThat(feedPostAttachmentRepository.findByPostIdOrderByDisplayOrder(response.id()))
+                .extracting(attachment -> attachment.getFileMetadata().getId())
+                .containsExactly(second.getId(), first.getId());
     }
 
     @Test
@@ -128,5 +156,22 @@ class FeedPostServiceTest {
 
         service.deletePost(other.getId(), true, created.id()); // 어드민 모더레이션
         assertThat(postRepository.findByIdAndDeletedAtIsNull(created.id())).isEmpty();
+    }
+
+    private static class FakeFileStorage implements FileStorage {
+
+        @Override
+        public String upload(String key, InputStream content, long size, String contentType) {
+            return key;
+        }
+
+        @Override
+        public void delete(String key) {
+        }
+
+        @Override
+        public String getUrl(String key) {
+            return "https://files.example/" + key;
+        }
     }
 }

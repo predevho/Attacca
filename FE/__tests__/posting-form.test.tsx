@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { PostingForm } from '@/components/recruitment/PostingForm';
 
 const options = [{ code: 'PIANO', label: '피아노' }];
@@ -13,13 +13,16 @@ describe('PostingForm', () => {
     expect(screen.getByText('제목을 입력해 주세요.')).toBeInTheDocument();
   });
 
-  it('유효 입력이면 폼 값과 함께 onSubmit', () => {
+  it('유효 입력이면 임시 첨부 ID와 함께 onSubmit', async () => {
     const onSubmit = vi.fn();
     render(<PostingForm options={options} submitting={false} submitLabel="등록" onSubmit={onSubmit} />);
     fireEvent.change(screen.getByLabelText('제목'), { target: { value: '반주자 구함' } });
     fireEvent.click(screen.getByText('피아노')); // 악기 선택
     fireEvent.click(screen.getByRole('button', { name: '등록' }));
-    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ title: '반주자 구함', instruments: ['PIANO'] }));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ title: '반주자 구함', instruments: ['PIANO'] }),
+      [],
+    ));
   });
 
   it('initial 값으로 필드를 채운다', () => {

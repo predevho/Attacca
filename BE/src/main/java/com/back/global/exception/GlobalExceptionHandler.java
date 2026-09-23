@@ -11,6 +11,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
@@ -80,6 +81,17 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleMissingServletRequestPart(MissingServletRequestPartException e) {
         ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
         log.warn("MissingServletRequestPartException: part={}", e.getRequestPartName());
+        return ResponseEntity.status(errorCode.getStatus())
+                .body(ApiResponse.error(errorCode));
+    }
+
+    // servlet multipart 제한을 넘으면 컨트롤러 진입 전에 예외가 난다.
+    // 첨부 정책 오류와 같은 코드로 내려야 프런트가 파일 입력 근처에 일관되게 표시할 수 있다.
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMaxUploadSizeExceededException(
+            MaxUploadSizeExceededException e) {
+        ErrorCode errorCode = ErrorCode.ATTACHMENT_TOO_LARGE;
+        log.warn("MaxUploadSizeExceededException: maxUploadSize={}", e.getMaxUploadSize());
         return ResponseEntity.status(errorCode.getStatus())
                 .body(ApiResponse.error(errorCode));
     }

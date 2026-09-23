@@ -57,6 +57,11 @@ export async function putBffForm<T = unknown>(path: string, form: FormData): Pro
   return request<T>(path, { method: 'PUT', body: form });
 }
 
+/** multipart POST. content-type을 지정하지 않아 브라우저가 boundary를 설정한다. */
+export async function postBffForm<T = unknown>(path: string, form: FormData): Promise<BffResult<T>> {
+  return request<T>(path, { method: 'POST', body: form });
+}
+
 export async function deleteBff<T = unknown>(path: string): Promise<BffResult<T>> {
   return request<T>(path, { method: 'DELETE' });
 }

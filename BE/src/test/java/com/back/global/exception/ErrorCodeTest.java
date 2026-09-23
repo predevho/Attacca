@@ -67,6 +67,17 @@ class ErrorCodeTest {
     }
 
     @Test
+    void 첨부_에러코드는_형식과_권한과_상태를_구분한다() {
+        assertThat(ErrorCode.INVALID_ATTACHMENT_TYPE.getResultCode()).isEqualTo("400-08");
+        assertThat(ErrorCode.ATTACHMENT_TOO_LARGE.getResultCode()).isEqualTo("400-09");
+        assertThat(ErrorCode.ATTACHMENT_LIMIT_EXCEEDED.getResultCode()).isEqualTo("400-10");
+        assertThat(ErrorCode.ATTACHMENT_NOT_OWNED.getResultCode()).isEqualTo("403-04");
+        assertThat(ErrorCode.ATTACHMENT_NOT_TEMPORARY.getResultCode()).isEqualTo("409-13");
+        assertThat(ErrorCode.ATTACHMENT_NOT_OWNED.getStatus()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(ErrorCode.ATTACHMENT_NOT_TEMPORARY.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+    }
+
+    @Test
     void 회원_에러코드는_지정된_resultCode와_상태를_가진다() {
         assertThat(ErrorCode.MEMBER_NOT_FOUND.getResultCode()).isEqualTo("404-03");
         assertThat(ErrorCode.MEMBER_NOT_FOUND.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);

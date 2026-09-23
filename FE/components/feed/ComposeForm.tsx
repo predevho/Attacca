@@ -1,26 +1,44 @@
 'use client';
 
 import { useId, useState } from 'react';
+import { AttachmentPicker } from '@/components/files/AttachmentPicker';
+import { useTemporaryAttachments } from '@/lib/attachments/useTemporaryAttachments';
 
 export function ComposeForm({
-  placeholder, maxLength, buttonLabel, onSubmit,
+  placeholder, maxLength, buttonLabel, allowAttachments = false, onSubmit,
 }: {
   placeholder: string;
   maxLength: number;
   buttonLabel: string;
-  onSubmit: (content: string) => Promise<boolean>;
+  allowAttachments?: boolean;
+  onSubmit: (content: string, attachmentIds?: number[]) => Promise<boolean>;
 }) {
   const [content, setContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const countId = useId();
+  const attachments = useTemporaryAttachments();
 
   async function submit() {
     const trimmed = content.trim();
     if (!trimmed || submitting) return;
     setSubmitting(true);
-    const okDone = await onSubmit(trimmed);
+    setSubmitError(null);
+    const upload = allowAttachments ? await attachments.upload() : { ok: true as const, attachmentIds: [] };
+    if (!upload.ok) {
+      setSubmitting(false);
+      return;
+    }
+    const okDone = allowAttachments
+      ? await onSubmit(trimmed, upload.attachmentIds)
+      : await onSubmit(trimmed);
     setSubmitting(false);
-    if (okDone) setContent('');
+    if (okDone) {
+      setContent('');
+      attachments.clear();
+    } else {
+      setSubmitError(`${buttonLabel}하지 못했습니다. 다시 시도해 주세요.`);
+    }
   }
 
   return (
@@ -39,12 +57,23 @@ export function ComposeForm({
         onChange={(e) => setContent(e.target.value)}
         className="min-h-20 w-full rounded border border-line px-3 py-2 text-sm"
       />
+      {allowAttachments && (
+        <AttachmentPicker
+          items={attachments.items}
+          error={attachments.error}
+          disabled={submitting || attachments.uploading}
+          onAdd={attachments.addFiles}
+          onRemove={attachments.remove}
+          onRetry={attachments.retry}
+        />
+      )}
+      {submitError && <p role="alert" className="text-sm text-danger">{submitError}</p>}
       <div className="flex items-center justify-between">
         <span id={countId} className="text-xs text-ink-faint">{content.length}/{maxLength}</span>
         <button
           type="button"
           onClick={submit}
-          disabled={submitting || content.trim().length === 0}
+          disabled={submitting || attachments.uploading || content.trim().length === 0}
           className="rounded bg-brand px-4 py-2 text-sm text-on-brand disabled:opacity-40"
         >
           {submitting ? '전송 중...' : buttonLabel}

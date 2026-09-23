@@ -1,5 +1,13 @@
 export type Author = { id: number; nickname: string; verified: boolean };
 
+export type AttachmentFile = {
+  id: number;
+  originalName: string;
+  contentType: string;
+  size: number;
+  url: string;
+};
+
 export type Post = {
   id: number;
   author: Author;
@@ -7,6 +15,7 @@ export type Post = {
   likeCount: number;
   commentCount: number;
   likedByMe: boolean;
+  attachments?: AttachmentFile[];
   createdAt: string;
   updatedAt: string;
 };

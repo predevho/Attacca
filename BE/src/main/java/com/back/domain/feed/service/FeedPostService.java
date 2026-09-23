@@ -4,8 +4,10 @@ import com.back.domain.feed.dto.CreatePostRequest;
 import com.back.domain.feed.dto.CursorPage;
 import com.back.domain.feed.dto.PostResponse;
 import com.back.domain.feed.dto.UpdatePostRequest;
+import com.back.domain.feed.entity.FeedPostAttachment;
 import com.back.domain.feed.entity.Post;
 import com.back.domain.feed.repository.CommentRepository;
+import com.back.domain.feed.repository.FeedPostAttachmentRepository;
 import com.back.domain.feed.repository.IdCount;
 import com.back.domain.feed.repository.PostLikeRepository;
 import com.back.domain.feed.repository.PostRepository;
@@ -13,6 +15,11 @@ import com.back.domain.member.dto.MemberDisplay;
 import com.back.domain.member.service.MemberQueryService;
 import com.back.global.exception.BusinessException;
 import com.back.global.exception.ErrorCode;
+import com.back.global.storage.AttachmentResponse;
+import com.back.global.storage.FileMetadata;
+import com.back.global.storage.FileService;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,10 +38,13 @@ public class FeedPostService {
     private final PostLikeRepository postLikeRepository;
     private final CommentRepository commentRepository;
     private final MemberQueryService memberQueryService;
+    private final FeedPostAttachmentRepository feedPostAttachmentRepository;
+    private final FileService fileService;
 
     @Transactional
     public PostResponse createPost(Long authorId, CreatePostRequest request) {
         Post saved = postRepository.save(Post.create(authorId, request.content()));
+        attachTemporaryFiles(saved, authorId, request.attachmentIds());
         return toSingleResponse(authorId, saved);
     }
 
@@ -59,12 +69,14 @@ public class FeedPostService {
         Map<Long, Long> likeCounts = toCountMap(postLikeRepository.countByPostIds(postIds));
         Map<Long, Long> commentCounts = toCountMap(commentRepository.countByPostIds(postIds));
         Set<Long> likedIds = Set.copyOf(postLikeRepository.findLikedPostIds(viewerId, postIds));
+        Map<Long, List<AttachmentResponse>> attachmentsByPostId = attachmentsByPostIds(postIds);
 
         List<PostResponse> items = page.stream()
                 .map(p -> toResponse(p, authors.get(p.getAuthorId()),
                         likeCounts.getOrDefault(p.getId(), 0L),
                         commentCounts.getOrDefault(p.getId(), 0L),
-                        likedIds.contains(p.getId())))
+                        likedIds.contains(p.getId()),
+                        attachmentsByPostId.getOrDefault(p.getId(), List.of())))
                 .toList();
         Long nextCursor = hasNext ? page.get(page.size() - 1).getId() : null;
         return new CursorPage<>(items, nextCursor);
@@ -77,6 +89,7 @@ public class FeedPostService {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
         post.edit(request.content());
+        attachTemporaryFiles(post, editorId, request.attachmentIds());
         return toSingleResponse(editorId, post);
     }
 
@@ -100,16 +113,40 @@ public class FeedPostService {
         long likeCount = postLikeRepository.countByPostId(post.getId());
         long commentCount = commentRepository.countByPostIdAndDeletedAtIsNull(post.getId());
         boolean likedByMe = postLikeRepository.existsByMemberIdAndPostId(viewerId, post.getId());
-        return toResponse(post, author, likeCount, commentCount, likedByMe);
+        return toResponse(post, author, likeCount, commentCount, likedByMe,
+                attachmentsByPostIds(List.of(post.getId())).getOrDefault(post.getId(), List.of()));
     }
 
     private PostResponse toResponse(Post post, MemberDisplay author, long likeCount,
-            long commentCount, boolean likedByMe) {
+            long commentCount, boolean likedByMe, List<AttachmentResponse> attachments) {
         return new PostResponse(post.getId(), author, post.getContent(), likeCount, commentCount,
-                likedByMe, post.getCreatedAt(), post.getUpdatedAt());
+                likedByMe, attachments, post.getCreatedAt(), post.getUpdatedAt());
     }
 
     private Map<Long, Long> toCountMap(List<IdCount> counts) {
         return counts.stream().collect(Collectors.toMap(IdCount::getId, IdCount::getCount));
+    }
+
+    private void attachTemporaryFiles(Post post, Long authorId, List<Long> attachmentIds) {
+        if (attachmentIds == null || attachmentIds.isEmpty()) {
+            return;
+        }
+        List<FileMetadata> files = fileService.claimTemporaryFiles(attachmentIds, authorId);
+        List<FeedPostAttachment> attachments = new ArrayList<>();
+        for (int index = 0; index < files.size(); index++) {
+            attachments.add(FeedPostAttachment.create(post, files.get(index), index));
+        }
+        feedPostAttachmentRepository.saveAll(attachments);
+    }
+
+    private Map<Long, List<AttachmentResponse>> attachmentsByPostIds(List<Long> postIds) {
+        Map<Long, List<AttachmentResponse>> attachmentsByPostId = new HashMap<>();
+        for (FeedPostAttachment attachment : feedPostAttachmentRepository
+                .findByPostIdInOrderByPostIdAscDisplayOrderAsc(postIds)) {
+            attachmentsByPostId.computeIfAbsent(attachment.getPost().getId(), ignored -> new ArrayList<>())
+                    .add(AttachmentResponse.of(attachment.getFileMetadata(),
+                            fileService.getUrl(attachment.getFileMetadata().getStorageKey())));
+        }
+        return attachmentsByPostId;
     }
 }
