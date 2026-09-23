@@ -50,21 +50,29 @@ describe('Header', () => {
     expect((await screen.findAllByText('인증')).length).toBeGreaterThan(0);
   });
 
-  it('ADMIN에게만 어드민 화면 링크를 보여준다', async () => {
-    // 어드민 화면이 둘(공지 관리 / 인증 심사)이라 링크도 둘이다.
+  it('ADMIN에게만 관리 허브 링크를 보여준다', async () => {
     getBff.mockResolvedValue({ ok: true, data: { ...ME, role: 'ADMIN' }, message: null });
     render(<Header />);
 
-    expect(await screen.findByRole('link', { name: '공지' })).toHaveAttribute('href', '/admin/notices');
-    expect(screen.getByRole('link', { name: '인증심사' }))
-      .toHaveAttribute('href', '/admin/verified-performers');
+    expect(await screen.findByRole('link', { name: '관리' })).toHaveAttribute('href', '/admin');
+    expect(screen.queryByRole('link', { name: '공지' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: '인증심사' })).not.toBeInTheDocument();
+  });
+
+  it('관리자 화면에서는 관리 링크를 활성 상태로 표시한다', async () => {
+    pathname = '/admin/imports';
+    getBff.mockResolvedValue({ ok: true, data: { ...ME, role: 'ADMIN' }, message: null });
+    render(<Header />);
+
+    const management = await screen.findByRole('link', { name: '관리' });
+    expect(management).toHaveAttribute('aria-current', 'page');
+    expect(management).toHaveClass('bg-brand');
   });
 
   it('일반 회원에게는 어드민 화면 링크를 보여주지 않는다', async () => {
     render(<Header />);
     await screen.findAllByText('스모크1');
-    expect(screen.queryByRole('link', { name: '공지' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: '인증심사' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: '관리' })).not.toBeInTheDocument();
   });
 
   it('비로그인이면 로그인·회원가입을 보여준다', async () => {

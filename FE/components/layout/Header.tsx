@@ -87,10 +87,16 @@ export function Header() {
         {me.verified && <span className="rounded-full bg-surface-muted px-1.5 py-0.5 text-xs font-semibold text-brand-strong">인증</span>}
       </Link>
       {me.role === 'ADMIN' && (
-        <>
-          <Link href="/admin/notices" onClick={() => setMenuOpen(false)} className="opacity-80">공지</Link>
-          <Link href="/admin/verified-performers" onClick={() => setMenuOpen(false)} className="opacity-80">인증심사</Link>
-        </>
+        <Link
+          href="/admin"
+          aria-current={isActive(pathname, '/admin') ? 'page' : undefined}
+          onClick={() => setMenuOpen(false)}
+          className={isActive(pathname, '/admin')
+            ? 'rounded bg-brand px-2.5 py-1 font-semibold text-on-brand'
+            : 'rounded border border-line px-2.5 py-1 font-semibold transition-colors hover:bg-on-header/10'}
+        >
+          관리
+        </Link>
       )}
       <button type="button" onClick={onLogout}
         className="text-left opacity-80 transition-opacity hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">로그아웃</button>
