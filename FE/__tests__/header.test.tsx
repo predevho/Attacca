@@ -66,7 +66,7 @@ describe('Header', () => {
 
     const management = await screen.findByRole('link', { name: '관리' });
     expect(management).toHaveAttribute('aria-current', 'page');
-    expect(management).toHaveClass('bg-brand');
+    expect(management).toHaveClass('border-brand-strong');
   });
 
   it('일반 회원에게는 어드민 화면 링크를 보여주지 않는다', async () => {

@@ -92,7 +92,7 @@ export function Header() {
           aria-current={isActive(pathname, '/admin') ? 'page' : undefined}
           onClick={() => setMenuOpen(false)}
           className={isActive(pathname, '/admin')
-            ? 'rounded bg-brand px-2.5 py-1 font-semibold text-on-brand'
+            ? 'rounded border border-brand-strong bg-surface-muted px-2.5 py-1 font-semibold text-brand-strong shadow-sm'
             : 'rounded border border-line px-2.5 py-1 font-semibold transition-colors hover:bg-on-header/10'}
         >
           관리

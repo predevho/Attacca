@@ -1,13 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 const push = vi.fn();
 const getBff = vi.fn();
+const postBff = vi.fn();
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
 vi.mock('@/lib/api', () => ({
   getBff: (path: string) => getBff(path),
-  postBff: vi.fn(),
+  postBff: (path: string) => postBff(path),
 }));
 
 import AdminImportsPage from '@/app/admin/imports/page';
@@ -27,6 +28,8 @@ describe('AdminImportsPage', () => {
   beforeEach(() => {
     push.mockReset();
     getBff.mockReset();
+    postBff.mockReset();
+    postBff.mockResolvedValue({ ok: true, data: { source: 'UNIV_NOTICE', status: 'ACCEPTED' }, message: null });
     getBff.mockImplementation((path: string) => {
       if (path === '/api/bff/me/identity') {
         return Promise.resolve({ ok: true, data: { role: 'ADMIN' }, message: null });
@@ -50,5 +53,38 @@ describe('AdminImportsPage', () => {
     expect(await screen.findByText('완료')).toBeInTheDocument();
     expect(screen.getByText('실행 기록 없음')).toBeInTheDocument();
     expect(screen.getByText(/새 항목 3건/)).toBeInTheDocument();
+  });
+
+  it('수집 요청 뒤 실행 기록이 생길 때까지 원천 상태를 다시 확인한다', async () => {
+    let runRecorded = false;
+    getBff.mockImplementation((path: string) => {
+      if (path === '/api/bff/me/identity') {
+        return Promise.resolve({ ok: true, data: { role: 'ADMIN' }, message: null });
+      }
+      if (path.startsWith('/api/bff/admin/imports?')) {
+        return Promise.resolve({ ok: true, data: { content: [] }, message: null });
+      }
+      if (path === '/api/bff/admin/imports/runs/latest?source=KOPIS') {
+        return Promise.resolve({ ok: true, data: null, message: null });
+      }
+      if (path === '/api/bff/admin/imports/runs/latest?source=UNIV_NOTICE') {
+        return Promise.resolve({
+          ok: true,
+          data: runRecorded ? { ...kopisRun, source: 'UNIV_NOTICE', newCount: 2 } : null,
+          message: null,
+        });
+      }
+      return Promise.resolve({ ok: false, data: null, message: 'unexpected request' });
+    });
+    render(<AdminImportsPage />);
+
+    const runButtons = await screen.findAllByRole('button', { name: '지금 가져오기' });
+    fireEvent.click(runButtons[1]);
+
+    await waitFor(() => expect(postBff).toHaveBeenCalledWith('/api/bff/admin/imports/runs?source=UNIV_NOTICE'));
+    await new Promise((resolve) => window.setTimeout(resolve, 100));
+    runRecorded = true;
+    await waitFor(() => expect(screen.getByText('완료')).toBeInTheDocument(), { timeout: 2_000 });
+    expect(screen.getByText(/새 항목 2건/)).toBeInTheDocument();
   });
 });
