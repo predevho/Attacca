@@ -4,6 +4,7 @@
 
 ---
 
+* 2026-09-24 — **외부 반입 운영 환경변수 전달 누락을 수정했다.** 운영 화면에서 KOPIS가 `KOPIS_SERVICE_KEY missing`으로 건너뛰는 것을 확인했다. `.env.prod`에 값이 있어도 `docker-compose.prod.yml`의 BE 환경변수 목록에 키가 없으면 컨테이너에는 빈 값으로 기동된다. `KOPIS_SERVICE_KEY`와 대학 수집 User-Agent용 `IMPORT_CONTACT`를 BE 컨테이너에 명시적으로 전달하도록 보완하고, `.env.prod.example`에 두 값의 주입 위치를 추가했다.
 * 2026-09-24 — **KOPIS 실패 이력의 메시지 길이 초과를 수정했다.** V8 이미지(`88880f9`)가 EC2 healthy 상태로 적용된 뒤, 운영 `import-worker` 로그에서 `Data too long for column 'message'`를 확인했다. 수집기가 던진 외부 API 예외 메시지를 그대로 `import_run.message(varchar 1000)`에 저장해 실패 이력조차 남기지 못한 문제였다. 저장 직전에 1,000자까지 자르고 초과분은 `...`로 표기하도록 변경했다. 1,001자 예외를 재현하는 테스트를 먼저 추가해 기존에는 `DataIntegrityViolationException`으로 실패함을 확인했고, 수정 후 IMPORT 실행 서비스 테스트와 실행 이력 저장소 테스트가 각각 통과했다. 실제 KOPIS 수동 실행은 새 이미지 배포 후 한 번만 재검증한다.
 * 2026-09-23 — IMPORT 운영 어드민 화면 오류를 수정했다. `GET /api/admin/imports/runs/latest`는 source별 단일 실행 기록 또는 `null`을 반환하는 계약인데, FE가 배열로 해석해 `runs.some` 렌더링 예외를 냈다. KOPIS·대학 공지 source를 병렬로 조회해 `null`은 빈 상태로, 값이 있는 기록만 배열로 조합하도록 고쳤다. 단일 실행 기록과 다른 원천의 빈 기록이 공존해도 화면이 열리는 회귀 테스트, 관련 IMPORT 컴포넌트·BFF 테스트 9건 및 타입 검사를 통과했다.
 * 2026-09-23 — **KOPIS 수집 실행 기록 저장 장애를 진단·수정했다.** EC2 `import-worker` 로그에서 `import_run` INSERT가 MySQL 예약어인 `trigger` 컬럼 때문에 SQL 1064로 실패한 것을 확인했다. 수집 결과 저장 뒤 실행 기록을 남기는 구조라, 기록 저장 예외가 워커를 종료시키고 어드민은 완료 여부를 계속 확인하게 됐다. 기존 V5와 충돌하지 않도록 Flyway **V8**에서 기존 `trigger` 컬럼을 `run_trigger`로 변경하고 엔티티 매핑도 동일하게 전환했다. 예약어가 아닌 컬럼 매핑을 단언하는 회귀 테스트와 IMPORT 실행 기록 서비스 테스트를 통과했다. 실제 KOPIS 데이터 건수는 수정 배포 후 새 수동 실행의 결과로 검증한다.
