@@ -88,6 +88,19 @@ class ImportRunServiceTest {
     }
 
     @Test
+    void 너무_긴_실패_메시지는_실행_이력을_남길_수_있는_길이로_요약한다() {
+        String longMessage = "x".repeat(1001);
+        ImportRunService service = serviceWith(new ThrowingCollector(ImportSource.KOPIS,
+                new IllegalStateException(longMessage)));
+
+        ImportRun run = service.run(ImportSource.KOPIS, ImportTrigger.MANUAL);
+
+        assertThat(run.getResult()).isEqualTo(ImportRunResult.FAILED);
+        assertThat(run.getMessage()).hasSize(1000).endsWith("...");
+        assertThat(importRunRepository.findById(run.getId())).isPresent();
+    }
+
+    @Test
     void 같은_원천이_실행_중이면_IMPORT_ALREADY_RUNNING을_던진다() throws Exception {
         BlockingCollector blockingCollector = new BlockingCollector(ImportSource.KOPIS);
         ImportRunService service = serviceWith(blockingCollector);

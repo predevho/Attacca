@@ -20,6 +20,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class ImportRunService {
 
+    private static final int MAX_MESSAGE_LENGTH = 1000;
+    private static final String TRUNCATION_SUFFIX = "...";
+
     private final Map<ImportSource, ImportCollector> collectors;
     private final ImportIngestionService ingestionService;
     private final ImportRunRepository importRunRepository;
@@ -72,7 +75,14 @@ public class ImportRunService {
             message = e.getMessage();
         }
         return importRunRepository.save(ImportRun.record(source, trigger, startedAt,
-                LocalDateTime.now(), result, newCount, message));
+                LocalDateTime.now(), result, newCount, summarizeMessage(message)));
+    }
+
+    private String summarizeMessage(String message) {
+        if (message == null || message.length() <= MAX_MESSAGE_LENGTH) {
+            return message;
+        }
+        return message.substring(0, MAX_MESSAGE_LENGTH - TRUNCATION_SUFFIX.length()) + TRUNCATION_SUFFIX;
     }
 
     private ImportCollector collectorFor(ImportSource source) {
