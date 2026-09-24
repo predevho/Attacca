@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getBff, postBff } from '@/lib/api';
 import { ImportSourceStatus } from '@/components/imports/ImportSourceStatus';
@@ -12,27 +12,30 @@ import { Button } from '@/components/ui/Button';
 import { StatusMessage } from '@/components/ui/StatusMessage';
 export default function AdminImportsPage() {
   const router = useRouter(); const [status, setStatus] = useState<ImportStatus>('NEW'); const [source, setSource] = useState<ImportSource | ''>(''); const [page, setPage] = useState(0); const [items, setItems] = useState<ImportedItem[]>([]); const [runs, setRuns] = useState<ImportRunStatus[]>([]); const [review, setReview] = useState<ImportedItem | null>(null); const [pending, setPending] = useState(false); const [awaitingRun, setAwaitingRun] = useState<ImportSource | null>(null); const [loading, setLoading] = useState(true); const [error, setError] = useState<string | null>(null);
+  const initialized = useRef(false);
   const load = useCallback(async () => { const q = new URLSearchParams({ status, page: String(page), size: '50' }); if (source) q.set('source', source); const r = await getBff<ImportPage>(`/api/bff/admin/imports?${q}`); if (r.ok) setItems((r.data as ImportPage).content); else setError(r.message ?? '목록을 불러오지 못했습니다.'); setLoading(false); }, [status, source, page]);
-  const loadRuns = useCallback(async () => {
-    const results = await Promise.all((['KOPIS', 'UNIV_NOTICE'] as ImportSource[]).map(async (source) => {
+  const loadRuns = useCallback(async (sources: ImportSource[] = ['KOPIS', 'UNIV_NOTICE']) => {
+    const results = await Promise.all(sources.map(async (source) => {
       const response = await getBff<ImportRunStatus | null>(`/api/bff/admin/imports/runs/latest?source=${source}`);
       return response.ok && response.data ? response.data as ImportRunStatus : null;
     }));
     const latestRuns = results.filter((run): run is ImportRunStatus => run !== null);
-    setRuns(latestRuns);
-    if (awaitingRun && latestRuns.some((run) => run.source === awaitingRun)) {
+    setRuns((current) => [...current.filter((run) => !sources.includes(run.source)), ...latestRuns]);
+    if (awaitingRun && sources.includes(awaitingRun) && latestRuns.some((run) => run.source === awaitingRun)) {
       setAwaitingRun(null);
       void load();
     }
   }, [awaitingRun, load]);
-  useEffect(() => { getBff<Me>('/api/bff/me/identity').then((r) => { if (!r.ok) router.push('/login'); else if ((r.data as Me).role !== 'ADMIN') router.push('/'); else { void load(); void loadRuns(); } }); }, [router, load, loadRuns]);
+  useEffect(() => { if (initialized.current) return; initialized.current = true; getBff<Me>('/api/bff/me/identity').then((r) => { if (!r.ok) router.push('/login'); else if ((r.data as Me).role !== 'ADMIN') router.push('/'); else { void load(); void loadRuns(); } }); }, [router, load, loadRuns]);
   useEffect(() => {
-    const running = runs.some((r) => !r.finishedAt);
-    if (!awaitingRun && !running) return undefined;
-    const timer = window.setInterval(() => { void loadRuns(); }, 500);
+    const sources = awaitingRun
+      ? [awaitingRun]
+      : runs.filter((run) => !run.finishedAt).map((run) => run.source);
+    if (sources.length === 0) return undefined;
+    const timer = window.setInterval(() => { void loadRuns(sources); }, 500);
     return () => window.clearInterval(timer);
   }, [awaitingRun, runs, loadRuns]);
-  async function run(s: ImportSource) { setError(null); setPending(true); const r = await postBff(`/api/bff/admin/imports/runs?source=${s}`); setPending(false); if (!r.ok) setError(r.message ?? '실행하지 못했습니다.'); else { setAwaitingRun(s); void loadRuns(); } }
+  async function run(s: ImportSource) { setError(null); setPending(true); const r = await postBff(`/api/bff/admin/imports/runs?source=${s}`); setPending(false); if (!r.ok) setError(r.message ?? '실행하지 못했습니다.'); else { setAwaitingRun(s); void loadRuns([s]); } }
   async function approve(values: Parameters<NonNullable<React.ComponentProps<typeof ImportReviewDialog>['onSubmit']>>[0]) { if (!review) return; setPending(true); const r = await postBff(`/api/bff/admin/imports/${review.id}/approve`, { notice: toNoticeRequest(values) }); setPending(false); if (r.ok) { setReview(null); void load(); } else setError(r.message ?? '승인하지 못했습니다.'); }
   async function reject(item: ImportedItem) { if (!window.confirm(`"${item.title}" 항목을 거절할까요?`)) return; const r = await postBff(`/api/bff/admin/imports/${item.id}/reject`); if (r.ok) void load(); else setError(r.message ?? '거절하지 못했습니다.'); }
   if (review) return <ImportReviewDialog item={review} pending={pending} onSubmit={approve} onCancel={() => setReview(null)} />;

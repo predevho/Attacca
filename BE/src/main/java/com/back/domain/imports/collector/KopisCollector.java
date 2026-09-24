@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -26,6 +27,7 @@ public class KopisCollector implements ImportCollector {
     public static final String SOURCE_NAME = "(재)예술경영지원센터 공연예술통합전산망(www.kopis.or.kr)";
     private static final String SKIPPED_MESSAGE = "KOPIS_SERVICE_KEY missing";
     private static final String DEFAULT_SOURCE_URL = "https://www.kopis.or.kr";
+    private static final String USER_AGENT = "Attacca/1.0 (+https://attacca.site)";
     private static final Duration REQUEST_INTERVAL = Duration.ofMillis(200);
     private static final DateTimeFormatter REQUEST_DATE = DateTimeFormatter.ofPattern("yyyyMMdd");
     private static final DateTimeFormatter KOPIS_DATE = DateTimeFormatter.ofPattern("yyyy.MM.dd");
@@ -114,6 +116,7 @@ public class KopisCollector implements ImportCollector {
                                 + "&stdate={stdate}&eddate={eddate}&cpage={cpage}&rows={rows}&shcate={shcate}",
                         properties.serviceKey(), REQUEST_DATE.format(start), REQUEST_DATE.format(end),
                         page, properties.rows(), properties.genreCode())
+                .header(HttpHeaders.USER_AGENT, USER_AGENT)
                 .retrieve()
                 .body(String.class);
     }
@@ -142,6 +145,7 @@ public class KopisCollector implements ImportCollector {
         return restClient.get()
                 .uri(properties.baseUrl() + "/openApi/restful/pblprfr/{id}?service={service}",
                         id, properties.serviceKey())
+                .header(HttpHeaders.USER_AGENT, USER_AGENT)
                 .retrieve()
                 .body(String.class);
     }

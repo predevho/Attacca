@@ -6,6 +6,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.client.ExpectedCount.once;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.queryParam;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
@@ -33,6 +34,7 @@ class KopisCollectorTest {
     private static final Clock CLOCK = Clock.fixed(
             Instant.parse("2026-09-14T00:00:00Z"), ZoneId.of("Asia/Seoul"));
     private static final String BASE_URL = "http://www.kopis.or.kr";
+    private static final String USER_AGENT = "Attacca/1.0 (+https://attacca.site)";
 
     private final RestClient.Builder restClientBuilder = RestClient.builder();
     private final MockRestServiceServer server = MockRestServiceServer.bindTo(restClientBuilder).build();
@@ -224,6 +226,7 @@ class KopisCollectorTest {
                         + "&stdate=" + from + "&eddate=" + to + "&cpage=" + page
                         + "&rows=100&shcate=CCCA"))
                 .andExpect(method(HttpMethod.GET))
+                .andExpect(header("User-Agent", USER_AGENT))
                 .andExpect(queryParam("service", "service-key"))
                 .andExpect(queryParam("stdate", from))
                 .andExpect(queryParam("eddate", to))
@@ -237,6 +240,7 @@ class KopisCollectorTest {
         server.expect(once(), requestTo(BASE_URL + "/openApi/restful/pblprfr/" + id
                         + "?service=service-key"))
                 .andExpect(method(HttpMethod.GET))
+                .andExpect(header("User-Agent", USER_AGENT))
                 .andExpect(queryParam("service", "service-key"))
                 .andRespond(withSuccess(body, MediaType.valueOf("application/xml;charset=UTF-8")));
     }

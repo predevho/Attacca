@@ -87,4 +87,19 @@ describe('AdminImportsPage', () => {
     await waitFor(() => expect(screen.getByText('완료')).toBeInTheDocument(), { timeout: 2_000 });
     expect(screen.getByText(/새 항목 2건/)).toBeInTheDocument();
   });
+
+  it('KOPIS 수집 요청 뒤에는 KOPIS 실행 상태만 다시 확인한다', async () => {
+    render(<AdminImportsPage />);
+
+    await screen.findByText('완료');
+    const initialUniversityRequests = getBff.mock.calls
+      .filter(([path]) => path === '/api/bff/admin/imports/runs/latest?source=UNIV_NOTICE').length;
+
+    fireEvent.click((await screen.findAllByRole('button', { name: '지금 가져오기' }))[0]);
+
+    await waitFor(() => expect(postBff).toHaveBeenCalledWith('/api/bff/admin/imports/runs?source=KOPIS'));
+    await waitFor(() => expect(getBff).toHaveBeenCalledWith('/api/bff/admin/imports/runs/latest?source=KOPIS'));
+    expect(getBff.mock.calls
+      .filter(([path]) => path === '/api/bff/admin/imports/runs/latest?source=UNIV_NOTICE')).toHaveLength(initialUniversityRequests);
+  });
 });
