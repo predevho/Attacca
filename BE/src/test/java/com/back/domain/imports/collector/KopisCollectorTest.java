@@ -169,6 +169,40 @@ class KopisCollectorTest {
     }
 
     @Test
+    void KOPIS_확장_태그가_있어도_필요한_필드만_수집한다() {
+        KopisCollector collector = collector("service-key");
+        expectList("20260914", "20261011", 1, """
+                <dbs>
+                  <db>
+                    <mt20id>PF-NEW</mt20id>
+                    <prfnm>목록 제목</prfnm>
+                    <area>서울특별시</area>
+                    <genrenm>서양음악(클래식)</genrenm>
+                  </db>
+                </dbs>
+                """);
+        expectDetail("PF-NEW", """
+                <dbs>
+                  <db>
+                    <mt20id>PF-NEW</mt20id>
+                    <prfnm>확장 태그 공연</prfnm>
+                    <prfpdfrom>2026.10.03</prfpdfrom>
+                    <prfpdto>2026.10.04</prfpdto>
+                    <fcltynm>공연장</fcltynm>
+                    <area>서울특별시</area>
+                    <genrenm>서양음악(클래식)</genrenm>
+                  </db>
+                </dbs>
+                """);
+        expectList("20261012", "20261108", 1, emptyList());
+
+        List<CollectedItem> items = collector.collect().items();
+
+        assertThat(items).extracting(CollectedItem::title).containsExactly("확장 태그 공연");
+        server.verify();
+    }
+
+    @Test
     void http_원문_링크가_없으면_KOPIS_홈을_sourceUrl로_쓴다() {
         KopisCollector collector = collector("service-key");
         expectList("20260914", "20261011", 1, listWith("PF-NEW"));

@@ -1,5 +1,6 @@
 package com.back.domain.imports.collector.kopis;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
@@ -16,6 +17,7 @@ public record KopisDetailResponse(
         return items == null || items.isEmpty() ? null : items.get(0);
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public record KopisDetailItem(
             @JacksonXmlProperty(localName = "mt20id") String mt20id,
             @JacksonXmlProperty(localName = "prfnm") String prfnm,
@@ -31,6 +33,7 @@ public record KopisDetailResponse(
     ) {
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public record Relates(
             @JacksonXmlProperty(localName = "relate")
             @JacksonXmlElementWrapper(useWrapping = false)
@@ -38,6 +41,7 @@ public record KopisDetailResponse(
     ) {
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public record Relate(
             @JacksonXmlProperty(localName = "relatenm") String relatenm,
             @JacksonXmlProperty(localName = "relateurl") String relateurl
