@@ -1,4 +1,4 @@
 package com.back.global.security.auth.dto;
 
-public record ReissueRequest(String refreshToken) {
+public record ReissueRequest(String refreshSession) {
 }

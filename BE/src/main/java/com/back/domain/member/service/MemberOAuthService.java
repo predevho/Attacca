@@ -70,7 +70,7 @@ public class MemberOAuthService {
         }
 
         TokenIssuer.IssuedTokens tokens = tokenIssuer.issue(member.getId(), member.getRole());
-        return new TokenPairResponse(tokens.accessToken(), tokens.refreshToken());
+        return new TokenPairResponse(tokens.accessToken(), tokens.refreshSession());
     }
 
     private OAuthClient resolveClient(OAuthProvider provider) {

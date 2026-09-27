@@ -48,7 +48,10 @@ export function Header() {
   }, [menuOpen]);
 
   async function onLogout() {
-    await postBff('/api/bff/logout');
+    const result = await postBff('/api/bff/logout');
+    if (!result.ok) {
+      window.alert(result.message ?? '서버 세션 철회를 확인하지 못했습니다.');
+    }
     setMenuOpen(false);
     setMe(null);
     router.replace('/login');

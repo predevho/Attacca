@@ -35,14 +35,14 @@ describe('GET /api/bff/oauth/kakao/callback', () => {
   it('state 통과 + BE 성공 → 인증 쿠키 설정 후 홈으로 이동한다', async () => {
     jar['oauth_state'] = 'S';
     vi.stubGlobal('fetch', vi.fn(async () => beJson(
-      { success: true, data: { accessToken: 'A', refreshToken: 'R' }, error: null }, 200)));
+      { success: true, data: { accessToken: 'A', refreshSession: 'R' }, error: null }, 200)));
     const { GET } = await import('@/app/api/bff/oauth/kakao/callback/route');
 
     const res = await GET(new Request('http://localhost:3000/api/bff/oauth/kakao/callback?code=c&state=S'));
 
     expect(locationOf(res)).toBe('/');
     expect(jar['access_token']).toBe('A');
-    expect(jar['refresh_token']).toBe('R');
+    expect(jar['refresh_session']).toBe('R');
     expect(jar['oauth_state']).toBeUndefined(); // 단일 사용
   });
 
@@ -107,13 +107,13 @@ describe('GET /api/bff/oauth/kakao/callback', () => {
 
     expect(locationOf(res)).toBe('/signup/nickname?next=%2Fchat');
     expect(jar['access_token']).toBe('T');
-    expect(jar['refresh_token']).toBeUndefined();
+    expect(jar['refresh_session']).toBeUndefined();
   });
 
   it('isNewMember=false → next 경로로 이동한다', async () => {
     jar['oauth_state'] = 'S';
     vi.stubGlobal('fetch', vi.fn(async () => beJson(
-      { success: true, data: { accessToken: 'A', refreshToken: 'R', isNewMember: false }, error: null }, 200)));
+      { success: true, data: { accessToken: 'A', refreshSession: 'R', isNewMember: false }, error: null }, 200)));
     const { GET } = await import('@/app/api/bff/oauth/kakao/callback/route');
 
     const res = await GET(new Request('http://localhost:3000/api/bff/oauth/kakao/callback?code=c&state=S&next=%2Fchat%3Froom%3D1'));

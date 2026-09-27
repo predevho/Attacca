@@ -6,7 +6,7 @@ import com.back.domain.member.repository.MemberRepository;
 import com.back.domain.member.repository.SocialAccountRepository;
 import com.back.global.exception.BusinessException;
 import com.back.global.exception.ErrorCode;
-import com.back.global.security.token.RefreshTokenStore;
+import com.back.global.security.session.RefreshSessionStore;
 import com.back.global.storage.FileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,7 +28,7 @@ public class MemberWithdrawService {
     private final MemberRepository memberRepository;
     private final MemberProfileRepository profileRepository;
     private final SocialAccountRepository socialAccountRepository;
-    private final RefreshTokenStore refreshTokenStore;
+    private final RefreshSessionStore refreshSessionStore;
     private final FileService fileService;
 
     @Transactional
@@ -57,6 +57,6 @@ public class MemberWithdrawService {
 
         // 이미 발급된 refresh 를 모두 철회한다. 안 하면 최대 14일간
         // 탈퇴한 계정으로 재발급이 계속된다.
-        refreshTokenStore.removeAll(memberId);
+        refreshSessionStore.revokeAll(memberId);
     }
 }

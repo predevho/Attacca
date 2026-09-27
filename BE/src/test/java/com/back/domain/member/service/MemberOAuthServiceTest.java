@@ -35,8 +35,8 @@ class MemberOAuthServiceTest {
     private final JwtProvider jwtProvider = new JwtProvider(new JwtProperties(
             "test-secret-key-that-is-long-enough-for-hs256-0123456789", 1800000L, 1209600000L));
     private final FakeOAuthClient fakeClient = new FakeOAuthClient();
-    private final com.back.global.security.token.InMemoryRefreshTokenStore tokenStore =
-            new com.back.global.security.token.InMemoryRefreshTokenStore();
+    private final com.back.global.security.session.InMemoryRefreshSessionStore tokenStore =
+            new com.back.global.security.session.InMemoryRefreshSessionStore(java.time.Duration.ofDays(14));
     private final com.back.global.security.token.TokenIssuer tokenIssuer =
             new com.back.global.security.token.TokenIssuer(jwtProvider, tokenStore);
     private MemberOAuthService service;
@@ -54,7 +54,7 @@ class MemberOAuthServiceTest {
         TokenPairResponse tokens = service.oauthLogin(OAuthProvider.KAKAO, "code", "https://app/cb");
 
         assertThat(tokens.accessToken()).isNull();
-        assertThat(tokens.refreshToken()).isNull();
+        assertThat(tokens.refreshSession()).isNull();
         assertThat(tokens.isNewMember()).isTrue();
         assertThat(tokens.onboardingTicket()).isNotBlank();
         Member created = memberRepository.findByEmail("new@attacca.com").orElseThrow();

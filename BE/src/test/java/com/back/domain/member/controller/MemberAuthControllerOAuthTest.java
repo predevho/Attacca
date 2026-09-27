@@ -59,7 +59,7 @@ class MemberAuthControllerOAuthTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.accessToken").doesNotExist())
-                .andExpect(jsonPath("$.data.refreshToken").doesNotExist())
+                .andExpect(jsonPath("$.data.refreshSession").doesNotExist())
                 .andExpect(jsonPath("$.data.onboardingTicket").isNotEmpty())
                 .andExpect(jsonPath("$.data.isNewMember").value(true));
     }

@@ -87,7 +87,7 @@ public class MemberProfileService {
         }
         Member member = completeNickname(memberId, request);
         TokenIssuer.IssuedTokens tokens = tokenIssuer.issue(member.getId(), member.getRole());
-        return new TokenPairResponse(tokens.accessToken(), tokens.refreshToken());
+        return new TokenPairResponse(tokens.accessToken(), tokens.refreshSession());
     }
 
     private Member completeNickname(Long memberId, UpdateNicknameRequest request) {

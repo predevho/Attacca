@@ -8,8 +8,8 @@ export async function POST(request: Request) {
   const res = await beFetch('/api/auth/login', { method: 'POST', body });
 
   if (res.ok) {
-    const { accessToken, refreshToken } = res.data as { accessToken: string; refreshToken: string };
-    setAuthCookies(await cookies(), accessToken, refreshToken);
+    const { accessToken, refreshSession } = res.data as { accessToken: string; refreshSession: string };
+    setAuthCookies(await cookies(), accessToken, refreshSession);
   }
   return bffResultJson(res);
 }

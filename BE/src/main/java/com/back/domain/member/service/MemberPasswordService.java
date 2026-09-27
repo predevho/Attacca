@@ -6,7 +6,7 @@ import com.back.domain.member.entity.Member;
 import com.back.domain.member.repository.MemberRepository;
 import com.back.global.exception.BusinessException;
 import com.back.global.exception.ErrorCode;
-import com.back.global.security.token.RefreshTokenStore;
+import com.back.global.security.session.RefreshSessionStore;
 import com.back.global.security.token.TokenIssuer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,7 +24,7 @@ public class MemberPasswordService {
 
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
-    private final RefreshTokenStore refreshTokenStore;
+    private final RefreshSessionStore refreshSessionStore;
     private final TokenIssuer tokenIssuer;
 
     @Transactional
@@ -50,12 +50,12 @@ public class MemberPasswordService {
 
         // 비밀번호를 바꾸는 이유의 절반이 "남이 들어와 있을지 모른다"이므로,
         // 다른 기기를 끊지 않으면 바꾸나 마나다.
-        refreshTokenStore.removeAll(memberId);
+        refreshSessionStore.revokeAll(memberId);
 
         // 다만 부른 본인은 계속 쓸 수 있어야 한다. 전부 끊고 끝내면 비밀번호를 바꾼
         // 사람이 자기도 튕겨 나가 다시 로그인해야 한다.
         // (이미 발급된 access(30분)는 만료까지 산다 — 로그아웃·탈퇴와 같은 절충)
         TokenIssuer.IssuedTokens tokens = tokenIssuer.issue(memberId, member.getRole());
-        return new TokenPairResponse(tokens.accessToken(), tokens.refreshToken());
+        return new TokenPairResponse(tokens.accessToken(), tokens.refreshSession());
     }
 }

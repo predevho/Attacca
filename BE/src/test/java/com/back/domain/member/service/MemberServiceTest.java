@@ -33,8 +33,8 @@ class MemberServiceTest {
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final JwtProvider jwtProvider = new JwtProvider(new JwtProperties(
             "test-secret-key-that-is-long-enough-for-hs256-0123456789", 1800000L, 1209600000L));
-    private final com.back.global.security.token.InMemoryRefreshTokenStore tokenStore =
-            new com.back.global.security.token.InMemoryRefreshTokenStore();
+    private final com.back.global.security.session.InMemoryRefreshSessionStore tokenStore =
+            new com.back.global.security.session.InMemoryRefreshSessionStore(java.time.Duration.ofDays(14));
     private final com.back.global.security.token.TokenIssuer tokenIssuer =
             new com.back.global.security.token.TokenIssuer(jwtProvider, tokenStore);
     private MemberService memberService;
@@ -91,7 +91,7 @@ class MemberServiceTest {
         TokenPairResponse tokens = memberService.login(new LoginRequest("jazzman", "raw-password"));
 
         assertThat(tokens.accessToken()).isNotBlank();
-        assertThat(tokens.refreshToken()).isNotBlank();
+        assertThat(tokens.refreshSession()).isNotBlank();
         assertThat(jwtProvider.parse(tokens.accessToken()).get("type", String.class)).isEqualTo("access");
     }
 

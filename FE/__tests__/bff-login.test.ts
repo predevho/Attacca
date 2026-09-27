@@ -19,7 +19,7 @@ function json(body: unknown, status: number) {
 describe('POST /api/bff/login', () => {
   it('로그인 성공 시 쿠키를 설정하고 ok를 반환한다', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => json(
-      { success: true, data: { accessToken: 'A', refreshToken: 'R' }, error: null }, 200)));
+      { success: true, data: { accessToken: 'A', refreshSession: 'R' }, error: null }, 200)));
     const { POST } = await import('@/app/api/bff/login/route');
 
     const req = new Request('http://localhost/api/bff/login', {
@@ -29,7 +29,7 @@ describe('POST /api/bff/login', () => {
 
     expect(res.status).toBe(200);
     expect(jar['access_token']).toBe('A');
-    expect(jar['refresh_token']).toBe('R');
+    expect(jar['refresh_session']).toBe('R');
   });
 
   it('로그인 실패 시 쿠키 없이 에러 메시지를 반환한다', async () => {

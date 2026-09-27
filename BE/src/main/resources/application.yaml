@@ -46,7 +46,7 @@ app:
     # 비워 두면 아무 일도 하지 않는다. 값은 커밋하지 않는다.
     bootstrap-login-ids: ${ADMIN_LOGIN_IDS:}
   auth:
-    # refresh 화이트리스트 저장소. 테스트는 in-memory로 바꿔 Redis 없이 돈다.
+    # refresh 세션 저장소. 테스트는 in-memory로 바꿔 Redis 없이 돈다.
     token-store: ${TOKEN_STORE:redis}
   ws:
     # WS 핸드셰이크 허용 origin. 채팅은 브라우저가 BE에 직접 붙으므로(BFF를 안 거침)
