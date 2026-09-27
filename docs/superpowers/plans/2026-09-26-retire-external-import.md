@@ -161,7 +161,7 @@ docker compose --env-file .env.prod -f docker-compose.prod.yml ps be
 docker inspect -f '{{ index .Config.Labels "org.opencontainers.image.revision" }}' attacca-be-1
 ```
 
-- [ ] **Step 5: 새 이미지가 healthy인 것을 확인한 뒤에만 EC2 환경변수를 제거한다.**
+- [x] **Step 5: 새 이미지가 healthy인 것을 확인한 뒤에만 EC2 환경변수를 제거한다.**
 
 Run:
 
@@ -170,6 +170,6 @@ cd /home/ubuntu/attacca
 sed -i '/^KOPIS_SERVICE_KEY=/d; /^IMPORT_CONTACT=/d; /^KOPIS_BASE_URL=/d' .env.prod
 ```
 
-- [ ] **Step 6: 운영 스모크를 확인한다.**
+- [x] **Step 6: 운영 스모크를 확인한다.** (`/admin` 외부 반입 링크 제거, 공지 관리, 기존 채팅방 진입·입력창 표시를 2026-09-27 운영에서 확인)
 
 Expected: `/admin`에 외부 반입 링크가 없고, 로그인·공지 관리·채팅이 정상이다.
