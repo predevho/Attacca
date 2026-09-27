@@ -17,8 +17,7 @@
   * 소셜 로그인: OAuth2 (카카오/구글 등)
 * 실시간 채팅: WebSocket(STOMP) + 단일 인스턴스 Simple Broker. Redis는 refresh 토큰 allowlist에 사용하며 STOMP broker가 아니다.
 * 파일 저장: `FileStorage` 인터페이스로 추상화 — 현재 EC2 로컬 Docker volume / AWS S3 서울 리전(opt-in, `storage.type=s3`) 두 구현체. S3는 운영 기동 검증 전이다.
-* 외부 반입: Spring `RestClient` + `jackson-dataformat-xml`(KOPIS XML) + `jsoup`(대학 서버 렌더링 HTML)
-* 작업 스케줄링: Spring Scheduling(`@EnableScheduling`), 단일 서버의 원천별 메모리 잠금. 분산 잠금은 도입하지 않는다.
+* 임시 첨부 정리: Spring Scheduling으로 만료된 `TEMPORARY` 첨부를 정리한다.
 
 ### Frontend
 
@@ -53,7 +52,6 @@ com.back
 │   ├── recruitment
 │   ├── chat
 │   ├── notice
-│   └── imports
 └── global
     ├── config          // 설정 (Security, WebSocket, JPA, S3 등)
     ├── security        // 인증/인가, JWT, OAuth2

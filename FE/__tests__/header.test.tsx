@@ -60,7 +60,7 @@ describe('Header', () => {
   });
 
   it('관리자 화면에서는 관리 링크를 활성 상태로 표시한다', async () => {
-    pathname = '/admin/imports';
+    pathname = '/admin/notices';
     getBff.mockResolvedValue({ ok: true, data: { ...ME, role: 'ADMIN' }, message: null });
     render(<Header />);
 

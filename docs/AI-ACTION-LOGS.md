@@ -4,6 +4,8 @@
 
 ---
 
+* 2026-09-26 — **외부 반입(IMPORT) 기능을 의도적으로 폐기했다.** KOPIS API의 식별 헤더·XML 확장 태그 대응과 대학 게시판별 HTML 선택자 유지가 초기 서비스 단계의 운영 부담을 키운다고 판단했다. KOPIS·대학 수집기, 승인 API·BFF·관리 화면, 예약 실행, XML/HTML 전용 의존성과 환경변수를 제거했다. 공지 관리·인증 심사와 공지의 출처 링크 표시는 유지한다. 운영 DB에 이미 적용된 `import_run`·`imported_item` 테이블과 Flyway V4/V8은 파괴하지 않고, 과거 설계·장애 기록도 역사 자료로 보존한다. 재도입은 새 설계와 별도 사용자 승인이 필요하다. 정본: `docs/superpowers/specs/2026-09-26-retire-external-import-design.md`.
+
 * 2026-09-24 — IMPORT 관리자 화면에서 KOPIS 수동 실행 뒤 대학 공지까지 함께 실행되는 것처럼 보이는 현상을 확인했다. 실제 `POST /runs?source=UNIV_NOTICE`는 없었고, 실행 대기 중 `GET /runs/latest`를 두 원천에 0.5초마다 보내는 화면 폴링 때문이었다. 최초 진입 때만 두 원천을 조회하고, 수동 실행 뒤에는 선택한 원천만 실행 이력을 재조회하도록 보완했다. 회귀 테스트·타입 검사·대상 lint를 통과했다. 같은 운영 실행에서 KOPIS는 `400 Request Blocked`를 반환했다. 이메일로 발급된 32자 키가 정본임을 확인했고, 같은 EC2에서 서비스 식별 `User-Agent`를 붙인 동일 요청은 `200 OK`였다. 원인은 KOPIS 요청에 식별 헤더가 없었던 것이며, 목록·상세 호출에 해당 헤더를 추가하고 회귀 테스트로 고정했다.
 * 2026-09-24 — **KOPIS 정상 XML의 확장 태그 파싱 실패를 수정했다.** `User-Agent` 적용 후 실제 KOPIS 응답은 `200 OK`와 공연 목록 XML을 반환했지만, 목록 DTO가 `mt20id` 외의 `prfnm`, `area`, `genrenm` 태그를 알지 못해 `UnrecognizedPropertyException`으로 실패했다. KOPIS 목록·상세 DTO에서 미사용 확장 태그만 무시하도록 제한하고, 실제 응답 형태를 반영한 회귀 테스트를 추가했다. 운영 수동 실행 재검증은 새 이미지 배포 후 진행한다.
 * 2026-09-24 — **외부 반입 운영 환경변수 전달 누락을 수정했다.** 운영 화면에서 KOPIS가 `KOPIS_SERVICE_KEY missing`으로 건너뛰는 것을 확인했다. `.env.prod`에 값이 있어도 `docker-compose.prod.yml`의 BE 환경변수 목록에 키가 없으면 컨테이너에는 빈 값으로 기동된다. `KOPIS_SERVICE_KEY`와 대학 수집 User-Agent용 `IMPORT_CONTACT`를 BE 컨테이너에 명시적으로 전달하도록 보완하고, `.env.prod.example`에 두 값의 주입 위치를 추가했다.

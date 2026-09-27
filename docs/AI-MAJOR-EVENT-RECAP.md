@@ -4,6 +4,8 @@
 
 ---
 
+* **2026-09-26 외부 반입 폐기**: KOPIS·대학 공지 수집은 운영 복잡도 대비 초기 효용이 낮아 제품 범위에서 제외했다. 관련 API·화면·스케줄·환경변수·전용 의존성은 제거하고, 운영 DB의 반입 이력 테이블과 Flyway 이력은 안전하게 보존한다. 재도입은 새 설계와 별도 승인이 필요하다.
+
 * **2026-09-22 운영 정본화**: 웹은 Vercel, API·WebSocket·파일은 EC2로 분리 운영한다. 채팅은 단일 BE의 Simple Broker이고 Redis는 refresh token allowlist 용도다. 현재 업로드는 EC2 Docker volume이며 S3는 후보 상태다. Blue/Green은 외부 STOMP broker relay와 공유 presence 설계·검증 전까지 도입하지 않는다.
 * **2026-07-05 프로젝트 시작**: Attacca(음악인 커뮤니티 SNS) 설계 확정.
   * 도메인 6개: 회원 / 인증 연주자 / 피드 / 연주회 / 구인·구직 / 채팅

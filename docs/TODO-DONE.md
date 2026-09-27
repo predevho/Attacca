@@ -4,6 +4,11 @@
 
 ---
 
+* [x] (2026-09-26) 외부 반입(IMPORT) 기능 폐기.
+  * KOPIS 공연·대학 공지 수집, 어드민 승인 API·BFF·심사 화면, 예약 실행, 전용 XML/HTML 라이브러리와 환경변수를 제거했다. 공지 관리와 인증 심사는 `/admin`에서 그대로 제공한다.
+  * 기존 운영 DB의 `import_run`·`imported_item` 테이블과 Flyway V4/V8 이력은 파괴하지 않는다. 재도입은 별도 설계·승인이 필요하다.
+  * 근거와 범위: `docs/superpowers/specs/2026-09-26-retire-external-import-design.md`.
+
 * [x] (2026-09-21) `staging.attacca.site` 운영 연결 폐기.
   * 현재 staging은 독립 branch·배포·데이터 환경이 아니라 Production의 추가 호스트였으므로, 별도 개발 인프라를 만들지 않는 운영 결정에 따라 폐기했다.
   * Vercel Domain, 카카오 OAuth 리다이렉트 URI, 가비아 `staging` CNAME, EC2 `WS_ALLOWED_ORIGINS`의 staging 참조를 제거했다. `attacca.site`, `www.attacca.site`, `api.attacca.site`와 EC2의 rollback FE 컨테이너는 유지했다.

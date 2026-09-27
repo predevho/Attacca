@@ -1,5 +1,7 @@
 # DOMAIN-IMPORT-STATUTE
 
+> **폐기됨 (2026-09-26).** 외부 반입 구현은 제거됐고 이 문서는 과거 규칙 기록으로만 보존한다. 재도입은 새 설계와 별도 승인이 필요하다. 현재 결정: `docs/superpowers/specs/2026-09-26-retire-external-import-design.md`.
+
 외부 공연·입시 공지 후보 반입 도메인 구현 규칙.
 
 > 작성일: 2026-09-13. 승인된 설계 `docs/superpowers/specs/2026-09-11-external-import-design.md`를 정본 규칙으로 옮겼다.

@@ -30,11 +30,11 @@ describe('LoginForm', () => {
   it('next가 있으면 일반 로그인 성공 후 원래 경로로 이동한다', async () => {
     const user = userEvent.setup();
     postBff.mockResolvedValue({ ok: true, data: null, message: null });
-    render(<LoginForm initialError={null} next="/admin/imports" />);
+    render(<LoginForm initialError={null} next="/admin" />);
     await user.type(screen.getByLabelText('아이디'), 'user');
     await user.type(screen.getByLabelText('비밀번호'), 'password');
     await user.click(screen.getByRole('button', { name: '로그인' }));
-    expect(push).toHaveBeenCalledWith('/admin/imports');
+    expect(push).toHaveBeenCalledWith('/admin');
   });
 
   it('카카오 로그인은 별도 체크 없이 바로 시작할 수 있다', () => {

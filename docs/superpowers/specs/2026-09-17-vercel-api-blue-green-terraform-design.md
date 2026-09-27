@@ -61,7 +61,7 @@
 
 현재 `PUBLIC_ORIGIN` 하나가 WebSocket, 파일 URL, 카카오 콜백까지 겸한다. 목표 구조에서는
 웹 origin과 API origin이 다르므로 이 변수의 역할을 위처럼 분리한다. 비밀값(`DB_PASSWORD`,
-`JWT_SECRET`, OAuth client secret, KOPIS 키)은 Vercel이나 Terraform 상태에 복제하지 않고,
+`JWT_SECRET`, OAuth client secret)은 Vercel이나 Terraform 상태에 복제하지 않고,
 EC2의 git-ignored `.env.prod`에만 둔다.
 
 Vercel이 자동으로 만드는 preview URL은 배포마다 바뀌므로 WebSocket origin allowlist에 넣지 않는다.
@@ -122,7 +122,7 @@ AWS 기본 RDS subnet/parameter/option group은 공유 또는 AWS 소유이므�
 * `infra/bootstrap`은 Terraform state용 전용 S3 bucket을 한 번 만들며 versioning과 차단된 public access를 적용한다.
 * `infra/production`은 S3 backend의 `use_lockfile = true`를 쓴다. DynamoDB lock은 현재 Terraform 문서에서 deprecated이므로 새로 만들지 않는다.
 * backend 버킷 이름·리전만 backend partial configuration으로 주고, AWS 자격증명은 로컬 프로필 또는 CI OIDC 환경으로 공급한다.
-* DB 비밀번호, JWT, OAuth secret, KOPIS 키는 `.tf`, `.tfvars`, state, GitHub 변수에 넣지 않는다. 기존 EC2 `.env.prod`가 계속 런타임 정본이다.
+* DB 비밀번호, JWT, OAuth secret은 `.tf`, `.tfvars`, state, GitHub 변수에 넣지 않는다. 기존 EC2 `.env.prod`가 계속 런타임 정본이다.
 * 현재 `default` AWS CLI profile은 `AdministratorAccess`가 붙은 장기 access key이므로 Terraform apply에 사용하지 않는다. IAM Identity Center의 임시 자격 증명을 쓰는 `attacca-terraform` named profile을 먼저 만들고, 최소 권한 permission set을 적용한다.
 
 ### 5.3 Terraform 범위

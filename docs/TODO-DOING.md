@@ -4,14 +4,11 @@
 
 * **밝은 콘텐츠 커뮤니티 UI·게시글 첨부** — 피드 인라인 작성 폼을 `/feed/new` 독립 흐름으로 옮기고, 기본 밝은 전역 UI와 피드·구인 임시 첨부 업로드(ID 연결)를 구현했다. JPG/PNG/WebP/PDF, 파일당 10MB, 최대 5개를 검증하고 실패 파일은 사유 표시와 개별 재시도가 가능하다. 자동 검증(BE 전체 테스트, FE 전체 테스트·타입검사·lint·색 토큰 검사·build)은 통과했다. 실제 브라우저에서 신규 작성·첨부 조회·실패 재시도 스모크 검증과 배포는 남아 있다. 설계: `docs/superpowers/specs/2026-09-22-content-community-attachments-ui-design.md`, 계획: `docs/superpowers/plans/2026-09-22-content-community-attachments-ui-implementation.md`.
 
-* **관리자 진입점 정리** — ADMIN 계정에만 전역 헤더의 `/admin` 관리 버튼을 노출하고, 공지·외부 반입·인증 심사로 이동하는 관리 허브를 추가했다. `/admin/*` 경로에서는 버튼을 활성 상태로 표시한다. 각 하위 화면의 BE 권한 검사는 유지하며, 운영 브라우저 확인과 배포는 남아 있다.
+* **관리자 진입점 정리** — ADMIN 계정에만 전역 헤더의 `/admin` 관리 버튼을 노출하고, 공지·인증 심사로 이동하는 관리 허브를 제공한다. `/admin/*` 경로에서는 버튼을 활성 상태로 표시한다. 각 하위 화면의 BE 권한 검사는 유지하며, 운영 브라우저 확인과 배포는 남아 있다.
 
 * **카카오 신규 소셜 회원 온보딩 티켓** — 카카오 인증 후 신규 회원이 `CONSENT_REQUIRED`로 `/login?error=oauth`에 떨어지는 문제를 해결한다. 설계: `docs/superpowers/specs/2026-09-18-social-onboarding-ticket-design.md`, 트러블슈팅: `docs/ops/troubleshooting/2026-09-18-kakao-oauth-onboarding.md`. 문서 작성 완료, BE/FE 구현 진행 중.
 
 ---
-
-* **외부 공연(KOPIS)·입시 공지 반입(IMPORT)** — 수집·승인 API, BFF, 어드민 심사 화면은 이미 `main`에 구현돼 있다. 2026-09-23에 IMPORT BE 선택 테스트와 IMPORT UI 테스트, BFF 경로 계약 테스트를 다시 통과시켰다. 같은 날 운영 어드민 화면이 `runs/latest`의 단일 객체·`null` 계약을 배열로 오해해 렌더링에 실패한 문제를 고쳤다. 화면은 이제 KOPIS·대학 공지 상태를 각각 병렬 조회하고, 실행 이력이 없으면 빈 상태로 표현한다. 수동 실행은 비동기 접수(`ACCEPTED`)이므로, 실행 기록이 저장될 때까지 해당 원천의 최신 상태를 재조회하고 요청 확인 상태를 표시하도록 보정했다. 운영 로그에서 MySQL 예약어 `trigger`로 인한 실행 기록 INSERT SQL 1064를 확인해, 기존 V5와 충돌하지 않는 Flyway **V8**과 엔티티를 `run_trigger`로 전환했다. 후속 운영 로그에서 외부 예외 전문이 `message(varchar 1000)`을 넘겨 실행 이력 저장을 다시 실패시키는 문제를 확인해, 메시지를 1,000자로 요약해 저장하도록 보완했다. KOPIS 발급 키(32자)는 유효하며, 같은 EC2에서 `User-Agent`를 넣은 요청만 `200 OK`가 된 것을 확인했다. 실제 목록 XML의 확장 태그가 DTO 파싱을 실패시키던 문제도 KOPIS 전용 DTO에서 무시하도록 보완했다. 화면은 수동 실행 후 선택하지 않은 원천도 0.5초마다 재조회하던 문제를 보완했고, 실제 KOPIS 수동 실행의 결과·신규 건수·후보 목록 검증은 배포 뒤 재개한다. 정본: `docs/superpowers/plans/2026-09-13-external-import-implementation.md`.
-  * 사용자 조치: KOPIS 인증키 발급, User-Agent에 넣을 `IMPORT_CONTACT` 값 결정. 값이 없어도 테스트 더블과 대학 설정 검증부터 구현할 수 있다.
 
 * **Vercel FE 분리·EC2 BE 블루/그린·Terraform 전환 설계** — `attacca.site`는 Vercel, `api.attacca.site`는 EC2 BE/Nginx/WebSocket/파일로 분리하는 방향을 사용자와 합의했다. 현행 단일 Compose를 유지한 채, Terraform import-first→API subdomain→Vercel 사전 검증→apex DNS 전환→외부 STOMP broker relay·공유 presence 설계→BE 블루/그린 순서로 진행한다. 설계 초안: `docs/superpowers/specs/2026-09-17-vercel-api-blue-green-terraform-design.md`.
   * 단계 0 수집은 2026-09-17 당시 DNS 스냅샷이다. 현재 운영 주소·DNS는 `docs/ops/inventory/2026-09-21-production-state.md`를 기준으로 한다.

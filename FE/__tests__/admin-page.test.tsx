@@ -26,7 +26,7 @@ describe('AdminPage', () => {
 
     expect(await screen.findByRole('heading', { name: '관리' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '공지 관리' })).toHaveAttribute('href', '/admin/notices');
-    expect(screen.getByRole('link', { name: '외부 반입 심사' })).toHaveAttribute('href', '/admin/imports');
+    expect(screen.queryByRole('link', { name: '외부 반입 심사' })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: '인증 심사' })).toHaveAttribute('href', '/admin/verified-performers');
   });
 

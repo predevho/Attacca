@@ -13,11 +13,6 @@ const ADMIN_MENUS = [
     description: '공지와 운영 일정을 등록하고 관리합니다.',
   },
   {
-    href: '/admin/imports',
-    title: '외부 반입 심사',
-    description: '공연과 대학 공지 후보를 검토하고 반입합니다.',
-  },
-  {
     href: '/admin/verified-performers',
     title: '인증 심사',
     description: '인증 연주자 신청을 검토하고 처리합니다.',
