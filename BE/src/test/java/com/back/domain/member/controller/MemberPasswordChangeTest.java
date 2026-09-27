@@ -9,7 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.back.domain.member.entity.Member;
 import com.back.domain.member.repository.MemberRepository;
 import com.back.global.security.jwt.JwtProvider;
-import com.back.global.security.token.RefreshTokenStore;
+import com.back.global.security.session.RefreshSessionStore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
@@ -53,7 +53,7 @@ class MemberPasswordChangeTest {
     private JwtProvider jwtProvider;
 
     @Autowired
-    private RefreshTokenStore refreshTokenStore;
+    private RefreshSessionStore refreshSessionStore;
 
     private Long signup(String loginId) throws Exception {
         mockMvc.perform(post("/api/auth/signup")
@@ -101,7 +101,7 @@ class MemberPasswordChangeTest {
         change(id, OLD, NEW)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
-                .andExpect(jsonPath("$.data.refreshToken").isNotEmpty());
+                .andExpect(jsonPath("$.data.refreshSession").isNotEmpty());
     }
 
     @Test
@@ -110,13 +110,12 @@ class MemberPasswordChangeTest {
         // 비밀번호를 바꾸는 이유의 절반이 "남이 들어와 있을지 모른다" 인데,
         // 다른 기기를 끊지 않으면 바꾸나 마나다.
         Long id = signup("revoker01");
-        String otherDeviceJti = "other-device-jti";
-        refreshTokenStore.save(id, otherDeviceJti);
-        assertThat(refreshTokenStore.exists(id, otherDeviceJti)).isTrue();
+        String otherDeviceSession = refreshSessionStore.create(id);
+        assertThat(refreshSessionStore.findMemberId(otherDeviceSession)).contains(id);
 
         change(id, OLD, NEW).andExpect(status().isOk());
 
-        assertThat(refreshTokenStore.exists(id, otherDeviceJti)).isFalse();
+        assertThat(refreshSessionStore.findMemberId(otherDeviceSession)).isEmpty();
     }
 
     @Test

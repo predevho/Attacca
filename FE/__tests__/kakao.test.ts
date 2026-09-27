@@ -23,14 +23,14 @@ describe('buildAuthorizeUrl', () => {
 describe('exchangeCode', () => {
   it('BE /api/auth/oauth/kakao로 code와 redirectUri를 POST한다', async () => {
     const fetchMock = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => new Response(
-      JSON.stringify({ success: true, data: { accessToken: 'A', refreshToken: 'R' }, error: null }),
+      JSON.stringify({ success: true, data: { accessToken: 'A', refreshSession: 'R' }, error: null }),
       { status: 200, headers: { 'content-type': 'application/json' } }));
     vi.stubGlobal('fetch', fetchMock);
 
     const res = await exchangeCode('auth-code', 'http://localhost:3000/api/bff/oauth/kakao/callback');
 
     expect(res.ok).toBe(true);
-    expect(res.data).toEqual({ accessToken: 'A', refreshToken: 'R' });
+    expect(res.data).toEqual({ accessToken: 'A', refreshSession: 'R' });
     const [calledUrl, init] = fetchMock.mock.calls[0];
     expect(String(calledUrl)).toContain('/api/auth/oauth/kakao');
     expect(JSON.parse((init as RequestInit).body as string))

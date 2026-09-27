@@ -22,7 +22,6 @@ import com.back.global.storage.FileService;
 import com.back.global.storage.FileStorage;
 import com.back.global.security.jwt.JwtProperties;
 import com.back.global.security.jwt.JwtProvider;
-import com.back.global.security.token.InMemoryRefreshTokenStore;
 import com.back.global.security.token.TokenIssuer;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -64,7 +63,8 @@ class MemberProfileServiceTest {
                 "test-secret-key-that-is-long-enough-for-hs256-0123456789", 1800000L, 1209600000L));
         service = new MemberProfileService(memberRepository, memberProfileRepository, fileService,
                 verifiedPerformerService, new MemberConsentService(memberConsentRepository),
-                new TokenIssuer(jwtProvider, new InMemoryRefreshTokenStore()));
+                new TokenIssuer(jwtProvider, new com.back.global.security.session.InMemoryRefreshSessionStore(
+                        java.time.Duration.ofDays(14))));
     }
 
     private Member savedMember(String suffix) {

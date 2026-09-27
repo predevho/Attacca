@@ -6,9 +6,7 @@ import { bffResultJson } from '@/lib/server/bffProxy';
 /**
  * 비밀번호 변경. (DOMAIN-MEMBER-STATUTE §3.5)
  *
- * BE가 다른 기기의 refresh 를 모두 끊고 **부른 본인에게만** 새 토큰 쌍을 준다.
- * 그 쌍을 쿠키에 갈아 끼우지 않으면, 방금 비밀번호를 바꾼 사람의 옛 refresh 가
- * 이미 철회돼 있어 다음 갱신에서 튕긴다.
+ * BE가 기존 로그인 세션을 모두 철회한 뒤, 현재 요청자에게만 새 세션을 발급한다.
  */
 export async function PUT(request: Request) {
   const store = await cookies();
@@ -16,8 +14,8 @@ export async function PUT(request: Request) {
   const res = await authedBeFetch(store, '/api/members/me/password', { method: 'PUT', body });
 
   if (res.ok) {
-    const { accessToken, refreshToken } = res.data as { accessToken: string; refreshToken: string };
-    setAuthCookies(store, accessToken, refreshToken);
+    const { accessToken, refreshSession } = res.data as { accessToken: string; refreshSession: string };
+    setAuthCookies(store, accessToken, refreshSession);
   }
   return bffResultJson(res);
 }

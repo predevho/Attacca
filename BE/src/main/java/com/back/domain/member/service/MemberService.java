@@ -69,6 +69,6 @@ public class MemberService {
 
         // 발급과 화이트리스트 등록을 TokenIssuer가 한 번에 한다(DOMAIN-COMMON-STATUTE §4.1).
         TokenIssuer.IssuedTokens tokens = tokenIssuer.issue(member.getId(), member.getRole());
-        return new TokenPairResponse(tokens.accessToken(), tokens.refreshToken());
+        return new TokenPairResponse(tokens.accessToken(), tokens.refreshSession());
     }
 }

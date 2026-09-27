@@ -64,7 +64,7 @@ class MemberAuthControllerTest {
                         .content(json(new LoginRequest("loginuser", "raw-password"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
-                .andExpect(jsonPath("$.data.refreshToken").isNotEmpty());
+                .andExpect(jsonPath("$.data.refreshSession").isNotEmpty());
     }
 
     @Test

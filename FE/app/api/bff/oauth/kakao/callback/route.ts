@@ -27,15 +27,15 @@ export async function GET(request: Request) {
     return redirectTo('/login?error=oauth');
   }
 
-  const { accessToken, refreshToken, isNewMember, onboardingTicket } = res.data as {
-    accessToken?: string; refreshToken?: string; isNewMember?: boolean; onboardingTicket?: string;
+  const { accessToken, refreshSession, isNewMember, onboardingTicket } = res.data as {
+    accessToken?: string; refreshSession?: string; isNewMember?: boolean; onboardingTicket?: string;
   };
   const destination = next && next.startsWith('/') && !next.startsWith('//') ? next : '/';
   if (isNewMember && onboardingTicket) {
     setAccessCookie(store, onboardingTicket);
     return redirectTo(`/signup/nickname?next=${encodeURIComponent(destination)}`);
   }
-  if (!accessToken || !refreshToken) return redirectTo('/login?error=oauth');
-  setAuthCookies(store, accessToken, refreshToken);
+  if (!accessToken || !refreshSession) return redirectTo('/login?error=oauth');
+  setAuthCookies(store, accessToken, refreshSession);
   return redirectTo(destination);
 }

@@ -9,7 +9,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
  * 겉으로는 멀쩡했지만, status를 보는 소비처(프록시·모니터링·캐시)가 생기면 장애가 성공으로 집계된다.
  */
 
-const jar: Record<string, string> = { access_token: 'A', refresh_token: 'R' };
+const jar: Record<string, string> = { access_token: 'A', refresh_session: 'R' };
 const cookieStore = {
   set: vi.fn((n: string, v: string) => { jar[n] = v; }),
   delete: vi.fn((n: string) => { delete jar[n]; }),
@@ -67,7 +67,7 @@ describe('BE 연결 실패 시 BFF status', () => {
 describe('토큰 격리', () => {
   it('로그인 응답 바디에 토큰이 없다', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(
-      JSON.stringify({ success: true, data: { accessToken: 'AT', refreshToken: 'RT' }, error: null }),
+      JSON.stringify({ success: true, data: { accessToken: 'AT', refreshSession: 'RT' }, error: null }),
       { status: 200, headers: { 'content-type': 'application/json' } })));
     const { POST } = await import('@/app/api/bff/login/route');
     const res = await POST(req('POST', '{}'));
@@ -80,11 +80,10 @@ describe('토큰 격리', () => {
 
   it('비밀번호 변경 응답 바디에도 토큰이 없다', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(
-      JSON.stringify({ success: true, data: { accessToken: 'AT2', refreshToken: 'RT2' }, error: null }),
+      JSON.stringify({ success: true, data: { accessToken: 'AT2', refreshSession: 'RT2' }, error: null }),
       { status: 200, headers: { 'content-type': 'application/json' } })));
     const { PUT } = await import('@/app/api/bff/members/me/password/route');
     const text = await (await PUT(req('PUT', '{}'))).text();
     expect(text).not.toContain('AT2');
   });
 });
-

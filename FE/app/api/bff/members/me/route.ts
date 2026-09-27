@@ -6,7 +6,7 @@ import { bffResultJson } from '@/lib/server/bffProxy';
 /**
  * 회원 탈퇴. 되돌릴 수 없다. (DOMAIN-MEMBER-STATUTE §3.6)
  *
- * BE가 refresh 를 모두 철회하므로 재발급은 막히지만, 이미 내려간 access 쿠키가
+ * BE가 로그인 세션을 모두 철회하므로 재발급은 막히지만, 이미 내려간 access 쿠키가
  * 브라우저에 남아 있으면 만료(30분)까지 로그인한 것처럼 보인다. 여기서 함께 지운다.
  */
 export async function DELETE() {
@@ -36,8 +36,8 @@ export async function POST(request: Request) {
     body,
   });
   if (res.ok) {
-    const tokens = res.data as { accessToken?: string; refreshToken?: string } | null;
-    if (tokens?.accessToken && tokens.refreshToken) setAuthCookies(store, tokens.accessToken, tokens.refreshToken);
+    const tokens = res.data as { accessToken?: string; refreshSession?: string } | null;
+    if (tokens?.accessToken && tokens.refreshSession) setAuthCookies(store, tokens.accessToken, tokens.refreshSession);
   }
   return bffResultJson(res);
 }

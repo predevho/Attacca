@@ -23,8 +23,7 @@ function beJson(body: unknown, status = 200) {
 }
 
 describe('BFF 로그아웃', () => {
-  it('BE에 refresh 철회를 알리고 쿠키를 지운다', async () => {
-    // 쿠키만 지우면 탈취된 refresh가 만료까지 유효하다 — 그래서 BE 호출이 필요하다.
+  it('BE에 로그인 세션 철회를 알리고 쿠키를 지운다', async () => {
     jar[ACCESS_COOKIE] = 'a';
     jar[REFRESH_COOKIE] = 'r';
     const f = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => beJson({ success: true, data: null, error: null }));
@@ -35,13 +34,12 @@ describe('BFF 로그아웃', () => {
 
     expect(res.status).toBe(200);
     expect(String(f.mock.calls[0][0])).toContain('/api/auth/logout');
-    expect(JSON.parse(String((f.mock.calls[0][1] as RequestInit).body))).toEqual({ refreshToken: 'r' });
+    expect(JSON.parse(String((f.mock.calls[0][1] as RequestInit).body))).toEqual({ refreshSession: 'r' });
     expect(jar[ACCESS_COOKIE]).toBeUndefined();
     expect(jar[REFRESH_COOKIE]).toBeUndefined();
   });
 
-  it('BE 호출이 실패해도 쿠키는 지운다', async () => {
-    // 사용자 입장에서 로그아웃은 언제나 성공해야 한다.
+  it('BE 호출이 실패하면 쿠키를 지우고 세션 철회 미확인을 알린다', async () => {
     jar[ACCESS_COOKIE] = 'a';
     jar[REFRESH_COOKIE] = 'r';
     vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('down'); }));
@@ -49,12 +47,13 @@ describe('BFF 로그아웃', () => {
 
     const res = await POST();
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(503);
+    expect((await res.json()).message).toBe('서버 세션 철회를 확인하지 못했습니다.');
     expect(jar[ACCESS_COOKIE]).toBeUndefined();
     expect(jar[REFRESH_COOKIE]).toBeUndefined();
   });
 
-  it('refresh 쿠키가 없으면 BE를 부르지 않는다', async () => {
+  it('로그인 세션 쿠키가 없으면 BE를 부르지 않는다', async () => {
     const f = vi.fn();
     vi.stubGlobal('fetch', f);
     const { POST } = await import('@/app/api/bff/logout/route');

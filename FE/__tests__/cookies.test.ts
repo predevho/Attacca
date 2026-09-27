@@ -18,6 +18,7 @@ describe('cookies', () => {
 
     expect(store.jar[ACCESS_COOKIE]).toBe('A');
     expect(store.jar[REFRESH_COOKIE]).toBe('R');
+    expect(store.delete).toHaveBeenCalledWith('refresh_token');
     const opts = (store.set as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][2];
     expect(opts).toMatchObject({ httpOnly: true, sameSite: 'lax', path: '/', maxAge: 1800 });
     const refreshOpts = (store.set as unknown as { mock: { calls: unknown[][] } }).mock.calls[1][2];
@@ -33,5 +34,6 @@ describe('cookies', () => {
     expect(store.jar[REFRESH_COOKIE]).toBeUndefined();
     expect(store.delete).toHaveBeenCalledWith(ACCESS_COOKIE);
     expect(store.delete).toHaveBeenCalledWith(REFRESH_COOKIE);
+    expect(store.delete).toHaveBeenCalledWith('refresh_token');
   });
 });

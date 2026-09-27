@@ -2,6 +2,7 @@ package com.back.global.security.token;
 
 import com.back.global.security.Role;
 import com.back.global.security.jwt.JwtProvider;
+import com.back.global.security.session.RefreshSessionStore;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -17,17 +18,19 @@ import org.springframework.stereotype.Component;
 public class TokenIssuer {
 
     private final JwtProvider jwtProvider;
-    private final RefreshTokenStore refreshTokenStore;
+    private final RefreshSessionStore refreshSessionStore;
 
-    /** access + refresh를 새로 발급하고 refresh를 유효 목록에 등록한다. */
+    /** access JWT와 서버 관리 refresh 세션을 함께 발급한다. */
     public IssuedTokens issue(Long memberId, Role role) {
-        String jti = jwtProvider.newJti();
         String access = jwtProvider.createAccessToken(memberId, role);
-        String refresh = jwtProvider.createRefreshToken(memberId, role, jti);
-        refreshTokenStore.save(memberId, jti);
-        return new IssuedTokens(access, refresh);
+        String refreshSession = refreshSessionStore.create(memberId);
+        return new IssuedTokens(access, refreshSession);
     }
 
-    public record IssuedTokens(String accessToken, String refreshToken) {
+    public String issueAccessToken(Long memberId, Role role) {
+        return jwtProvider.createAccessToken(memberId, role);
+    }
+
+    public record IssuedTokens(String accessToken, String refreshSession) {
     }
 }
