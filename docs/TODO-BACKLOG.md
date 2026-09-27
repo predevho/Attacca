@@ -86,7 +86,7 @@
 
 ## BE 공통 정리 (도메인 리뷰에서 이연된 Minor)
 
-* [ ] BE: 오프셋 페이징 응답을 안정적 `PageResponse<T>` DTO로 공통화 — 현재 VERIFIED-PERFORMER 어드민 목록·PERFORMANCE 목록이 `Page<T>`(PageImpl)를 그대로 직렬화해 Spring Boot 3.4의 "PageImpl 직렬화 비권장" 경고가 뜬다(동작·테스트는 정상). JSON 계약 안정화를 위해 공통 DTO로 감싸는 것을 검토. (2026-07-22 PERFORMANCE 최종 리뷰 식별)
+* [x] ~~BE: 오프셋 페이징 응답을 안정적 `PageResponse<T>` DTO로 공통화~~ — 2026-09-27 완료. VERIFIED-PERFORMER 어드민 목록·PERFORMANCE 목록을 기존 공통 DTO로 전환하고, FE의 `number` 의존도 `page` 계약으로 바꿨다. 다른 도메인은 별도 전환 작업으로 남긴다.
 * [ ] FEED/PERFORMANCE: `clamp(size)`·`isAdmin(Authentication)`가 여러 컨트롤러에 중복 — 공용 헬퍼로 추출. (2026-07-17/07-22 리뷰 식별)
 * [ ] FEED: `VerificationApplicationRepository.findApprovedMemberIds`의 JPQL이 enum을 FQN 리터럴로 사용 → `@Param`으로 파라미터 바인딩 정리(리네임 취약). 해당 테스트의 인라인 `java.util.Set`도 import로. (2026-07-17)
 
@@ -220,7 +220,7 @@
 * [x] ~~BE PERFORMANCE: 월 범위 조회~~ — 2026-09-08 완료. `GET /api/public/performances?scope=SCHEDULED&from=&to=`. NOTICE와 같은 이름·같은 `[from, to)` 규약이라 BFF가 두 번 같은 모양으로 호출해 합치면 된다. PERFORMANCE-STATUTE §12.
 * [x] ~~NOTICE 도메인 문서 작성~~ — 2026-09-08 완료. `DOMAIN-NOTICE-CONSTITUTION.md` / `DOMAIN-NOTICE-STATUTE.md`. ARCHITECTURE-CONSTITUTION §3 도메인 표와 ARCHITECTURE-STATUTE §2 패키지 트리에도 반영.
 * [x] ~~NOTICE 도메인 BE 구현~~ — 2026-09-08 완료(TDD, 테스트 46개, 전체 358/358). STATUTE §11 미결정 4건도 함께 확정: `pinned`는 등록 제한 없이 **조회에서 상위 5건만**, 목록 size 기본 20/최대 50(PINNED만 5), 공개·어드민 모두 **`PageResponse<T>`**, `content`는 **순수 텍스트**(마크다운 미허용).
-* [ ] 기존 도메인 목록 응답을 `PageResponse<T>`로 전환 — NOTICE에서 도입했다. VERIFIED-PERFORMER 어드민 목록·PERFORMANCE 목록이 아직 `Page<T>`(PageImpl) 직렬화라 Boot 3.4 경고가 남아 있다. (기존 "BE 공통 정리" 항목과 같은 건 — 여기서 통합)
+* [x] ~~기존 도메인 목록 응답을 `PageResponse<T>`로 전환~~ — 2026-09-27 완료. NOTICE에 이어 VERIFIED-PERFORMER 어드민 목록·PERFORMANCE 목록을 전환했다. 채팅·구인 등 나머지 Spring 페이지 응답은 별도 범위로 남긴다.
 * [ ] NOTICE 본문 마크다운 지원 — 지금은 순수 텍스트로 확정. 서식이 필요해지면 FE 렌더러와 XSS 처리(허용 태그 화이트리스트)를 함께 도입할 것.
 * [x] ~~**PERFORMANCE: 공개 조회 추가**~~ — 2026-09-08 완료(위 항목과 함께).
 * [x] ~~BFF `/api/bff/public/calendar`~~ — 2026-09-08 완료. 공연·공지 두 공개 조회를 호출해 시각순 한 벌로 합친다. 한쪽이라도 실패하면 반쪽 달력을 그리지 않고 실패로 내린다(빠진 일정이 "없는 일정"으로 보이면 안 되므로).

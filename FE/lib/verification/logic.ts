@@ -1,10 +1,10 @@
 import type { CursorPage } from '@/lib/feed/types';
-import type { ApplyFormValues, GrantFormValues, SpringPage, VerificationStatus } from '@/lib/verification/types';
+import type { ApplyFormValues, GrantFormValues, PageResponse, VerificationStatus } from '@/lib/verification/types';
 import { isHttpUrl } from '@/lib/url';
 
-/** Spring Page(오프셋)를 커서 페이지 계약으로 변환 → useInfiniteList 재사용. */
-export function toCursorPage<T>(page: SpringPage<T>): CursorPage<T> {
-  return { items: page.content, nextCursor: page.last ? null : page.number + 1 };
+/** 오프셋 페이지 응답을 커서 페이지 계약으로 변환 → useInfiniteList 재사용. */
+export function toCursorPage<T>(page: PageResponse<T>): CursorPage<T> {
+  return { items: page.content, nextCursor: page.last ? null : page.page + 1 };
 }
 
 // 증빙 링크 가드는 공용(lib/url.ts)으로 올렸다. 기존 호출부를 위해 여기서 다시 내보낸다.

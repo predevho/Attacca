@@ -7,12 +7,12 @@ const base: PerformanceFormValues = {
 };
 
 describe('toCursorPage', () => {
-  it('마지막 페이지가 아니면 nextCursor=number+1', () => {
-    expect(toCursorPage({ content: [{ id: 1 } as never], number: 0, totalPages: 3, last: false }))
+  it('마지막 페이지가 아니면 nextCursor=page+1', () => {
+    expect(toCursorPage({ content: [{ id: 1 } as never], page: 0, size: 20, totalElements: 3, totalPages: 3, first: true, last: false }))
       .toEqual({ items: [{ id: 1 }], nextCursor: 1 });
   });
   it('마지막 페이지면 nextCursor=null', () => {
-    expect(toCursorPage({ content: [], number: 2, totalPages: 3, last: true }))
+    expect(toCursorPage({ content: [], page: 2, size: 20, totalElements: 3, totalPages: 3, first: false, last: true }))
       .toEqual({ items: [], nextCursor: null });
   });
 });

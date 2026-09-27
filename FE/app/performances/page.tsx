@@ -7,7 +7,7 @@ import { useInfiniteList } from '@/lib/feed/useInfiniteList';
 import { toCursorPage } from '@/lib/performance/logic';
 import { PerformanceCard } from '@/components/performance/PerformanceCard';
 import type { CursorPage, Me } from '@/lib/feed/types';
-import type { Performance, PerformanceScope, SpringPage } from '@/lib/performance/types';
+import type { PageResponse, Performance, PerformanceScope } from '@/lib/performance/types';
 
 const TABS: { key: PerformanceScope; label: string }[] = [
   { key: 'UPCOMING', label: '다가오는' },
@@ -21,9 +21,9 @@ function ScopeList({ scope }: { scope: PerformanceScope }) {
     const pageNum = cursor ?? 0;
     // 공개 경로로 읽는다 — 로그인하지 않아도 목록이 보여야 한다.
     // 쓰기(등록·수정·삭제)만 인증 경로를 쓴다.
-    const r = await getBff<SpringPage<Performance>>(
+    const r = await getBff<PageResponse<Performance>>(
       `/api/bff/public/performances?scope=${scope}&page=${pageNum}`);
-    return r.ok ? toCursorPage(r.data as SpringPage<Performance>) : null;
+    return r.ok ? toCursorPage(r.data as PageResponse<Performance>) : null;
   }, [scope]);
 
   const { items, isLoading, error, loaded, hasMore, sentinelRef } = useInfiniteList<Performance>(fetchPage);

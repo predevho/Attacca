@@ -1,9 +1,9 @@
 import type { CursorPage } from '@/lib/feed/types';
-import type { Performance, PerformanceFormValues, SpringPage } from '@/lib/performance/types';
+import type { PageResponse, Performance, PerformanceFormValues } from '@/lib/performance/types';
 
-/** Spring Page(오프셋)를 커서 페이지 계약으로 변환 → useInfiniteList 재사용. cursor=페이지 번호. */
-export function toCursorPage(page: SpringPage<Performance>): CursorPage<Performance> {
-  return { items: page.content, nextCursor: page.last ? null : page.number + 1 };
+/** 오프셋 페이지 응답을 커서 페이지 계약으로 변환 → useInfiniteList 재사용. cursor=페이지 번호. */
+export function toCursorPage(page: PageResponse<Performance>): CursorPage<Performance> {
+  return { items: page.content, nextCursor: page.last ? null : page.page + 1 };
 }
 
 /** 클라이언트 측 폼 검증. 첫 에러 메시지 또는 null. BE PerformanceRequest 규칙과 일치. */

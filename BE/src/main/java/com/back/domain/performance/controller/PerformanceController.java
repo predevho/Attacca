@@ -5,9 +5,9 @@ import com.back.domain.performance.dto.PerformanceResponse;
 import com.back.domain.performance.dto.PerformanceScope;
 import com.back.domain.performance.service.PerformanceService;
 import com.back.global.common.ApiResponse;
+import com.back.global.common.PageResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -45,12 +45,12 @@ public class PerformanceController {
     }
 
     @GetMapping
-    public ApiResponse<Page<PerformanceResponse>> list(
+    public ApiResponse<PageResponse<PerformanceResponse>> list(
             @RequestParam(defaultValue = "UPCOMING") PerformanceScope scope,
             @RequestParam(required = false, defaultValue = "0") int page,
             @RequestParam(required = false, defaultValue = "20") int size) {
-        return ApiResponse.success(performanceService.getPerformances(scope,
-                PageRequest.of(Math.max(page, 0), clamp(size))));
+        return ApiResponse.success(PageResponse.from(performanceService.getPerformances(scope,
+                PageRequest.of(Math.max(page, 0), clamp(size)))));
     }
 
     @GetMapping("/{id}")

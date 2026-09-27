@@ -9,8 +9,8 @@ vi.mock('@/lib/api', () => ({ getBff: (...a: unknown[]) => getBff(...a) }));
 
 import PerformancesPage from '@/app/performances/page';
 
-function page(items: unknown[], last = true, number = 0) {
-  return { ok: true, data: { content: items, number, totalPages: 1, last }, message: null };
+function page(items: unknown[], last = true, pageNumber = 0) {
+  return { ok: true, data: { content: items, page: pageNumber, totalPages: 1, last }, message: null };
 }
 function perf(id: number, title: string) {
   return { id, organizer: { id: 5, nickname: '주최', verified: true }, title, description: null,

@@ -8,9 +8,9 @@ import com.back.domain.verifiedperformer.entity.VerificationStatus;
 import com.back.domain.verifiedperformer.service.VerificationReviewService;
 import com.back.domain.verifiedperformer.service.VerifiedPerformerService;
 import com.back.global.common.ApiResponse;
+import com.back.global.common.PageResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,9 +34,9 @@ public class VerifiedPerformerAdminController {
     private final VerificationReviewService verificationReviewService;
 
     @GetMapping("/applications")
-    public ApiResponse<Page<ApplicationResponse>> applications(
+    public ApiResponse<PageResponse<ApplicationResponse>> applications(
             @RequestParam(defaultValue = "PENDING") VerificationStatus status, Pageable pageable) {
-        return ApiResponse.success(verificationReviewService.getApplications(status, pageable));
+        return ApiResponse.success(PageResponse.from(verificationReviewService.getApplications(status, pageable)));
     }
 
     @PostMapping("/applications/{id}/approve")

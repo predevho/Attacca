@@ -9,7 +9,7 @@ vi.mock('@/lib/api', () => ({ getBff: (p: string) => getBff(p), postBff: (...a: 
 import AdminVerifiedPerformersPage from '@/app/admin/verified-performers/page';
 
 const pageData = { content: [{ id: 1, memberId: 5, statement: '5년', evidenceUrls: [], status: 'PENDING',
-  decisionReason: null, decidedBy: null, decidedAt: null, createdAt: '' }], number: 0, totalPages: 1, last: true };
+  decisionReason: null, decidedBy: null, decidedAt: null, createdAt: '' }], page: 0, totalPages: 1, last: true };
 
 function mockAdmin(role: 'ADMIN' | 'USER') {
   getBff.mockImplementation((p: string) => {

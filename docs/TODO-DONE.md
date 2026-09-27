@@ -4,6 +4,12 @@
 
 ---
 
+* [x] (2026-09-27) API 페이지 계약 안정화 리팩터링.
+  * 공연 목록과 관리자 인증 심사 목록을 Spring `PageImpl` 직접 직렬화에서 공통 `PageResponse<T>` 계약으로 전환했다. 외부 JSON은 `content`, `page`, `size`, `totalElements`, `totalPages`, `first`, `last`만 노출한다.
+  * 공연·인증 심사 프런트의 무한 목록 변환을 Spring 내부 `number` 대신 `page`로 바꿨다. 페이지 처리 UX·기본값·상한·권한 규칙은 그대로다.
+  * BE 전체 테스트와 FE 전체 테스트·타입 검사·lint·색 토큰 검사·build를 통과했다. 다른 도메인의 페이지 전환과 `clamp(size)`·관리자 판별 공용화는 별도 작업으로 남긴다.
+  * 설계: `docs/superpowers/specs/2026-09-27-api-contract-stabilization-design.md`, 계획: `docs/superpowers/plans/2026-09-27-api-contract-stabilization.md`.
+
 * [x] (2026-09-26) 외부 반입(IMPORT) 기능 폐기.
   * KOPIS 공연·대학 공지 수집, 어드민 승인 API·BFF·심사 화면, 예약 실행, 전용 XML/HTML 라이브러리와 환경변수를 제거했다. 공지 관리와 인증 심사는 `/admin`에서 그대로 제공한다.
   * 기존 운영 DB의 `import_run`·`imported_item` 테이블과 Flyway V4/V8 이력은 파괴하지 않는다. 재도입은 별도 설계·승인이 필요하다.

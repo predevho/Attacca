@@ -81,7 +81,14 @@ class PerformanceControllerTest {
                         .header("Authorization", verifiedBearer))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.content[0].title").value("리사이틀"))
-                .andExpect(jsonPath("$.data.content[0].organizer.nickname").value("연주자"));
+                .andExpect(jsonPath("$.data.content[0].organizer.nickname").value("연주자"))
+                .andExpect(jsonPath("$.data.page").value(0))
+                .andExpect(jsonPath("$.data.size").value(20))
+                .andExpect(jsonPath("$.data.totalElements").value(1))
+                .andExpect(jsonPath("$.data.totalPages").value(1))
+                .andExpect(jsonPath("$.data.first").value(true))
+                .andExpect(jsonPath("$.data.last").value(true))
+                .andExpect(jsonPath("$.data.number").doesNotExist());
     }
 
     @Test

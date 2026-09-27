@@ -8,7 +8,7 @@ import { toCursorPage, toGrantRequest } from '@/lib/verification/logic';
 import { ApplicationReviewItem } from '@/components/verification/ApplicationReviewItem';
 import { GrantForm } from '@/components/verification/GrantForm';
 import type { CursorPage, Me } from '@/lib/feed/types';
-import type { Application, GrantFormValues, SpringPage, VerificationStatus } from '@/lib/verification/types';
+import type { Application, GrantFormValues, PageResponse, VerificationStatus } from '@/lib/verification/types';
 
 const TABS: { key: VerificationStatus; label: string }[] = [
   { key: 'PENDING', label: '심사 중' },
@@ -28,8 +28,8 @@ function ReviewList({
   // 재조회는 부모가 key(`status:refreshKey`)를 바꿔 이 컴포넌트를 리마운트하는 것으로 처리한다.
   const fetchPage = useCallback(async (cursor: number | null): Promise<CursorPage<Application> | null> => {
     const pageNum = cursor ?? 0;
-    const r = await getBff<SpringPage<Application>>(`/api/bff/admin/verified-performers/applications?status=${status}&page=${pageNum}`);
-    return r.ok ? toCursorPage(r.data as SpringPage<Application>) : null;
+    const r = await getBff<PageResponse<Application>>(`/api/bff/admin/verified-performers/applications?status=${status}&page=${pageNum}`);
+    return r.ok ? toCursorPage(r.data as PageResponse<Application>) : null;
   }, [status]);
 
   const { items, isLoading, error, loaded, hasMore, sentinelRef } = useInfiniteList<Application>(fetchPage);

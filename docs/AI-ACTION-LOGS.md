@@ -4,6 +4,8 @@
 
 ---
 
+* 2026-09-27 — **API 페이지 계약을 안정화했다.** 공연 목록과 관리자 인증 심사 목록이 Spring `PageImpl` 내부 구조를 직접 직렬화하던 것을 공통 `PageResponse<T>`로 전환했다. FE의 공연·인증 심사 무한 목록도 `number` 대신 `page`를 사용하도록 맞췄다. TDD로 기존 구현에서 새 JSON 계약이 실패하는 것을 확인한 뒤 전환했고, BE 전체 테스트와 FE 전체 테스트·타입 검사·lint·색 토큰 검사·build를 통과했다. 채팅·구인 등 나머지 Spring 페이지 응답과 `clamp(size)`·관리자 판별 공용화는 별도 리팩터링 범위다.
+
 * 2026-09-27 — 외부 반입 기능 제거 이미지(`7a019e7`)가 EC2에 배포된 뒤 BE 컨테이너의 `healthy` 상태를 확인했다. `.env.prod`에서 `KOPIS_SERVICE_KEY`·`IMPORT_CONTACT`·`KOPIS_BASE_URL`를 로컬 백업 후 삭제하고 BE를 재생성했다. 재기동 컨테이너에서 `KOPIS_SERVICE_KEY`가 비어 있음을 확인했다. 운영에서 `/admin`의 외부 반입 링크가 사라졌고, 공지 관리와 기존 채팅방 진입·입력창 표시도 정상임을 확인했다.
 
 * 2026-09-26 — **외부 반입(IMPORT) 기능을 의도적으로 폐기했다.** KOPIS API의 식별 헤더·XML 확장 태그 대응과 대학 게시판별 HTML 선택자 유지가 초기 서비스 단계의 운영 부담을 키운다고 판단했다. KOPIS·대학 수집기, 승인 API·BFF·관리 화면, 예약 실행, XML/HTML 전용 의존성과 환경변수를 제거했다. 공지 관리·인증 심사와 공지의 출처 링크 표시는 유지한다. 운영 DB에 이미 적용된 `import_run`·`imported_item` 테이블과 Flyway V4/V8은 파괴하지 않고, 과거 설계·장애 기록도 역사 자료로 보존한다. 재도입은 새 설계와 별도 사용자 승인이 필요하다. 정본: `docs/superpowers/specs/2026-09-26-retire-external-import-design.md`.

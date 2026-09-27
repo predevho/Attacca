@@ -20,5 +20,13 @@ export type ApplyFormValues = { statement: string; evidenceUrls: string[] };
 /** 어드민 직접지정 폼 값(입력은 문자열, 전송 시 변환). */
 export type GrantFormValues = { memberId: string; reason: string };
 
-/** Spring Page 응답 중 FE가 쓰는 필드만. */
-export type SpringPage<T> = { content: T[]; number: number; totalPages: number; last: boolean };
+/** BE의 안정적인 오프셋 페이지 응답 계약. */
+export type PageResponse<T> = {
+  content: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  first: boolean;
+  last: boolean;
+};

@@ -154,6 +154,13 @@ class VerifiedPerformerAdminControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.content[0].memberId").value(memberId))
                 .andExpect(jsonPath("$.data.content[0].applicant.nickname").value("신청자"))
-                .andExpect(jsonPath("$.data.content[0].applicant.verified").value(false));
+                .andExpect(jsonPath("$.data.content[0].applicant.verified").value(false))
+                .andExpect(jsonPath("$.data.page").value(0))
+                .andExpect(jsonPath("$.data.size").value(20))
+                .andExpect(jsonPath("$.data.totalElements").value(1))
+                .andExpect(jsonPath("$.data.totalPages").value(1))
+                .andExpect(jsonPath("$.data.first").value(true))
+                .andExpect(jsonPath("$.data.last").value(true))
+                .andExpect(jsonPath("$.data.number").doesNotExist());
     }
 }

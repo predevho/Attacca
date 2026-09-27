@@ -8,11 +8,11 @@ import type { ApplyFormValues } from '@/lib/verification/types';
 const base: ApplyFormValues = { statement: '오케스트라 5년 활동했습니다', evidenceUrls: [] };
 
 describe('toCursorPage', () => {
-  it('마지막 아니면 nextCursor=number+1', () =>
-    expect(toCursorPage({ content: [{ id: 1 } as never], number: 0, totalPages: 2, last: false }))
+  it('마지막 아니면 nextCursor=page+1', () =>
+    expect(toCursorPage({ content: [{ id: 1 } as never], page: 0, size: 20, totalElements: 2, totalPages: 2, first: true, last: false }))
       .toEqual({ items: [{ id: 1 }], nextCursor: 1 }));
   it('마지막이면 null', () =>
-    expect(toCursorPage({ content: [], number: 1, totalPages: 2, last: true }))
+    expect(toCursorPage({ content: [], page: 1, size: 20, totalElements: 2, totalPages: 2, first: false, last: true }))
       .toEqual({ items: [], nextCursor: null }));
 });
 
