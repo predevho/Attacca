@@ -2,6 +2,7 @@ import 'server-only';
 
 export const ACCESS_COOKIE = 'access_token';
 export const REFRESH_COOKIE = 'refresh_session';
+const LEGACY_REFRESH_COOKIE = 'refresh_token';
 
 const ACCESS_MAX_AGE = 1800;      // 30분(BE access 만료와 일치)
 const REFRESH_MAX_AGE = 1209600;  // 14일(BE refresh 만료와 일치)
@@ -30,9 +31,11 @@ export function setAccessCookie(store: CookieStore, access: string): void {
 export function setAuthCookies(store: CookieStore, access: string, refreshSession: string): void {
   setAccessCookie(store, access);
   store.set(REFRESH_COOKIE, refreshSession, baseOptions(REFRESH_MAX_AGE));
+  store.delete(LEGACY_REFRESH_COOKIE);
 }
 
 export function clearAuthCookies(store: CookieStore): void {
   store.delete(ACCESS_COOKIE);
   store.delete(REFRESH_COOKIE);
+  store.delete(LEGACY_REFRESH_COOKIE);
 }
