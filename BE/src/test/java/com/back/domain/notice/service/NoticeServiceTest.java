@@ -31,7 +31,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 
 @DataJpaTest
 class NoticeServiceTest {
@@ -41,7 +43,7 @@ class NoticeServiceTest {
     @Autowired VerificationApplicationRepository verificationApplicationRepository;
     @Autowired FileMetadataRepository fileMetadataRepository;
 
-    private NoticeService service;
+    private NoticeFacade service;
     private FakeFileStorage storage;
     private Long adminId;
 
@@ -54,7 +56,10 @@ class NoticeServiceTest {
         storage = new FakeFileStorage();
         FileService fileService = new FileService(storage, fileMetadataRepository,
                 new AttachmentFilePolicy());
-        service = new NoticeService(noticeRepository, memberQueryService, fileService);
+        NoticeResponseAssembler responseAssembler = new NoticeResponseAssembler(memberQueryService, fileService);
+        service = new NoticeFacade(
+                new NoticeCommandService(noticeRepository, responseAssembler, fileService),
+                new NoticeQueryService(noticeRepository, memberQueryService, responseAssembler));
 
         Member admin = memberRepository.save(
                 Member.createLocal("admin", "pw", "admin@x.com", "운영자"));
@@ -285,6 +290,46 @@ class NoticeServiceTest {
         @Override
         public String getUrl(String key) {
             return "http://fake/" + key;
+        }
+    }
+
+    /** 기존 공지 서비스 계약을 유지해 두 서비스의 회귀를 같은 시나리오로 검증한다. */
+    private record NoticeFacade(NoticeCommandService command, NoticeQueryService query) {
+        NoticeResponse register(Long authorId, NoticeRequest request) {
+            return command.register(authorId, request);
+        }
+
+        NoticeResponse create(long authorId, NoticeRequest request) {
+            return command.create(authorId, request);
+        }
+
+        NoticeResponse editNotice(Long id, NoticeRequest request) {
+            return command.editNotice(id, request);
+        }
+
+        void deleteNotice(Long id) {
+            command.deleteNotice(id);
+        }
+
+        NoticeResponse updateCover(Long adminId, Long id, MultipartFile file) {
+            return command.updateCover(adminId, id, file);
+        }
+
+        NoticeResponse getAdminNotice(Long id) {
+            return query.getAdminNotice(id);
+        }
+
+        PageResponse<NoticeResponse> getAdminNotices(NoticeType type, Pageable pageable) {
+            return query.getAdminNotices(type, pageable);
+        }
+
+        PublicNoticeResponse getPublicNotice(Long id) {
+            return query.getPublicNotice(id);
+        }
+
+        PageResponse<PublicNoticeResponse> getPublicNotices(NoticeScope scope, LocalDateTime from,
+                LocalDateTime to, Pageable pageable) {
+            return query.getPublicNotices(scope, from, to, pageable);
         }
     }
 }

@@ -3,7 +3,8 @@ package com.back.domain.notice.controller;
 import com.back.domain.notice.dto.NoticeRequest;
 import com.back.domain.notice.dto.NoticeResponse;
 import com.back.domain.notice.entity.NoticeType;
-import com.back.domain.notice.service.NoticeService;
+import com.back.domain.notice.service.NoticeCommandService;
+import com.back.domain.notice.service.NoticeQueryService;
 import com.back.global.common.ApiResponse;
 import com.back.global.common.PageResponse;
 import jakarta.validation.Valid;
@@ -34,12 +35,13 @@ public class NoticeAdminController {
     private static final int DEFAULT_SIZE = 20;
     private static final int MAX_SIZE = 50;
 
-    private final NoticeService noticeService;
+    private final NoticeCommandService noticeCommandService;
+    private final NoticeQueryService noticeQueryService;
 
     @PostMapping
     public ApiResponse<NoticeResponse> register(@AuthenticationPrincipal Long adminId,
             @Valid @RequestBody NoticeRequest request) {
-        return ApiResponse.success(noticeService.register(adminId, request));
+        return ApiResponse.success(noticeCommandService.register(adminId, request));
     }
 
     @GetMapping
@@ -47,31 +49,31 @@ public class NoticeAdminController {
             @RequestParam(required = false) NoticeType type,
             @RequestParam(required = false, defaultValue = "0") int page,
             @RequestParam(required = false, defaultValue = "20") int size) {
-        return ApiResponse.success(noticeService.getAdminNotices(type,
+        return ApiResponse.success(noticeQueryService.getAdminNotices(type,
                 PageRequest.of(Math.max(page, 0), clamp(size))));
     }
 
     @GetMapping("/{id}")
     public ApiResponse<NoticeResponse> get(@PathVariable Long id) {
-        return ApiResponse.success(noticeService.getAdminNotice(id));
+        return ApiResponse.success(noticeQueryService.getAdminNotice(id));
     }
 
     @PutMapping("/{id}")
     public ApiResponse<NoticeResponse> edit(@PathVariable Long id,
             @Valid @RequestBody NoticeRequest request) {
-        return ApiResponse.success(noticeService.editNotice(id, request));
+        return ApiResponse.success(noticeCommandService.editNotice(id, request));
     }
 
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@PathVariable Long id) {
-        noticeService.deleteNotice(id);
+        noticeCommandService.deleteNotice(id);
         return ApiResponse.success();
     }
 
     @PutMapping("/{id}/cover")
     public ApiResponse<NoticeResponse> cover(@AuthenticationPrincipal Long adminId,
             @PathVariable Long id, @RequestPart("file") MultipartFile file) {
-        return ApiResponse.success(noticeService.updateCover(adminId, id, file));
+        return ApiResponse.success(noticeCommandService.updateCover(adminId, id, file));
     }
 
     private int clamp(int size) {

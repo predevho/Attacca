@@ -2,6 +2,11 @@
 
 완료된 작업 기록.
 
+* [x] (2026-09-28) 공지 서비스 CQS 분리
+  * 단일 `NoticeService`를 조회 전용 `NoticeQueryService`, 변경 전용 `NoticeCommandService`, 공유 DTO 변환 `NoticeResponseAssembler`로 나눴다.
+  * 공개·관리자 HTTP 경로, DTO, 권한, soft delete, 일정·출처·이미지 검증과 파일 교체 순서는 유지했다.
+  * JDK 21 컨테이너에서 공지 대상 테스트와 전체 BE 테스트를 통과했다. 설계: `docs/superpowers/specs/2026-09-28-notice-cqs-refactoring-design.md`.
+
 ---
 
 * [x] (2026-09-27) API 페이지 계약 안정화 리팩터링.

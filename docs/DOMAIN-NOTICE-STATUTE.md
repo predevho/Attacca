@@ -200,3 +200,11 @@ BE는 처음부터 CRUD가 있었는데 **화면이 없어 공지를 올릴 방�
 
 > 커버 이미지 업로드는 BFF 라우트(`PUT /api/bff/admin/notices/{id}/cover`)만 두고
 > 화면은 아직 붙이지 않았다. 캐러셀에서 커버 없는 공지는 "이미지 없음"으로 나온다.
+
+---
+
+## 12. 서비스 책임 분리 (2026-09-28)
+
+* `NoticeQueryService`는 공개·관리자 단건/목록 조회와 `readOnly` 트랜잭션만 담당한다.
+* `NoticeCommandService`는 등록·수정·삭제·커버 이미지 교체와 입력 검증만 담당한다.
+* 관리자·공개 DTO 변환과 커버 URL 생성은 `NoticeResponseAssembler`로 공유한다. 경로·DTO·권한과 soft delete 규칙은 분리 전후 동일하다.

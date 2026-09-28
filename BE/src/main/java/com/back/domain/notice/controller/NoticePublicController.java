@@ -2,7 +2,7 @@ package com.back.domain.notice.controller;
 
 import com.back.domain.notice.dto.NoticeScope;
 import com.back.domain.notice.dto.PublicNoticeResponse;
-import com.back.domain.notice.service.NoticeService;
+import com.back.domain.notice.service.NoticeQueryService;
 import com.back.global.common.ApiResponse;
 import com.back.global.common.PageResponse;
 import java.time.LocalDateTime;
@@ -31,7 +31,7 @@ public class NoticePublicController {
     /** 캐러셀은 몇 장만 넘긴다. 20장이 꽂히면 아무도 끝까지 보지 않는다. */
     private static final int PINNED_MAX_SIZE = 5;
 
-    private final NoticeService noticeService;
+    private final NoticeQueryService noticeQueryService;
 
     @GetMapping
     public ApiResponse<PageResponse<PublicNoticeResponse>> list(
@@ -42,13 +42,13 @@ public class NoticePublicController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to,
             @RequestParam(required = false, defaultValue = "0") int page,
             @RequestParam(required = false, defaultValue = "20") int size) {
-        return ApiResponse.success(noticeService.getPublicNotices(scope, from, to,
+        return ApiResponse.success(noticeQueryService.getPublicNotices(scope, from, to,
                 PageRequest.of(Math.max(page, 0), clamp(scope, size))));
     }
 
     @GetMapping("/{id}")
     public ApiResponse<PublicNoticeResponse> get(@PathVariable Long id) {
-        return ApiResponse.success(noticeService.getPublicNotice(id));
+        return ApiResponse.success(noticeQueryService.getPublicNotice(id));
     }
 
     private int clamp(NoticeScope scope, int size) {

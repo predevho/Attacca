@@ -4,6 +4,8 @@
 
 ---
 
+* 2026-09-28 — **공지 서비스의 조회·변경 책임을 분리했다.** 기존 `NoticeService`는 공개·관리자 조회, 등록·수정·삭제, 커버 파일 교체와 DTO 변환을 함께 맡고 있었다. `NoticeQueryService`와 `NoticeCommandService`로 나누고 DTO 변환은 `NoticeResponseAssembler`로 공유했다. HTTP 경로·응답 DTO·권한·soft delete·입력 검증·파일 교체 순서는 그대로 유지했다. 대상 테스트와 전체 BE 테스트를 JDK 21 Gradle 컨테이너로 통과했다. 정본: `docs/superpowers/specs/2026-09-28-notice-cqs-refactoring-design.md`.
+
 * 2026-09-27 — **API 페이지 계약을 안정화했다.** 공연 목록과 관리자 인증 심사 목록이 Spring `PageImpl` 내부 구조를 직접 직렬화하던 것을 공통 `PageResponse<T>`로 전환했다. FE의 공연·인증 심사 무한 목록도 `number` 대신 `page`를 사용하도록 맞췄다. TDD로 기존 구현에서 새 JSON 계약이 실패하는 것을 확인한 뒤 전환했고, BE 전체 테스트와 FE 전체 테스트·타입 검사·lint·색 토큰 검사·build를 통과했다. 채팅·구인 등 나머지 Spring 페이지 응답과 `clamp(size)`·관리자 판별 공용화는 별도 리팩터링 범위다.
 
 * 2026-09-27 — 외부 반입 기능 제거 이미지(`7a019e7`)가 EC2에 배포된 뒤 BE 컨테이너의 `healthy` 상태를 확인했다. `.env.prod`에서 `KOPIS_SERVICE_KEY`·`IMPORT_CONTACT`·`KOPIS_BASE_URL`를 로컬 백업 후 삭제하고 BE를 재생성했다. 재기동 컨테이너에서 `KOPIS_SERVICE_KEY`가 비어 있음을 확인했다. 운영에서 `/admin`의 외부 반입 링크가 사라졌고, 공지 관리와 기존 채팅방 진입·입력창 표시도 정상임을 확인했다.
