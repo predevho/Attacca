@@ -9,7 +9,6 @@ import { REFRESH_COOKIE, clearAuthCookies } from '@/lib/server/cookies';
 export async function POST() {
   const store = await cookies();
   const refreshSession = store.get(REFRESH_COOKIE)?.value;
-  let backendDiagnostic = 'not-called';
   let revocationFailed = false;
 
   if (refreshSession) {
@@ -18,25 +17,18 @@ export async function POST() {
         method: 'POST',
         body: JSON.stringify({ refreshSession }),
       });
-      backendDiagnostic = `status-${result.status}`;
       revocationFailed = !result.ok;
     } catch {
-      backendDiagnostic = 'network-error';
       revocationFailed = true;
     }
   }
-
-  const diagnosticHeaders = {
-    'x-attacca-refresh-session': refreshSession ? 'present' : 'absent',
-    'x-attacca-logout-be': backendDiagnostic,
-  };
 
   clearAuthCookies(store);
   if (revocationFailed) {
     return NextResponse.json(
       { ok: false, message: '서버 세션 철회를 확인하지 못했습니다.' },
-      { status: 503, headers: diagnosticHeaders },
+      { status: 503 },
     );
   }
-  return NextResponse.json({ ok: true, message: null }, { headers: diagnosticHeaders });
+  return NextResponse.json({ ok: true, message: null });
 }
