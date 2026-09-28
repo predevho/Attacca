@@ -34,6 +34,7 @@ describe('BFF 로그아웃', () => {
 
     expect(res.status).toBe(200);
     expect(res.headers.get('x-attacca-refresh-session')).toBe('present');
+    expect(res.headers.get('x-attacca-logout-be')).toBe('status-200');
     expect(String(f.mock.calls[0][0])).toContain('/api/auth/logout');
     expect(JSON.parse(String((f.mock.calls[0][1] as RequestInit).body))).toEqual({ refreshSession: 'r' });
     expect(jar[ACCESS_COOKIE]).toBeUndefined();
@@ -50,6 +51,7 @@ describe('BFF 로그아웃', () => {
 
     expect(res.status).toBe(503);
     expect(res.headers.get('x-attacca-refresh-session')).toBe('present');
+    expect(res.headers.get('x-attacca-logout-be')).toBe('status-0');
     expect((await res.json()).message).toBe('서버 세션 철회를 확인하지 못했습니다.');
     expect(jar[ACCESS_COOKIE]).toBeUndefined();
     expect(jar[REFRESH_COOKIE]).toBeUndefined();
@@ -64,6 +66,7 @@ describe('BFF 로그아웃', () => {
 
     expect(res.status).toBe(200);
     expect(res.headers.get('x-attacca-refresh-session')).toBe('absent');
+    expect(res.headers.get('x-attacca-logout-be')).toBe('not-called');
     expect(f).not.toHaveBeenCalled();
   });
 });

@@ -9,7 +9,7 @@ import { REFRESH_COOKIE, clearAuthCookies } from '@/lib/server/cookies';
 export async function POST() {
   const store = await cookies();
   const refreshSession = store.get(REFRESH_COOKIE)?.value;
-  const diagnosticHeaders = { 'x-attacca-refresh-session': refreshSession ? 'present' : 'absent' };
+  let backendDiagnostic = 'not-called';
   let revocationFailed = false;
 
   if (refreshSession) {
@@ -18,11 +18,18 @@ export async function POST() {
         method: 'POST',
         body: JSON.stringify({ refreshSession }),
       });
+      backendDiagnostic = `status-${result.status}`;
       revocationFailed = !result.ok;
     } catch {
+      backendDiagnostic = 'network-error';
       revocationFailed = true;
     }
   }
+
+  const diagnosticHeaders = {
+    'x-attacca-refresh-session': refreshSession ? 'present' : 'absent',
+    'x-attacca-logout-be': backendDiagnostic,
+  };
 
   clearAuthCookies(store);
   if (revocationFailed) {
