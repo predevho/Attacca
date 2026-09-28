@@ -9,6 +9,7 @@ import { REFRESH_COOKIE, clearAuthCookies } from '@/lib/server/cookies';
 export async function POST() {
   const store = await cookies();
   const refreshSession = store.get(REFRESH_COOKIE)?.value;
+  const diagnosticHeaders = { 'x-attacca-refresh-session': refreshSession ? 'present' : 'absent' };
   let revocationFailed = false;
 
   if (refreshSession) {
@@ -27,8 +28,8 @@ export async function POST() {
   if (revocationFailed) {
     return NextResponse.json(
       { ok: false, message: '서버 세션 철회를 확인하지 못했습니다.' },
-      { status: 503 },
+      { status: 503, headers: diagnosticHeaders },
     );
   }
-  return NextResponse.json({ ok: true, message: null });
+  return NextResponse.json({ ok: true, message: null }, { headers: diagnosticHeaders });
 }
