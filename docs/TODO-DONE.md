@@ -7,6 +7,12 @@
   * 공개·관리자 HTTP 경로, DTO, 권한, soft delete, 일정·출처·이미지 검증과 파일 교체 순서는 유지했다.
   * JDK 21 컨테이너에서 공지 대상 테스트와 전체 BE 테스트를 통과했다. 설계: `docs/superpowers/specs/2026-09-28-notice-cqs-refactoring-design.md`.
 
+* [x] (2026-09-28) 채팅 방 화면 기능 단위 정리.
+  * `/chat/[id]`에서 `ChatRoomHeader`(방 이름·GROUP 참여자/조작)와 `ChatRoomTimeline`(이력 더 보기·메시지 목록)을 분리했다. 라우트는 BFF·STOMP·읽음·스크롤 보정을 계속 조합한다.
+  * 한글 IME Enter 보호가 있는 `MessageComposer`, 연결 전 구독 보관·재연결 재구독을 맡는 `stompClient`는 이동하지 않았다. URL·BFF·STOMP 계약과 화면 문구도 유지했다.
+  * FE 전체 562개 테스트, 타입 검사, lint(기존 `<img>` 경고 4건), 색 토큰 검사, production build를 통과했다. 로컬 비로그인 브라우저에서는 `/chat/3` 접근이 로그인 화면으로 보호되는 것까지 확인했다.
+  * 설계: `docs/superpowers/specs/2026-09-28-chat-room-feature-slice-refactoring-design.md`, 계획: `docs/superpowers/plans/2026-09-28-chat-room-feature-slice-refactoring.md`.
+
 ---
 
 * [x] (2026-09-27) API 페이지 계약 안정화 리팩터링.

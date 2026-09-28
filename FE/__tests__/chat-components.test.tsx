@@ -3,7 +3,9 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { RoomListItem } from '@/components/chat/RoomListItem';
 import { MessageBubble } from '@/components/chat/MessageBubble';
 import { MessageComposer } from '@/components/chat/MessageComposer';
-import type { RoomSummary, ChatMessage } from '@/lib/chat/types';
+import { ChatRoomHeader } from '@/components/chat/ChatRoomHeader';
+import { ChatRoomTimeline } from '@/components/chat/ChatRoomTimeline';
+import type { RoomDetail, RoomSummary, ChatMessage } from '@/lib/chat/types';
 
 const room: RoomSummary = {
   id: 1, type: 'DIRECT', displayName: '홍길동',
@@ -102,5 +104,46 @@ describe('MessageComposer', () => {
   it('모바일 하단 safe-area를 확보', () => {
     render(<MessageComposer onSend={() => {}} />);
     expect(screen.getByRole('contentinfo')).toHaveClass('pb-[env(safe-area-inset-bottom)]');
+  });
+});
+
+const directRoom: RoomDetail = {
+  id: 1,
+  type: 'DIRECT',
+  title: null,
+  participants: [
+    { id: 2, nickname: '홍길동', verified: false, online: true },
+    { id: 9, nickname: '나', verified: false, online: true },
+  ],
+  createdAt: '',
+};
+
+describe('ChatRoomHeader', () => {
+  it('DIRECT 방에서는 내 이름을 제외한 상대 이름만 표시한다', () => {
+    render(<ChatRoomHeader room={directRoom} me={{ id: 9, nickname: '나', role: 'USER', verified: false }} onBack={() => {}} onToggleInvite={() => {}} onLeave={() => {}} />);
+    expect(screen.getByRole('heading')).toHaveTextContent('홍길동');
+    expect(screen.getByRole('heading')).not.toHaveTextContent('나');
+    expect(screen.queryByRole('button', { name: '초대' })).not.toBeInTheDocument();
+  });
+
+  it('GROUP 방에서는 참여자와 초대·나가기 조작을 표시한다', () => {
+    const onToggleInvite = vi.fn();
+    const onLeave = vi.fn();
+    render(<ChatRoomHeader room={{ ...directRoom, type: 'GROUP', title: '합주' }} me={{ id: 9, nickname: '나', role: 'USER', verified: false }} onBack={() => {}} onToggleInvite={onToggleInvite} onLeave={onLeave} />);
+    fireEvent.click(screen.getByRole('button', { name: '초대' }));
+    fireEvent.click(screen.getByRole('button', { name: '나가기' }));
+    expect(screen.getByRole('group', { name: '참여자' })).toHaveTextContent('나 (나)');
+    expect(onToggleInvite).toHaveBeenCalledOnce();
+    expect(onLeave).toHaveBeenCalledOnce();
+  });
+});
+
+describe('ChatRoomTimeline', () => {
+  it('이전 이력 버튼과 메시지 목록을 렌더링한다', () => {
+    const onLoadOlder = vi.fn();
+    render(<ChatRoomTimeline scrollRef={{ current: null }} messages={[{ id: 1, roomId: 1, sender: { id: 2, nickname: '홍길동', verified: false }, content: '안녕', createdAt: '2026-08-01T09:00:00' }]} viewerId={9} olderCursor={1} loadingOlder={false} onLoadOlder={onLoadOlder} />);
+    fireEvent.click(screen.getByRole('button', { name: '이전 메시지 더 보기' }));
+    expect(onLoadOlder).toHaveBeenCalledOnce();
+    expect(screen.getByText('안녕')).toBeInTheDocument();
   });
 });
