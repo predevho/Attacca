@@ -5,6 +5,7 @@
 * [x] (2026-09-29) 채팅 시각을 KST로 보정하고 날짜 구분선을 추가했다.
   * BE JVM 기본 시간대를 `Asia/Seoul`로 고정하고, Flyway V9에서 기존 `chat_message`·`chat_room`·`chat_participant`의 비어 있지 않은 시각값만 KST 기준으로 보정했다.
   * 채팅 이력은 날짜별로 `YYYY년 M월 D일 요일` 구분선을 표시하며, 메시지 시각은 브라우저 시간대와 무관하게 서버가 전달한 KST `LocalDateTime`을 `오전/오후 h:mm` 형식으로 표시한다.
+  * 실시간 STOMP 메시지의 나노초 9자리(`.131911043`) `LocalDateTime`도 같은 형식으로 처리하도록 보완했다.
   * 검증: BE 전체 테스트(JDK 21), FE 테스트 567건·타입 검사·lint를 통과했다. 운영에서 Flyway V9 적용, FE·BE 컨테이너 기동 및 BE `healthy`, JVM 시간대 주입을 확인했다.
   * 운영 백업: 수동 스냅샷 `attacca-before-chat-timezone-20260929`은 자동 갱신 배포가 완료된 뒤 생성됐다. 현 상태 복구용 백업이며, 시각 보정 전 데이터로 되돌리는 용도의 백업은 아니다.
   * 설계: `docs/superpowers/specs/2026-09-28-chat-timezone-and-date-separator-design.md`, 계획: `docs/superpowers/plans/2026-09-28-chat-timezone-and-date-separator.md`.

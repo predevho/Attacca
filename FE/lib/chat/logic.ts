@@ -34,7 +34,7 @@ export type ChatMessageDateGroup = {
   messages: ChatMessage[];
 };
 
-const CHAT_LOCAL_DATE_TIME = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::\d{2}(?:\.\d{1,6})?)?$/;
+const CHAT_LOCAL_DATE_TIME = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::\d{2}(?:\.\d{1,9})?)?$/;
 const KOREAN_WEEKDAYS = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
 
 /** KST 벽시계 문자열을 파싱한다. 브라우저 시간대 변환은 적용하지 않는다. */

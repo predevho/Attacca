@@ -41,6 +41,11 @@ describe('채팅 시각과 날짜', () => {
     expect(formatChatTime('2026-08-01T13:05:30.123')).toBe('오후 1:05');
   });
 
+  it('STOMP 나노초 LocalDateTime도 날짜와 시각으로 표시한다', () => {
+    expect(formatChatTime('2026-09-29T12:19:07.131911043')).toBe('오후 12:19');
+    expect(formatChatDate('2026-09-29T12:19:07.131911043')).toBe('2026년 9월 29일 화요일');
+  });
+
   it('KST LocalDateTime을 날짜 라벨로 표시한다', () => {
     expect(formatChatDate('2026-08-01T09:05:00')).toBe('2026년 8월 1일 토요일');
   });
