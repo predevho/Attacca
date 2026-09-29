@@ -34,7 +34,8 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       STORAGE_TYPE: ${STORAGE_TYPE:-local}
-      STORAGE_LOCAL_BASE_URL: ${PUBLIC_ORIGIN}/files
+      # FE는 Vercel에 있고 파일은 EC2 API가 제공하므로 파일 URL은 API 호스트를 사용한다.
+      STORAGE_LOCAL_BASE_URL: ${STORAGE_LOCAL_BASE_URL:-https://api.attacca.site/files}
       S3_BUCKET: ${S3_BUCKET:-}
       S3_REGION: ${S3_REGION:-ap-northeast-2}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}

@@ -248,7 +248,8 @@ Redirect URI를 `https://attacca.site/api/bff/oauth/kakao/callback`로 등록한
 
 | 변수 | 1단계 예시 | 설명 |
 |---|---|---|
-| `PUBLIC_ORIGIN` | `http://13.0.0.0` | 서비스의 대표 웹 주소. 파일 URL·카카오 콜백이 이 값으로 조립된다 |
+| `PUBLIC_ORIGIN` | `https://attacca.site` | 서비스의 대표 웹 주소. 카카오 콜백 등 웹 기준 URL에 사용한다 |
+| `STORAGE_LOCAL_BASE_URL` | `https://api.attacca.site/files` | EC2가 직접 제공하는 파일 공개 URL. Vercel 웹 주소와 분리한다 |
 | `WS_ALLOWED_ORIGINS` | `http://13.0.0.0` | 브라우저가 직접 연결할 수 있는 WebSocket origin 목록(쉼표 구분). 대표 주소와 별도로 관리하며, 운영에서 허용한 웹 도메인만 넣는다 |
 | `NEXT_PUBLIC_BE_WS_URL` | `ws://13.0.0.0/ws` | **빌드 시점에 박힌다.** 바꾸면 `--build` 필수 |
 | `DB_URL` | `jdbc:mysql://<endpoint>:3306/attacca` | RDS 엔드포인트 |

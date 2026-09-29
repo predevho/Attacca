@@ -4,6 +4,10 @@
 
 ---
 
+* 2026-09-29 — **게시글 JPG 404의 원인을 확인했다.** 첨부 URL이 `https://attacca.site/files/...`로 생성되어 Vercel FE로 요청되고 있었고, 같은 경로를 `https://api.attacca.site/files/...`로 요청하면 EC2 파일이 정상 응답했다. `PUBLIC_ORIGIN`은 Vercel 웹 주소로 유지하고 `STORAGE_LOCAL_BASE_URL`을 EC2 API 파일 주소로 분리하도록 Compose·환경변수 예시·배포 문서를 수정했다. 수정 배포 후 기존 JPG URL과 신규 이미지 URL을 재확인한다.
+
+* 2026-09-29 — **관리자 운영 화면 프레임 운영 확인을 완료했다.** 로그인된 운영 브라우저에서 `/admin`, `/admin/notices`, `/admin/verified-performers`를 순서대로 열어 관리자 메뉴, 공지 목록·등록 버튼, 인증 심사 상태 탭·직접지정 영역·빈 상태가 표시되는 것을 확인했다. 관리자 프레임 자동 테스트도 통과했다.
+
 * 2026-09-29 — **access 쿠키만 삭제한 재진입 테스트에서 추가 결함을 확인하고 수정했다.** 프록시는 `refresh_session`이 있으면 보호 페이지를 통과시켰지만, `authedBeFetch`가 access 쿠키가 없을 때 BE 호출과 reissue를 모두 생략해 401을 반환하고 있었다. access가 없고 refresh 세션이 있는 경우 reissue 후 원 요청을 호출하도록 수정했으며, 해당 회귀 테스트를 추가했다. FE proxy·session 16건과 타입 검사를 통과했다. 새 이미지 배포 후 운영 브라우저에서 재검증한다.
 
 * 2026-09-29 — **인증 연주자 승인 조회의 enum 문자열 의존성을 제거했다.** `VerificationApplicationRepository`의 JPQL은 FQN으로 `APPROVED`를 직접 쓰는 대신 `status`를 `@Param`으로 바인딩하는 `findMemberIdsByStatus`를 사용한다. `VerifiedPerformerService`는 기존과 동일하게 `APPROVED`만 전달하므로 인증 뱃지 결과는 바뀌지 않는다. 승인 회원 ID 배치 조회 테스트와 관련 서비스 테스트를 통과했다.

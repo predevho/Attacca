@@ -2,11 +2,7 @@
 
 현재 진행 중인 작업.
 
-* **access 만료 후 리프레시 세션 진입 보완** — 프록시 수정 뒤에도 access 쿠키를 수동 삭제하면 `authedBeFetch`가 즉시 401을 반환하는 추가 결함을 확인했다. access가 없고 `refresh_session`이 있으면 reissue 후 원 요청을 호출하도록 수정했고, FE proxy·session 16건과 타입 검사를 통과했다. 커밋·배포 후 실제 access 만료 상태의 보호 페이지 재진입을 확인한다.
-
-* **관리자 운영 화면 프레임 정리** — `AdminPageFrame`을 도입해 관리 허브, 공지 관리, 인증 심사의 제목·설명·주요 행동 영역과 콘텐츠 폭을 통일했다. BFF·권한·도메인 행동은 유지했다. 관리자 관련 18건, FE 전체 573건, 타입 검사, lint(기존 `<img>` 경고 4건), production build를 통과했다. 실제 운영 브라우저 확인과 배포는 커밋·푸시 후 진행한다. 설계: `docs/superpowers/specs/2026-09-29-admin-operations-layout-design.md`, 계획: `docs/superpowers/plans/2026-09-29-admin-operations-layout.md`.
-
-* **운영 첨부 기능 스모크 검증** — 밝은 전역 UI, `/feed/new` 작성 흐름, 피드·구인 임시 첨부 구현과 자동 검증은 완료됐다. 운영 브라우저에서 신규 글 작성·첨부 조회·실패 파일 재시도, 배포 후 파일 URL·임시 파일 정리까지 확인한 뒤 완료 처리한다. 설계: `docs/superpowers/specs/2026-09-22-content-community-attachments-ui-design.md`, 계획: `docs/superpowers/plans/2026-09-22-content-community-attachments-ui-implementation.md`.
+* **운영 첨부 기능 스모크 검증** — 밝은 전역 UI, `/feed/new` 작성 흐름, 피드·구인 임시 첨부 구현과 자동 검증은 완료됐다. JPG 404는 `PUBLIC_ORIGIN`으로 파일 URL을 만들던 Compose 설정이 Vercel FE 주소와 EC2 파일 호스트를 혼동한 것이 원인이었다. `STORAGE_LOCAL_BASE_URL=https://api.attacca.site/files`로 수정했으며, 배포 후 기존 JPG URL·신규 이미지 URL·실패 파일 재시도를 확인한다. 설계: `docs/superpowers/specs/2026-09-22-content-community-attachments-ui-design.md`, 계획: `docs/superpowers/plans/2026-09-22-content-community-attachments-ui-implementation.md`.
 
 ---
 
