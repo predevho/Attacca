@@ -2,6 +2,8 @@
 
 현재 진행 중인 작업.
 
+* **access 만료 후 리프레시 세션 진입 보완** — 보호 페이지 프록시가 `access_token`만 보고 로그인으로 보냈기 때문에, 30분 access 쿠키가 사라진 뒤에도 남아 있는 14일 `refresh_session`으로 BFF 재발급을 시작할 수 없었다. 프록시는 두 쿠키 중 하나가 있으면 통과시키고, 기존 신원 BFF가 401에서 재발급·원 요청 1회 재시도를 맡도록 유지했다. 프록시 회귀 테스트, 세션·신원 BFF 테스트, 타입 검사, lint를 통과했다. 커밋·배포 후 실제 access 만료 상태의 보호 페이지 재진입을 확인한다.
+
 * **관리자 운영 화면 프레임 정리** — `AdminPageFrame`을 도입해 관리 허브, 공지 관리, 인증 심사의 제목·설명·주요 행동 영역과 콘텐츠 폭을 통일했다. BFF·권한·도메인 행동은 유지했다. 관리자 관련 18건, FE 전체 573건, 타입 검사, lint(기존 `<img>` 경고 4건), production build를 통과했다. 실제 운영 브라우저 확인과 배포는 커밋·푸시 후 진행한다. 설계: `docs/superpowers/specs/2026-09-29-admin-operations-layout-design.md`, 계획: `docs/superpowers/plans/2026-09-29-admin-operations-layout.md`.
 
 * **밝은 콘텐츠 커뮤니티 UI·게시글 첨부** — 피드 인라인 작성 폼을 `/feed/new` 독립 흐름으로 옮기고, 기본 밝은 전역 UI와 피드·구인 임시 첨부 업로드(ID 연결)를 구현했다. JPG/PNG/WebP/PDF, 파일당 10MB, 최대 5개를 검증하고 실패 파일은 사유 표시와 개별 재시도가 가능하다. 자동 검증(BE 전체 테스트, FE 전체 테스트·타입검사·lint·색 토큰 검사·build)은 통과했다. 실제 브라우저에서 신규 작성·첨부 조회·실패 재시도 스모크 검증과 배포는 남아 있다. 설계: `docs/superpowers/specs/2026-09-22-content-community-attachments-ui-design.md`, 계획: `docs/superpowers/plans/2026-09-22-content-community-attachments-ui-implementation.md`.

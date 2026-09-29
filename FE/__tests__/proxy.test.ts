@@ -14,9 +14,9 @@ import { config, proxy } from '@/proxy';
 
 type FakeRequest = Parameters<typeof proxy>[0];
 
-function request(pathname: string, search = '', hasCookie = false): FakeRequest {
+function request(pathname: string, search = '', cookieNames: string[] = []): FakeRequest {
   return {
-    cookies: { has: () => hasCookie },
+    cookies: { has: (name: string) => cookieNames.includes(name) },
     url: `http://localhost:3000${pathname}${search}`,
     nextUrl: { pathname, search },
   } as unknown as FakeRequest;
@@ -88,7 +88,14 @@ describe('로그인 후 원래 경로로 되돌리기', () => {
   });
 
   it('쿠키가 있으면 그대로 통과시킨다', () => {
-    proxy(request('/feed', '', true));
+    proxy(request('/feed', '', ['access_token']));
+
+    expect(redirect).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalled();
+  });
+
+  it('access가 만료돼도 refresh 세션이 있으면 BFF 재발급을 위해 통과시킨다', () => {
+    proxy(request('/admin', '', ['refresh_session']));
 
     expect(redirect).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalled();
