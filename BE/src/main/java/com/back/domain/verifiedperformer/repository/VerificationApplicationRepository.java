@@ -27,10 +27,11 @@ public interface VerificationApplicationRepository
     Page<VerificationApplication> findByStatusOrderByCreatedAtDescIdDesc(VerificationStatus status,
             Pageable pageable);
 
-    /** 주어진 회원 id 중 APPROVED 레코드가 있는 회원 id만 배치로 조회한다. 피드 등 목록 뱃지 파생의 N+1 방지용. */
+    /** 주어진 회원 id 중 특정 상태 레코드가 있는 회원 id를 배치로 조회한다. */
     @Query(
             "select distinct a.memberId from VerificationApplication a "
-            + "where a.status = com.back.domain.verifiedperformer.entity.VerificationStatus.APPROVED "
+            + "where a.status = :status "
             + "and a.memberId in :ids")
-    List<Long> findApprovedMemberIds(@Param("ids") Collection<Long> ids);
+    List<Long> findMemberIdsByStatus(@Param("ids") Collection<Long> ids,
+            @Param("status") VerificationStatus status);
 }

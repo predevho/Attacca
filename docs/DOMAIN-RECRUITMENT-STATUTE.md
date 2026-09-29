@@ -118,10 +118,10 @@ com.back.domain.recruitment
 
 * 목록·지원자 목록·내 지원 목록 모두 Spring `Pageable`(offset, DOMAIN-COMMON-STATUTE §5).
 * `size` 기본 20 / 최대 50(초과 clamp), `page<0`이면 0. FEED/PERFORMANCE와 동일.
-* 공고 목록은 `scope` 쿼리로 구분한다(기본 `open`), `instrument` 선택 필터(모집 파트에 해당 악기 포함)를 함께 적용한다:
-  * `open`: `deletedAt IS NULL AND status=OPEN AND (deadline IS NULL OR deadline > now)`, 최신순.
-  * `closed`: `deletedAt IS NULL AND (status=CLOSED OR (deadline IS NOT NULL AND deadline <= now))`, 최신순.
-  * `all`: `deletedAt IS NULL`, 최신순.
+* 공고 목록은 `scope` 쿼리로 구분한다(기본 `OPEN`), `instrument` 선택 필터(모집 파트에 해당 악기 포함)를 함께 적용한다:
+  * `OPEN`: `deletedAt IS NULL AND status=OPEN AND (deadline IS NULL OR deadline > now)`, 최신순.
+  * `CLOSED`: `deletedAt IS NULL AND (status=CLOSED OR (deadline IS NOT NULL AND deadline <= now))`, 최신순.
+  * `ALL`: `deletedAt IS NULL`, 최신순.
 * `now` 기준 경계는 서비스에서 `LocalDateTime.now()`로 계산한다.
 
 ---
@@ -133,7 +133,7 @@ com.back.domain.recruitment
 ### 7.1 공고(Posting)
 
 * `POST /` : 등록(인증 회원 누구나). body `{title, description, instruments, recruitCount, location, fee, deadline}`. → `RecruitmentPostingResponse`.
-* `GET /?scope=open|closed|all&instrument=&page=&size=` : 목록(페이징). `scope` 기본 `open`. → `Page<RecruitmentPostingResponse>`.
+* `GET /?scope=OPEN|CLOSED|ALL&instrument=&page=&size=` : 목록(페이징). `scope` 기본 `OPEN`. → `Page<RecruitmentPostingResponse>`.
 * `GET /{id}` : 단건 상세. 없음/삭제 시 `RECRUITMENT_NOT_FOUND`. → `RecruitmentPostingResponse`.
 * `PUT /{id}` : 수정(작성자만). 등록과 동일 body(전체 교체, PUT 시맨틱). → `RecruitmentPostingResponse`.
 * `POST /{id}/close` : 마감(작성자만, status→CLOSED). → `RecruitmentPostingResponse`.
@@ -176,6 +176,6 @@ com.back.domain.recruitment
 ## 9. 테스트 (구현 시)
 
 * 엔티티: `RecruitmentPosting` 생성/전체 교체(edit)/마감(close)/soft delete 마킹/`isClosed` 파생(수동 CLOSED, deadline 경과, 상시 모집). `RecruitmentApplication` 생성(PENDING)/accept·reject·withdraw(PENDING에서만 전이, 재처리 시 `RECRUITMENT_INVALID_APPLICATION_STATE`).
-* 리포지토리: 공고 `scope`별 목록(open/closed/all) + `instrument` 필터(`member of`) + soft delete 필터, 지원 활성 지원 존재 판정 + 공고별/지원자별 페이징 목록.
+* 리포지토리: 공고 `scope`별 목록(OPEN/CLOSED/ALL) + `instrument` 필터(`member of`) + soft delete 필터, 지원 활성 지원 존재 판정 + 공고별/지원자별 페이징 목록.
 * 서비스: 등록(인증 회원 누구나 허용), 수정/마감(작성자 아니면 403), 삭제(작성자·어드민 허용, 타인 403, 대상 접근 404), 지원(본인공고 409/마감 409/중복 409 게이팅), 지원자 목록(작성자만, 아니면 403), 내 지원 목록, 수락·거절(작성자, PENDING 아니면 409), 철회(지원자 본인, PENDING 아니면 409/타인 403), 거절·철회 후 재지원 허용, 작성자·지원자 표시 협력 파생(닉네임·verified).
 * 컨트롤러: 인증 회원 등록/목록/상세/수정/마감/삭제 흐름, 악기 필터, 권한 403/404, 페이징·scope 응답, 지원 흐름(지원/지원자목록/내지원목록/수락/거절/철회) 각 성공·실패 케이스.

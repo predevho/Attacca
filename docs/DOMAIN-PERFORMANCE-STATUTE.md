@@ -90,7 +90,7 @@ com.back.domain.performance
 모두 인증 필요(principal = memberId). 경로 접두사 `/api/performances`.
 
 * `POST /` : 등록(인증 연주자 또는 어드민). body `{title, description, performedAt, venue, program, ticketInfo, ticketUrl}`. 자격 없으면 403-02. → `PerformanceResponse`.
-* `GET /?scope=upcoming|past|all&page=&size=` : 목록(페이징). → `Page<PerformanceResponse>`.
+* `GET /?scope=UPCOMING|PAST|ALL&page=&size=` : 목록(페이징). → `Page<PerformanceResponse>`.
 * `GET /{id}` : 단건 상세. 삭제/없음이면 `PERFORMANCE_NOT_FOUND`. → `PerformanceResponse`.
 * `PUT /{id}` : 수정(주최자만, 아니면 403). body 는 등록과 동일(전체 교체). → `PerformanceResponse`.
 * `DELETE /{id}` : 삭제(주최자 또는 ADMIN). soft delete. → 성공.
@@ -124,7 +124,7 @@ com.back.domain.performance
 ## 10. 테스트 (구현 시)
 
 * 엔티티: 생성/전체 교체(edit)/포스터 교체/soft delete 마킹.
-* 리포지토리: `scope` 별 목록(upcoming asc / past desc / all desc, `deletedAt` 필터, `performedAt` 경계), 단건 미삭제 조회.
+* 리포지토리: `scope` 별 목록(UPCOMING asc / PAST desc / ALL desc, `deletedAt` 필터, `performedAt` 경계), 단건 미삭제 조회.
 * 서비스: 등록 자격(인증 연주자 허용·어드민 허용·둘 다 아니면 403-02), 수정(주최자 아님 403), 삭제(주최자·어드민 허용, 타인 403), 삭제 대상 접근 404, 주최자 표시 협력 파생(닉네임·verified), 포스터 업로드/교체.
 * 컨트롤러: 회원 API 흐름, 등록 자격 403-02, 권한 403/404, 페이징·scope 응답.
 
@@ -134,7 +134,7 @@ com.back.domain.performance
 
 * `PUT /{id}/poster` 응답 = **갱신된 `PerformanceResponse`**(posterImageUrl 포함).
 * 목록 `size` = **기본 20, 최대 50**(초과 clamp, `<1`이면 기본). `page<0`이면 0. 컨트롤러에서 처리.
-* `performedAt` 과거 일시 등록 = **허용**(과거 공연 기록용, scope=past 로 노출).
+* `performedAt` 과거 일시 등록 = **허용**(과거 공연 기록용, scope=PAST 로 노출).
 * `edit` = 등록과 동일 `PerformanceRequest`(`@Valid`, 전체 교체).
 * `description`/`program` 정규화 = 별도 트림 없이 `@NotBlank`(title/venue) + `@Size` 로만 제약.
 * 어드민 판정 `isAdmin` = `PerformanceController` 로컬 static(FEED의 것과 공용 헬퍼 추출은 BACKLOG).

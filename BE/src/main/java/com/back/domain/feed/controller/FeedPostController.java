@@ -6,6 +6,8 @@ import com.back.domain.feed.dto.PostResponse;
 import com.back.domain.feed.dto.UpdatePostRequest;
 import com.back.domain.feed.service.FeedPostService;
 import com.back.global.common.ApiResponse;
+import com.back.global.common.PageRequestPolicy;
+import com.back.global.security.AuthorizationRoles;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -26,9 +28,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class FeedPostController {
 
-    private static final int DEFAULT_SIZE = 20;
-    private static final int MAX_SIZE = 50;
-
     private final FeedPostService feedPostService;
 
     @PostMapping
@@ -41,7 +40,8 @@ public class FeedPostController {
     public ApiResponse<CursorPage<PostResponse>> timeline(@AuthenticationPrincipal Long memberId,
             @RequestParam(required = false) Long cursor,
             @RequestParam(required = false, defaultValue = "20") int size) {
-        return ApiResponse.success(feedPostService.getTimeline(memberId, cursor, clamp(size)));
+        return ApiResponse.success(feedPostService.getTimeline(memberId, cursor,
+                PageRequestPolicy.size(size)));
     }
 
     @GetMapping("/{id}")
@@ -59,19 +59,8 @@ public class FeedPostController {
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@AuthenticationPrincipal Long memberId,
             Authentication authentication, @PathVariable Long id) {
-        feedPostService.deletePost(memberId, isAdmin(authentication), id);
+        feedPostService.deletePost(memberId, AuthorizationRoles.isAdmin(authentication), id);
         return ApiResponse.success();
     }
 
-    private int clamp(int size) {
-        if (size < 1) {
-            return DEFAULT_SIZE;
-        }
-        return Math.min(size, MAX_SIZE);
-    }
-
-    static boolean isAdmin(Authentication authentication) {
-        return authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-    }
 }

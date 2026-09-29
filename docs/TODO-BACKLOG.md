@@ -40,7 +40,7 @@
 * [ ] FE 채팅: WS 토큰 만료 완전 처리 — 현재는 대화창 진입 시 REST 선행 reissue에 의존. access 만료 중 재연결 시 ws-token이 stale일 수 있음(전용 단수명 WS 티켓 BE 도입 검토).
 * [ ] FE 채팅: 대화창 `markRead`를 `setMessages` 업데이터 내부에서 호출 — StrictMode 이중호출 시 중복 read POST(BE 멱등이라 무해). 별도 effect로 분리 검토.
 * [x] ~~FE 채팅: 이력 더 보기 + 스크롤 하단 고정~~ — 2026-09-09 해소. `nextCursor`를 써서 과거를 앞에 붙이고(중복 제거·오름차순 유지) **스크롤 위치를 보정**한다. 새 메시지는 이미 바닥 근처일 때만 따라간다(`shouldStickToBottom`).
-* [ ] 배포 시 `NEXT_PUBLIC_BE_WS_URL`을 실제 BE WS 주소(wss)로 설정 + Nginx WebSocket 프록시.
+* [x] ~~배포 시 `NEXT_PUBLIC_BE_WS_URL`을 실제 BE WS 주소(wss)로 설정 + Nginx WebSocket 프록시.~~ — 2026-09-21 완료. 운영 웹은 Vercel, API·WebSocket은 EC2 `wss://api.attacca.site/ws`로 분리했고 운영 브라우저에서 101 handshake와 채팅 송수신을 확인했다. 현재 주소 정본은 `docs/ops/inventory/2026-09-21-production-state.md`다.
 
 ## 기능
 
@@ -88,7 +88,7 @@
 
 * [x] ~~BE: 오프셋 페이징 응답을 안정적 `PageResponse<T>` DTO로 공통화~~ — 2026-09-27 완료. VERIFIED-PERFORMER 어드민 목록·PERFORMANCE 목록을 기존 공통 DTO로 전환하고, FE의 `number` 의존도 `page` 계약으로 바꿨다. 다른 도메인은 별도 전환 작업으로 남긴다.
 * [ ] FEED/PERFORMANCE: `clamp(size)`·`isAdmin(Authentication)`가 여러 컨트롤러에 중복 — 공용 헬퍼로 추출. (2026-07-17/07-22 리뷰 식별)
-* [ ] FEED: `VerificationApplicationRepository.findApprovedMemberIds`의 JPQL이 enum을 FQN 리터럴로 사용 → `@Param`으로 파라미터 바인딩 정리(리네임 취약). 해당 테스트의 인라인 `java.util.Set`도 import로. (2026-07-17)
+* [x] ~~FEED: `VerificationApplicationRepository.findApprovedMemberIds`의 JPQL이 enum을 FQN 리터럴로 사용~~ — 2026-09-29 완료. `findMemberIdsByStatus(ids, status)`가 `@Param`으로 enum을 바인딩하며, 인증 연주자 서비스는 기존처럼 `APPROVED`만 전달한다. 리포지터리 테스트로 승인 회원 ID 배치 조회 결과를 고정했다.
 
 * [ ] HSTS 적용 검토 — 지금은 헤더가 없다. 넣으면 브라우저가 이후 https만 쓰지만, HTTPS가 깨졌을 때 되돌리기 어려워진다(max-age 동안 http 접속 불가). 짧은 max-age로 시작해 늘리는 방식 검토. `includeSubDomains`/`preload`는 신중히.
 * [ ] 접속 로그·모니터링 — 지금은 컨테이너 로그가 전부. 배포 자동화까지 됐으니 실패를 알아챌 수단이 필요하다.
@@ -159,7 +159,7 @@
 * [x] ~~**CI/CD 구성**~~ — 2026-09-08 `.github/workflows/ci.yml` 작성. 한 워크플로 안에서 `dorny/paths-filter` + `needs`로 BE→FE 순서 강제. **배포 job은 아직 없다**(EC2 접속 방식 미정). 원문: — 모노레포 경로 필터로 BE/FE 파이프라인 분리. ⚠️ 워크플로 **파일**을 나누면 두 쪽이 같이 바뀐 커밋에서 배포 순서가 보장되지 않아 계약 변경 배포 때 깨진 창이 생긴다. 한 워크플로 안에서 job 레벨 변경 감지(`dorny/paths-filter`) + `needs`로 **BE → FE 순서 강제**.
 * [x] ~~**헬스체크 엔드포인트**~~ — 2026-09-08 완료. Actuator 추가, `health`만 노출하고 SecurityConfig에서 `/actuator/health`만 permitAll. `/actuator/env`·`/beans`가 401인 것까지 확인. 원문: — 현재 Spring Actuator 미도입(2026-08-18 확인). ALB/ECS 헬스체크·무중단 배포에 필요하므로 `actuator` 추가 후 `/actuator/health`만 노출(나머지 엔드포인트는 차단).
 * [x] ~~**프로덕션 환경변수 목록 정리**~~ — 2026-09-08 완료. `docs/DEPLOY.md`에 주입 시점까지 포함한 표, `.env.prod.example` 추가. `NEXT_PUBLIC_BE_WS_URL`이 **빌드 시점**에 박힌다는 점을 명시. 원문: — `DB_*`, `JWT_SECRET`, `KAKAO_CLIENT_ID`/`SECRET`, `STORAGE_TYPE`/`S3_*`, `DDL_AUTO`, FE의 `BE_BASE_URL`/`NEXT_PUBLIC_BE_WS_URL`(wss)/`KAKAO_REDIRECT_URI`. 한 곳에 표로 정리(어디에 주입하는지 포함). 카카오 `redirect_uri`는 개발자 콘솔에도 운영 주소 등록 필요.
-* [ ] **도메인 확보 후 HTTPS 전환(2단계)** — A 레코드 → 443 개방 → compose의 nginx 블록을 `nginx.https.conf`로 교체 → certbot 발급 → `PUBLIC_ORIGIN`/`NEXT_PUBLIC_BE_WS_URL`을 https·wss로 → **FE 이미지 재빌드**(NEXT_PUBLIC_*은 빌드에 박힌다) → 카카오 Redirect URI 갱신. 절차는 `docs/DEPLOY.md` 2단계.
+* [x] ~~**도메인 확보 후 HTTPS 전환(2단계)**~~ — 2026-09-08 완료. `attacca.site`·`www.attacca.site` HTTPS와 카카오 callback, WebSocket 보안 연결을 확인했다. 이후 2026-09-21 웹은 Vercel Production, API·WebSocket은 `api.attacca.site`로 분리했다. 초기 구축 절차는 `docs/DEPLOY.md`에 역사 기록으로 보존한다.
 * [ ] CI 배포 job — EC2 접속 방식(SSH 키/SSM/ECR)이 정해지면 `.github/workflows/ci.yml`에 붙인다. 지금은 서버에서 `git pull` + `up -d --build`가 배포다.
 
 ### C. 배포 후 / 최적화
@@ -185,9 +185,9 @@
 
 * [x] ~~FE 전역 내비게이션 부재~~ — 2026-08-18 해소. 공용 헤더 도입, 홈을 /feed로 전환, /dashboard 제거.
 * [x] ~~FE 프로필 화면에 닉네임·인증뱃지 미표시~~ — 2026-08-18 해소. 신원 조회 추가 + AuthorBadge 재사용. "내 지원 현황" 링크도 함께 추가.
-* [ ] 문서 계약 표기 정정 확산 확인 — `scope` 쿼리 파라미터를 소문자(`open|closed|all`, `upcoming|past|all`)로 적어둔 곳이 남아있는지 도메인 STATUTE까지 점검. 실제 계약은 enum 상수 그대로 대문자(`OPEN`/`UPCOMING`). (CONTEXT.md는 정정 완료)
-* [ ] 채팅 대화창 스크롤 — 메시지가 쌓여도 하단 고정이 없어 새 메시지가 화면 밖으로 밀린다. 기존 "이전 메시지 더 보기" 항목과 함께 처리.
-* [ ] 채팅 1:1 시작이 회원 id 입력이라 실사용 불가 수준 — 기존 항목(회원 검색 API)의 우선순위를 올릴지 검토. 스모크에서도 상대 id를 DB로 확인해야 했다.
+* [x] ~~문서 계약 표기 정정 확산 확인~~ — 2026-09-29 완료. 실제 컨트롤러·FE·BFF는 처음부터 enum 상수 대문자(`OPEN|CLOSED|ALL`, `UPCOMING|PAST|ALL`)를 사용했고 소문자는 `400-01`이다. 현재 계약 정본인 PERFORMANCE·RECRUITMENT STATUTE의 소문자 표기를 바로잡았다. 과거 설계 계획의 소문자 서술은 당시 작업 기록으로 보존한다.
+* [x] ~~채팅 대화창 스크롤~~ — 2026-09-09 해소. 새 메시지는 바닥 근처일 때만 따라가고, 과거 이력을 앞에 붙일 때는 읽던 위치를 보정한다. `ChatRoomTimeline`과 `shouldStickToBottom` 테스트로 계약을 고정했다.
+* [x] ~~채팅 1:1 시작이 회원 id 입력이라 실사용 불가 수준~~ — 2026-09-09 해소. `MemberSearchInput`으로 닉네임을 검색·선택해 DIRECT 방을 만들며, 회원 검색 API의 인증·최소 검색어·표시 정보 규칙도 함께 도입했다.
 
 ## 악보지 테마 후속 (2026-08-18 범위 밖)
 

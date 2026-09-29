@@ -7,9 +7,9 @@ import com.back.domain.notice.service.NoticeCommandService;
 import com.back.domain.notice.service.NoticeQueryService;
 import com.back.global.common.ApiResponse;
 import com.back.global.common.PageResponse;
+import com.back.global.common.PageRequestPolicy;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,9 +32,6 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class NoticeAdminController {
 
-    private static final int DEFAULT_SIZE = 20;
-    private static final int MAX_SIZE = 50;
-
     private final NoticeCommandService noticeCommandService;
     private final NoticeQueryService noticeQueryService;
 
@@ -50,7 +47,7 @@ public class NoticeAdminController {
             @RequestParam(required = false, defaultValue = "0") int page,
             @RequestParam(required = false, defaultValue = "20") int size) {
         return ApiResponse.success(noticeQueryService.getAdminNotices(type,
-                PageRequest.of(Math.max(page, 0), clamp(size))));
+                PageRequestPolicy.of(page, size)));
     }
 
     @GetMapping("/{id}")
@@ -76,10 +73,4 @@ public class NoticeAdminController {
         return ApiResponse.success(noticeCommandService.updateCover(adminId, id, file));
     }
 
-    private int clamp(int size) {
-        if (size < 1) {
-            return DEFAULT_SIZE;
-        }
-        return Math.min(size, MAX_SIZE);
-    }
 }

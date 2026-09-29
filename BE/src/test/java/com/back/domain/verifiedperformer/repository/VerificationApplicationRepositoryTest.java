@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.back.domain.verifiedperformer.entity.VerificationApplication;
 import com.back.domain.verifiedperformer.entity.VerificationStatus;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -59,5 +60,14 @@ class VerificationApplicationRepositoryTest {
 
         assertThat(pending).hasSize(2);
         assertThat(pending).allMatch(a -> a.getStatus() == VerificationStatus.PENDING);
+    }
+
+    @Test
+    void 상태와_회원_id로_인증_대상을_배치_조회한다() {
+        repository.save(VerificationApplication.grantByAdmin(1L, 99L, "승인"));
+        repository.save(VerificationApplication.apply(2L, "대기", List.of()));
+
+        assertThat(repository.findMemberIdsByStatus(Set.of(1L, 2L, 3L),
+                VerificationStatus.APPROVED)).containsExactly(1L);
     }
 }

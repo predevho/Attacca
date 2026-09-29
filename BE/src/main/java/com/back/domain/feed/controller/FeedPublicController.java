@@ -5,8 +5,8 @@ import com.back.domain.feed.dto.PublicPostSummary;
 import com.back.domain.feed.service.FeedPublicService;
 import com.back.global.common.ApiResponse;
 import com.back.global.common.PageResponse;
+import com.back.global.common.PageRequestPolicy;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -21,9 +21,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class FeedPublicController {
 
-    private static final int DEFAULT_SIZE = 20;
-    private static final int MAX_SIZE = 50;
-
     private final FeedPublicService feedPublicService;
 
     @GetMapping
@@ -32,13 +29,7 @@ public class FeedPublicController {
             @RequestParam(required = false, defaultValue = "0") int page,
             @RequestParam(required = false, defaultValue = "20") int size) {
         return ApiResponse.success(feedPublicService.getPublicPosts(sort,
-                PageRequest.of(Math.max(page, 0), clamp(size))));
+                PageRequestPolicy.of(page, size)));
     }
 
-    private int clamp(int size) {
-        if (size < 1) {
-            return DEFAULT_SIZE;
-        }
-        return Math.min(size, MAX_SIZE);
-    }
 }

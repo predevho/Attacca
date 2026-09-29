@@ -4,6 +4,14 @@
 
 ---
 
+* 2026-09-29 — **인증 연주자 승인 조회의 enum 문자열 의존성을 제거했다.** `VerificationApplicationRepository`의 JPQL은 FQN으로 `APPROVED`를 직접 쓰는 대신 `status`를 `@Param`으로 바인딩하는 `findMemberIdsByStatus`를 사용한다. `VerifiedPerformerService`는 기존과 동일하게 `APPROVED`만 전달하므로 인증 뱃지 결과는 바뀌지 않는다. 승인 회원 ID 배치 조회 테스트와 관련 서비스 테스트를 통과했다.
+
+* 2026-09-29 — **반복된 목록 보정과 관리자 판별을 공통 모듈로 정리했다.** `PageRequestPolicy`가 기본 목록의 `page<0 → 0`, `size<1 → 20`, `size>50 → 50`을 감추고, 같은 정책을 쓰던 채팅·피드·공연·구인·관리 공지 컨트롤러가 이를 사용한다. `AuthorizationRoles`는 `ROLE_ADMIN` 판별을 한 곳으로 모아 공연·피드·구인 삭제의 기존 권한 결과를 유지한다. 회원 검색과 고정 공지는 서로 다른 크기 규칙이라 범위에서 제외했다. 공통 모듈 테스트 5건, 영향 컨트롤러 테스트와 전체 BE 테스트를 통과했다.
+
+* 2026-09-29 — **목록 scope 문서 계약을 실제 API와 일치시켰다.** PERFORMANCE·RECRUITMENT 컨트롤러의 기본값과 FE/BFF 호출은 이미 enum 상수 대문자(`UPCOMING|PAST|ALL`, `OPEN|CLOSED|ALL`)를 사용하며, 소문자 요청은 `400-01`이 되는 테스트도 있었다. 현재 규칙 정본인 두 STATUTE의 소문자 표기만 바로잡고, 과거 설계 계획은 당시 작업 기록으로 유지했다.
+
+* 2026-09-29 — **백로그 정합성을 현재 코드·운영 기록과 대조했다.** 중복으로 남아 있던 채팅 이력/하단 고정, 닉네임 기반 1:1 시작, `wss://api.attacca.site/ws` 운영 WebSocket 연결, HTTPS 전환을 완료 상태로 정리했다. 채팅은 `ChatRoomTimeline`의 스크롤 보정·`shouldStickToBottom`, `MemberSearchInput` 구현을 확인했고 운영 경계는 `docs/ops/inventory/2026-09-21-production-state.md`와 배포 완료 기록을 기준으로 했다. HSTS, 모니터링, 업로드 보관 정책, RDS 운영 설정은 충분한 최신 근거 또는 결정이 없어 유지했다.
+
 * 2026-09-29 — **access 만료 뒤 리프레시 세션으로 보호 페이지에 재진입하지 못하는 결함을 수정했다.** 운영에서 이미 열려 있던 채팅은 보이지만 새 `/admin`·`/chat/1` 진입이 로그인으로 이동하는 것을 관찰했다. 원인은 `proxy.ts`가 30분 access 쿠키의 존재만 검사해, 14일짜리 `refresh_session`이 남아 있어도 BFF 신원 조회와 access 재발급 전에 막았기 때문이다. access 또는 refresh 세션 중 하나가 있으면 페이지를 통과시키고, 기존 `authedBeFetch`의 401 재발급·원 요청 1회 재시도 경로를 그대로 사용한다. proxy 회귀 테스트를 먼저 실패시킨 뒤 수정했고, proxy·세션·신원 BFF 17건, FE 타입 검사, 전체 FE 573건, lint(기존 `<img>` 경고 4건)를 통과했다. 운영에서는 새 이미지 배포 뒤 access 만료 상태 재진입을 확인한다.
 
 * 2026-09-29 — **관리자 운영 화면 프레임 구현과 정적 검증을 마쳤다.** `AdminPageFrame`으로 관리 허브, 공지 관리 목록·등록·수정, 인증 연주자 심사의 제목·설명·주요 행동 영역과 폭을 통일했다. 기존 BFF·권한 리다이렉트·공지 CRUD·심사 탭과 행동·오류/로딩/빈 상태의 접근성 계약은 유지했다. 관리자 관련 18건, FE 전체 573건, 타입 검사, lint(기존 `<img>` 경고 4건), production build를 통과했고 별도 코드 검토에서도 회귀가 없었다. 실제 운영 브라우저 확인은 커밋·푸시 후 진행한다. 정본: `docs/superpowers/specs/2026-09-29-admin-operations-layout-design.md`.

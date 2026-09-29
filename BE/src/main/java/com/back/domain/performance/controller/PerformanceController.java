@@ -6,9 +6,10 @@ import com.back.domain.performance.dto.PerformanceScope;
 import com.back.domain.performance.service.PerformanceService;
 import com.back.global.common.ApiResponse;
 import com.back.global.common.PageResponse;
+import com.back.global.common.PageRequestPolicy;
+import com.back.global.security.AuthorizationRoles;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -32,16 +33,13 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class PerformanceController {
 
-    private static final int DEFAULT_SIZE = 20;
-    private static final int MAX_SIZE = 50;
-
     private final PerformanceService performanceService;
 
     @PostMapping
     public ApiResponse<PerformanceResponse> register(@AuthenticationPrincipal Long memberId,
             Authentication authentication, @Valid @RequestBody PerformanceRequest request) {
         return ApiResponse.success(
-                performanceService.register(memberId, isAdmin(authentication), request));
+                performanceService.register(memberId, AuthorizationRoles.isAdmin(authentication), request));
     }
 
     @GetMapping
@@ -50,7 +48,7 @@ public class PerformanceController {
             @RequestParam(required = false, defaultValue = "0") int page,
             @RequestParam(required = false, defaultValue = "20") int size) {
         return ApiResponse.success(PageResponse.from(performanceService.getPerformances(scope,
-                PageRequest.of(Math.max(page, 0), clamp(size)))));
+                PageRequestPolicy.of(page, size))));
     }
 
     @GetMapping("/{id}")
@@ -67,7 +65,7 @@ public class PerformanceController {
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@AuthenticationPrincipal Long memberId,
             Authentication authentication, @PathVariable Long id) {
-        performanceService.deletePerformance(memberId, isAdmin(authentication), id);
+        performanceService.deletePerformance(memberId, AuthorizationRoles.isAdmin(authentication), id);
         return ApiResponse.success();
     }
 
@@ -77,15 +75,4 @@ public class PerformanceController {
         return ApiResponse.success(performanceService.updatePoster(memberId, id, file));
     }
 
-    private int clamp(int size) {
-        if (size < 1) {
-            return DEFAULT_SIZE;
-        }
-        return Math.min(size, MAX_SIZE);
-    }
-
-    static boolean isAdmin(Authentication authentication) {
-        return authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-    }
 }

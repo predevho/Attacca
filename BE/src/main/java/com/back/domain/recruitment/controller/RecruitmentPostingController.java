@@ -6,10 +6,11 @@ import com.back.domain.recruitment.dto.RecruitmentPostingResponse;
 import com.back.domain.recruitment.dto.RecruitmentScope;
 import com.back.domain.recruitment.service.RecruitmentPostingService;
 import com.back.global.common.ApiResponse;
+import com.back.global.common.PageRequestPolicy;
+import com.back.global.security.AuthorizationRoles;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -31,9 +32,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class RecruitmentPostingController {
 
-    private static final int DEFAULT_SIZE = 20;
-    private static final int MAX_SIZE = 50;
-
     private final RecruitmentPostingService postingService;
 
     @PostMapping
@@ -49,7 +47,7 @@ public class RecruitmentPostingController {
             @RequestParam(required = false, defaultValue = "0") int page,
             @RequestParam(required = false, defaultValue = "20") int size) {
         return ApiResponse.success(postingService.getPostings(scope, instrument,
-                PageRequest.of(Math.max(page, 0), clamp(size))));
+                PageRequestPolicy.of(page, size)));
     }
 
     @GetMapping("/{id}")
@@ -72,19 +70,8 @@ public class RecruitmentPostingController {
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@AuthenticationPrincipal Long memberId,
             Authentication authentication, @PathVariable Long id) {
-        postingService.deletePosting(memberId, isAdmin(authentication), id);
+        postingService.deletePosting(memberId, AuthorizationRoles.isAdmin(authentication), id);
         return ApiResponse.success();
     }
 
-    private int clamp(int size) {
-        if (size < 1) {
-            return DEFAULT_SIZE;
-        }
-        return Math.min(size, MAX_SIZE);
-    }
-
-    static boolean isAdmin(Authentication authentication) {
-        return authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-    }
 }

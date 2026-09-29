@@ -95,7 +95,7 @@ public class VerifiedPerformerService {
         if (memberIds == null || memberIds.isEmpty()) {
             return Set.of();
         }
-        return Set.copyOf(repository.findApprovedMemberIds(memberIds));
+        return Set.copyOf(repository.findMemberIdsByStatus(memberIds, VerificationStatus.APPROVED));
     }
 
     private void rejectIfActiveApplicationExists(Long memberId) {

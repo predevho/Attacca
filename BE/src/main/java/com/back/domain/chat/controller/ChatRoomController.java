@@ -10,10 +10,10 @@ import com.back.domain.chat.service.ChatMessageService;
 import com.back.domain.chat.service.ChatRoomService;
 import com.back.domain.feed.dto.CursorPage;
 import com.back.global.common.ApiResponse;
+import com.back.global.common.PageRequestPolicy;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,9 +30,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class ChatRoomController {
 
-    private static final int DEFAULT_SIZE = 20;
-    private static final int MAX_SIZE = 50;
-
     private final ChatRoomService roomService;
     private final ChatMessageService messageService;
 
@@ -47,7 +44,7 @@ public class ChatRoomController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         return ApiResponse.success(
-                roomService.listRooms(memberId, PageRequest.of(Math.max(page, 0), clamp(size))));
+                roomService.listRooms(memberId, PageRequestPolicy.of(page, size)));
     }
 
     @GetMapping("/rooms/{id}")
@@ -61,7 +58,8 @@ public class ChatRoomController {
             @AuthenticationPrincipal Long memberId, @PathVariable Long id,
             @RequestParam(required = false) Long cursor,
             @RequestParam(defaultValue = "20") int size) {
-        return ApiResponse.success(messageService.history(memberId, id, cursor, clamp(size)));
+        return ApiResponse.success(messageService.history(memberId, id, cursor,
+                PageRequestPolicy.size(size)));
     }
 
     @PostMapping("/rooms/{id}/participants")
@@ -83,10 +81,4 @@ public class ChatRoomController {
         return ApiResponse.success();
     }
 
-    private int clamp(int size) {
-        if (size < 1) {
-            return DEFAULT_SIZE;
-        }
-        return Math.min(size, MAX_SIZE);
-    }
 }
