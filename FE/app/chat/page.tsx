@@ -8,6 +8,7 @@ import { toRoomCursorPage, toCreateDirectRequest, toCreateGroupRequest } from '@
 import { RoomListItem } from '@/components/chat/RoomListItem';
 import { NewChatForm } from '@/components/chat/NewChatForm';
 import { NewGroupForm } from '@/components/chat/NewGroupForm';
+import { PageContainer } from '@/components/layout/PageContainer';
 import type { CursorPage } from '@/lib/feed/types';
 import type { GroupFormValues, NewChatFormValues, RoomDetail, RoomSummary, SpringPage } from '@/lib/chat/types';
 
@@ -63,10 +64,10 @@ export default function ChatListPage() {
     else setError(r.message ?? '그룹을 만들지 못했습니다.');
   }
 
-  if (!ready) return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-ink-faint">불러오는 중...</main>;
+  if (!ready) return <PageContainer width="narrow" className="mt-16 text-sm text-ink-faint">불러오는 중...</PageContainer>;
 
   return (
-    <main aria-labelledby="chat-page-title" className="mx-auto mt-6 max-w-2xl px-4 pb-8 sm:mt-8 sm:px-6">
+    <PageContainer width="narrow" aria-labelledby="chat-page-title" className="mt-6 pb-8 sm:mt-8 sm:px-6">
       <header className="mb-5 flex items-start justify-between gap-4">
         <h1 id="chat-page-title" className="text-2xl font-bold leading-tight">채팅</h1>
       </header>
@@ -79,6 +80,6 @@ export default function ChatListPage() {
         <h2 id="chat-room-list-title" className="mb-3 text-base font-semibold">대화 목록</h2>
         <RoomList />
       </section>
-    </main>
+    </PageContainer>
   );
 }

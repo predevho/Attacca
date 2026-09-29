@@ -88,6 +88,16 @@ describe('AdminNoticesPage', () => {
     expect(await screen.findByText('등록된 공지가 없습니다.')).toBeInTheDocument();
   });
 
+  it('등록 흐름을 취소하면 공지 관리 목록으로 돌아간다', async () => {
+    mockAdmin();
+    render(<AdminNoticesPage />);
+
+    fireEvent.click(await screen.findByRole('button', { name: '공지 등록' }));
+    expect(screen.getByRole('heading', { name: '공지 등록' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '취소' }));
+    expect(screen.getByRole('heading', { name: '공지 관리' })).toBeInTheDocument();
+  });
+
   it('삭제 액션은 기존 CRUD 엔드포인트를 호출한다', async () => {
     mockAdmin();
     deleteBff.mockResolvedValue({ ok: true, data: null });

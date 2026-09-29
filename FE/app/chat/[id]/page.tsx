@@ -9,6 +9,7 @@ import { MemberSearchInput } from '@/components/chat/MemberSearchInput';
 import { createChatSocket } from '@/lib/chat/stompClient';
 import { mergeMessages, sortByIdAsc, prependOlder, shouldStickToBottom } from '@/lib/chat/logic';
 import { MessageComposer } from '@/components/chat/MessageComposer';
+import { PageContainer } from '@/components/layout/PageContainer';
 import type { Me } from '@/lib/feed/types';
 import type { ChatMessage, RoomDetail } from '@/lib/chat/types';
 
@@ -138,11 +139,11 @@ export default function ChatRoomPage() {
   }
 
   if (notFound) {
-    return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-ink-muted">없거나 접근할 수 없는 방입니다.</main>;
+    return <PageContainer width="narrow" className="mt-16 text-sm text-ink-muted">없거나 접근할 수 없는 방입니다.</PageContainer>;
   }
 
   return (
-    <main className="mx-auto flex h-[calc(100dvh-3.5rem)] min-h-0 w-full max-w-xl flex-col px-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-4">
+    <PageContainer width="wide" className="flex h-[calc(100dvh-3.5rem)] min-h-0 flex-col px-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-4">
       <ChatRoomHeader
         room={room}
         me={me}
@@ -170,6 +171,6 @@ export default function ChatRoomPage() {
       />
 
       <MessageComposer onSend={sendMessage} disabled={!connected} />
-    </main>
+    </PageContainer>
   );
 }

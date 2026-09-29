@@ -2,6 +2,18 @@
 
 완료된 작업 기록.
 
+* [x] (2026-09-29) 공개 상세·작성 화면에도 전역 콘텐츠 프레임을 확장했다.
+  * 피드·구인·공연·공지·인증 연주자 공개 화면의 정상·로딩·없음 상태를 `PageContainer`의 집중 폭으로 통일했다. 기존 API 요청, 권한 판별, 폼 제출, 첨부 파일 처리, 무한 목록 동작은 바꾸지 않았다.
+  * 관리자 화면은 검토·운영 정보의 밀도가 달라 별도 디자인 단위로 남겼다.
+  * 검증: 대상 화면 테스트 49건과 FE 전체 570건, 타입 검사를 통과했다. lint·production build는 실행 승인 한도 복구 후 재확인한다.
+  * 설계 확장 기록: `docs/superpowers/specs/2026-09-29-global-layout-foundation-design.md`, 계획: `docs/superpowers/plans/2026-09-29-global-layout-foundation.md`.
+
+* [x] (2026-09-29) 대표 화면의 전역 콘텐츠 프레임을 통일했다.
+  * `PageContainer`가 일반(`max-w-5xl`)·넓은(`max-w-6xl`)·집중(`max-w-3xl`) 폭을 제공한다. 홈은 일반 폭, 피드·구인·채팅 목록은 집중 폭, 채팅 대화방은 넓은 폭을 사용한다.
+  * 인증, BFF 요청, STOMP 연결·스크롤·입력창 동작은 바꾸지 않았다. 헤더는 이미 일반 콘텐츠 폭(`max-w-5xl px-4`)과 정렬돼 있어 기존 접근성 동작을 유지했다.
+  * 검증: 공통 컨테이너 테스트 2건, 채팅 회귀 19건, 헤더 23건, FE 전체 570건, 타입 검사, lint(기존 `<img>` 경고 4건), production build 통과. 로컬 데스크톱 브라우저에서 헤더·홈 콘텐츠 기준선을 확인했다.
+  * 설계: `docs/superpowers/specs/2026-09-29-global-layout-foundation-design.md`, 계획: `docs/superpowers/plans/2026-09-29-global-layout-foundation.md`.
+
 * [x] (2026-09-29) 자동 배포의 이전 이미지 재기동을 막았다.
   * BE·FE·CI workflow 변경을 받은 뒤에는 두 GHCR 이미지의 커밋 라벨이 서버 목표 `HEAD`와 같을 때만 컨테이너를 교체한다. 이미지 전파가 늦으면 기존 서비스를 유지하고 다음 타이머 주기에 다시 확인한다.
   * 문서·nginx·compose만 바뀐 커밋은 이미지 빌드 대상이 아니므로 기존처럼 설정 반영을 허용한다.

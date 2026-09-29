@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { PageContainer } from '@/components/layout/PageContainer';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { getBff, deleteBff } from '@/lib/api';
 import { canEdit, canDelete } from '@/lib/feed/logic';
@@ -48,12 +49,12 @@ export default function PerformanceDetailPage() {
   }
 
   if (notFound) {
-    return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-ink-muted">삭제되었거나 없는 공연입니다.</main>;
+    return <PageContainer width="narrow" className="mt-16 text-sm text-ink-muted">삭제되었거나 없는 공연입니다.</PageContainer>;
   }
-  if (!performance) return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-ink-faint">불러오는 중...</main>;
+  if (!performance) return <PageContainer width="narrow" className="mt-16 text-sm text-ink-faint">불러오는 중...</PageContainer>;
 
   return (
-    <main className="mx-auto mt-6 max-w-3xl px-4 pb-10 sm:mt-8" aria-label={`${performance.title} 공연 상세`}>
+    <PageContainer width="narrow" className="mt-6 pb-10 sm:mt-8" aria-label={`${performance.title} 공연 상세`}>
       <button
         type="button"
         onClick={() => router.push('/performances')}
@@ -115,6 +116,6 @@ export default function PerformanceDetailPage() {
           {performance.program && <section><h2 className="mb-2 text-sm font-semibold">프로그램</h2><p className="whitespace-pre-wrap text-sm leading-6">{performance.program}</p></section>}
         </div>
       )}
-    </main>
+    </PageContainer>
   );
 }

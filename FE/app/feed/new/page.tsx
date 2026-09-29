@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { PageContainer } from '@/components/layout/PageContainer';
 import { useRouter } from 'next/navigation';
 import { ComposeForm } from '@/components/feed/ComposeForm';
 import { getBff, postBff } from '@/lib/api';
@@ -29,10 +30,10 @@ export default function FeedNewPage() {
     return false;
   }
 
-  if (!ready) return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-ink-faint">불러오는 중...</main>;
+  if (!ready) return <PageContainer width="narrow" className="mt-16 text-sm text-ink-faint">불러오는 중...</PageContainer>;
 
   return (
-    <main className="mx-auto mt-8 max-w-xl px-4">
+    <PageContainer width="narrow" className="mt-8">
       <button
         type="button"
         onClick={() => router.push('/feed')}
@@ -51,6 +52,6 @@ export default function FeedNewPage() {
           onSubmit={createPost}
         />
       </div>
-    </main>
+    </PageContainer>
   );
 }

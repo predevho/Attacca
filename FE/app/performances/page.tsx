@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { PageContainer } from '@/components/layout/PageContainer';
 import { useRouter } from 'next/navigation';
 import { getBff } from '@/lib/api';
 import { useInfiniteList } from '@/lib/feed/useInfiniteList';
@@ -68,7 +69,7 @@ export default function PerformancesPage() {
   }, []);
 
   return (
-    <main className="mx-auto mt-8 max-w-xl px-4">
+    <PageContainer width="narrow" className="mt-8">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-bold">공연</h1>
         {canRegister && (
@@ -109,6 +110,6 @@ export default function PerformancesPage() {
       <div id="performance-tabpanel" role="tabpanel" aria-labelledby={`performance-tab-${scope}`}>
         <ScopeList key={scope} scope={scope} />
       </div>
-    </main>
+    </PageContainer>
   );
 }

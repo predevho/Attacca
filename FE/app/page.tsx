@@ -6,6 +6,7 @@ import { EmptyHero } from '@/components/home/EmptyHero';
 import { HeroCarousel } from '@/components/home/HeroCarousel';
 import { MonthCalendar } from '@/components/home/MonthCalendar';
 import { PostWidget } from '@/components/home/PostWidget';
+import { PageContainer } from '@/components/layout/PageContainer';
 import { getBff } from '@/lib/api';
 import { monthRange, shiftMonth, toSlides } from '@/lib/home/logic';
 import type {
@@ -121,7 +122,7 @@ export default function HomePage() {
     now.getFullYear() === year && now.getMonth() + 1 === month ? now.getDate() : null;
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:py-8">
+    <PageContainer className="py-6 sm:py-8">
       <header className="mb-6 flex flex-col gap-4 border-b border-line pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-strong">Attacca / 오늘</p>
@@ -190,6 +191,6 @@ export default function HomePage() {
           />
         </section>
       </div>
-    </main>
+    </PageContainer>
   );
 }

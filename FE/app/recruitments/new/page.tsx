@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { PageContainer } from '@/components/layout/PageContainer';
 import { useRouter } from 'next/navigation';
 import { getBff, postBff } from '@/lib/api';
 import { toPostingRequest } from '@/lib/recruitment/logic';
@@ -30,13 +31,13 @@ export default function NewRecruitmentPage() {
     else setError(r.message ?? '등록에 실패했습니다.');
   }
 
-  if (!ready) return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-ink-faint">불러오는 중...</main>;
+  if (!ready) return <PageContainer width="narrow" className="mt-16 text-sm text-ink-faint">불러오는 중...</PageContainer>;
 
   return (
-    <main className="mx-auto mt-8 max-w-xl px-4">
+    <PageContainer width="narrow" className="mt-8">
       <h1 className="mb-4 text-2xl font-bold">공고 등록</h1>
       {error && <p className="mb-3 text-sm text-danger">{error}</p>}
       <PostingForm options={options} submitting={submitting} submitLabel="등록" onSubmit={submit} />
-    </main>
+    </PageContainer>
   );
 }

@@ -32,6 +32,7 @@ describe('AdminVerifiedPerformersPage', () => {
     mockAdmin('ADMIN');
     render(<AdminVerifiedPerformersPage />);
     expect(await screen.findByText(/회원 #5/)).toBeInTheDocument();
+    expect(screen.getByText('신청을 검토하고 처리합니다.')).toBeInTheDocument();
     expect(screen.getByRole('tablist', { name: '신청 상태' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: '심사 중' })).toHaveAttribute('aria-selected', 'true');
   });

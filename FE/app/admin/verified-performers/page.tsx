@@ -7,6 +7,7 @@ import { useInfiniteList } from '@/lib/feed/useInfiniteList';
 import { toCursorPage, toGrantRequest } from '@/lib/verification/logic';
 import { ApplicationReviewItem } from '@/components/verification/ApplicationReviewItem';
 import { GrantForm } from '@/components/verification/GrantForm';
+import { AdminPageFrame } from '@/components/admin/AdminPageFrame';
 import type { CursorPage, Me } from '@/lib/feed/types';
 import type { Application, GrantFormValues, PageResponse, VerificationStatus } from '@/lib/verification/types';
 
@@ -87,30 +88,36 @@ export default function AdminVerifiedPerformersPage() {
     else setMessage(r.message ?? '직접지정에 실패했습니다.');
   }
 
-  if (!ready) return <main className="mx-auto mt-16 max-w-3xl px-4 text-sm text-ink-faint">불러오는 중...</main>;
+  if (!ready) {
+    return (
+      <AdminPageFrame title="인증 연주자 심사" className="text-sm text-ink-faint">
+        불러오는 중...
+      </AdminPageFrame>
+    );
+  }
 
   return (
-    <main className="mx-auto mt-8 max-w-3xl px-4">
-      <h1 className="mb-4 text-2xl font-bold">인증 연주자 심사</h1>
+    <AdminPageFrame title="인증 연주자 심사" description="신청을 검토하고 처리합니다.">
+      <div className="mt-6">
+        <div className="mb-6"><GrantForm submitting={grantSubmitting} onGrant={onGrant} /></div>
 
-      <div className="mb-4"><GrantForm submitting={grantSubmitting} onGrant={onGrant} /></div>
+        {message && <p className="mb-3 text-sm text-ink-muted">{message}</p>}
 
-      {message && <p className="mb-3 text-sm text-ink-muted">{message}</p>}
+        <div className="mb-4 flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="신청 상태">
+          {TABS.map((t) => (
+            <button key={t.key} type="button" onClick={() => setStatus(t.key)}
+              role="tab" aria-selected={status === t.key} aria-controls={`verification-panel-${t.key}`}
+              className={`min-h-10 shrink-0 rounded-full px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${status === t.key ? 'bg-brand text-on-brand' : 'bg-surface-muted text-ink-muted'}`}>
+              {t.label}
+            </button>
+          ))}
+        </div>
 
-      <div className="mb-4 flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="신청 상태">
-        {TABS.map((t) => (
-          <button key={t.key} type="button" onClick={() => setStatus(t.key)}
-            role="tab" aria-selected={status === t.key} aria-controls={`verification-panel-${t.key}`}
-            className={`min-h-10 shrink-0 rounded-full px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${status === t.key ? 'bg-brand text-on-brand' : 'bg-surface-muted text-ink-muted'}`}>
-            {t.label}
-          </button>
-        ))}
+        <div id={`verification-panel-${status}`} role="tabpanel" aria-label={`${TABS.find((t) => t.key === status)?.label} 신청 목록`}>
+          <ReviewList key={`${status}:${refreshKey}`} status={status}
+            onApprove={onApprove} onReject={onReject} onRevoke={onRevoke} />
+        </div>
       </div>
-
-      <div id={`verification-panel-${status}`} role="tabpanel" aria-label={`${TABS.find((t) => t.key === status)?.label} 신청 목록`}>
-        <ReviewList key={`${status}:${refreshKey}`} status={status}
-          onApprove={onApprove} onReject={onReject} onRevoke={onRevoke} />
-      </div>
-    </main>
+    </AdminPageFrame>
   );
 }

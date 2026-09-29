@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { PageContainer } from '@/components/layout/PageContainer';
 import { useParams, useRouter } from 'next/navigation';
 import { getBff, postBff, deleteBff } from '@/lib/api';
 import { canEdit, canDelete } from '@/lib/feed/logic';
@@ -97,14 +98,14 @@ export default function RecruitmentDetailPage() {
   }
 
   if (notFound) {
-    return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-ink-muted">삭제되었거나 없는 공고입니다.</main>;
+    return <PageContainer width="narrow" className="mt-16 text-sm text-ink-muted">삭제되었거나 없는 공고입니다.</PageContainer>;
   }
   // me·posting 둘 다 로드된 뒤에 렌더한다. 신원보다 공고가 먼저 도착하면 isAuthor가 일시적으로 false가 되어
   // 작성자에게 지원 패널이 잠깐 보이는 레이스를 막는다.
-  if (!posting || !me) return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-ink-faint">불러오는 중...</main>;
+  if (!posting || !me) return <PageContainer width="narrow" className="mt-16 text-sm text-ink-faint">불러오는 중...</PageContainer>;
 
   return (
-    <main aria-labelledby="recruitment-title" className="mx-auto mt-8 max-w-xl px-4">
+    <PageContainer width="narrow" aria-labelledby="recruitment-title" className="mt-8">
       <button type="button" aria-label="구인 목록으로 돌아가기" onClick={() => router.push('/recruitments')}
         className="mb-6 rounded px-1 text-sm text-ink-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">← 구인</button>
 
@@ -165,6 +166,6 @@ export default function RecruitmentDetailPage() {
           <ApplyPanel submitting={submitting} applied={applied} onApply={apply} />
         </section>
       )}
-    </main>
+    </PageContainer>
   );
 }

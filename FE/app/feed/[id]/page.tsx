@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { PageContainer } from '@/components/layout/PageContainer';
 import { useParams, useRouter } from 'next/navigation';
 import { getBff, postBff, putBff, deleteBff } from '@/lib/api';
 import { useInfiniteList } from '@/lib/feed/useInfiniteList';
@@ -95,12 +96,12 @@ export default function FeedDetailPage() {
   }
 
   if (notFound) {
-    return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-ink-muted">삭제되었거나 없는 게시글입니다.</main>;
+    return <PageContainer width="narrow" className="mt-16 text-sm text-ink-muted">삭제되었거나 없는 게시글입니다.</PageContainer>;
   }
-  if (!post) return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-ink-faint">불러오는 중...</main>;
+  if (!post) return <PageContainer width="narrow" className="mt-16 text-sm text-ink-faint">불러오는 중...</PageContainer>;
 
   return (
-    <main className="mx-auto mt-8 max-w-xl px-4">
+    <PageContainer width="narrow" className="mt-8">
       <button type="button" onClick={() => router.push('/feed')} className="mb-4 text-sm text-ink-muted">← 피드</button>
 
       <article className="rounded-lg border border-line bg-surface p-4">
@@ -152,6 +153,6 @@ export default function FeedDetailPage() {
           <p className="py-4 text-center text-sm text-ink-faint">첫 댓글을 남겨보세요.</p>
         )}
       </section>
-    </main>
+    </PageContainer>
   );
 }

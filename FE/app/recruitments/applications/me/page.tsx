@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { PageContainer } from '@/components/layout/PageContainer';
 import { useRouter } from 'next/navigation';
 import { getBff, postBff } from '@/lib/api';
 import { ApplicationCard } from '@/components/recruitment/ApplicationCard';
@@ -28,7 +29,7 @@ export default function MyApplicationsPage() {
   }
 
   return (
-    <main className="mx-auto mt-8 max-w-xl px-4">
+    <PageContainer width="narrow" className="mt-8">
       <button type="button" onClick={() => router.push('/recruitments')} className="mb-4 text-sm text-ink-muted">← 구인</button>
       <h1 className="mb-4 text-2xl font-bold">내 지원 현황</h1>
       {error && <p className="mb-3 text-sm text-danger">{error}</p>}
@@ -41,6 +42,6 @@ export default function MyApplicationsPage() {
       {loaded && applications.length === 0 && (
         <p className="py-8 text-center text-sm text-ink-faint">지원한 공고가 없습니다.</p>
       )}
-    </main>
+    </PageContainer>
   );
 }

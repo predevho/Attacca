@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getBff } from '@/lib/api';
+import { AdminPageFrame } from '@/components/admin/AdminPageFrame';
 import type { Me } from '@/lib/feed/types';
 
 const ADMIN_MENUS = [
@@ -47,17 +48,16 @@ export default function AdminPage() {
   }, [router]);
 
   if (!authorized) {
-    return <main className="mx-auto max-w-5xl px-4 py-12 text-sm text-ink-faint">권한을 확인하는 중...</main>;
+    return (
+      <AdminPageFrame title="관리" className="text-sm text-ink-faint">
+        권한을 확인하는 중...
+      </AdminPageFrame>
+    );
   }
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-10">
-      <div className="border-b border-line pb-6">
-        <h1 className="text-2xl font-bold">관리</h1>
-        <p className="mt-2 text-sm text-ink-muted">운영 업무를 선택하세요.</p>
-      </div>
-
-      <nav aria-label="관리 메뉴" className="divide-y divide-line border-b border-line">
+    <AdminPageFrame title="관리" description="운영 업무를 선택하고 처리합니다.">
+      <nav aria-label="관리 메뉴" className="mt-6 divide-y divide-line border-b border-line">
         {ADMIN_MENUS.map((menu) => (
           <Link
             key={menu.href}
@@ -73,6 +73,6 @@ export default function AdminPage() {
           </Link>
         ))}
       </nav>
-    </main>
+    </AdminPageFrame>
   );
 }

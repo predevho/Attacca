@@ -9,6 +9,7 @@ import { PostingCard } from '@/components/recruitment/PostingCard';
 import type { CursorPage } from '@/lib/feed/types';
 import type { InstrumentOption, Posting, RecruitmentScope, SpringPage } from '@/lib/recruitment/types';
 import { toLabelMap, type InstrumentLabels } from '@/lib/recruitment/instruments';
+import { PageContainer } from '@/components/layout/PageContainer';
 
 const TABS: { key: RecruitmentScope; label: string }[] = [
   { key: 'OPEN', label: '모집중' },
@@ -66,7 +67,7 @@ export default function RecruitmentsPage() {
   }, [router]);
 
   return (
-    <main className="mx-auto mt-8 max-w-xl px-4">
+    <PageContainer width="narrow" className="mt-8">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-bold">구인</h1>
         {canRegister && (
@@ -101,6 +102,6 @@ export default function RecruitmentsPage() {
         <button type="button" onClick={() => router.push('/recruitments/applications/me')}
           className="w-full rounded border border-line px-3 py-2 text-sm font-medium text-ink-muted underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">내 지원 현황</button>
       </div>
-    </main>
+    </PageContainer>
   );
 }

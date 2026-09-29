@@ -4,6 +4,12 @@
 
 ---
 
+* 2026-09-29 — **관리자 운영 화면 프레임 구현과 정적 검증을 마쳤다.** `AdminPageFrame`으로 관리 허브, 공지 관리 목록·등록·수정, 인증 연주자 심사의 제목·설명·주요 행동 영역과 폭을 통일했다. 기존 BFF·권한 리다이렉트·공지 CRUD·심사 탭과 행동·오류/로딩/빈 상태의 접근성 계약은 유지했다. 관리자 관련 18건, FE 전체 573건, 타입 검사, lint(기존 `<img>` 경고 4건), production build를 통과했고 별도 코드 검토에서도 회귀가 없었다. 실제 운영 브라우저 확인은 커밋·푸시 후 진행한다. 정본: `docs/superpowers/specs/2026-09-29-admin-operations-layout-design.md`.
+
+* 2026-09-29 — **공개 상세·작성 화면으로 공통 콘텐츠 프레임을 확장했다.** 피드, 구인, 공연, 공지, 인증 연주자 화면의 정상·로딩·없음 상태를 `PageContainer`의 집중 폭으로 바꿨다. API 요청, 권한, 제출·첨부, 목록 조회는 손대지 않았고, 운영 목적의 관리자 화면은 별도 디자인 단위로 남겼다. 대상 테스트 49건과 FE 전체 570건, 타입 검사를 통과했다. lint·production build 재검증은 실행 승인 한도 복구 후 진행한다. 정본: `docs/superpowers/specs/2026-09-29-global-layout-foundation-design.md`.
+
+* 2026-09-29 — **대표 화면의 콘텐츠 프레임을 공통화했다.** `PageContainer`로 일반·넓은·집중 폭을 제한하고 홈, 피드, 구인, 채팅 목록·대화방의 중복 컨테이너 클래스를 교체했다. 채팅 대화방의 하단 입력창·이력 스크롤, 인증과 BFF 요청은 그대로 뒀다. 새 컴포넌트 테스트부터 TDD로 작성했고 FE 전체 570건, 타입 검사, lint(기존 `<img>` 경고 4건), production build를 통과했다. 로컬 데스크톱 브라우저에서 헤더와 홈 콘텐츠의 기준선도 확인했다. 정본: `docs/superpowers/specs/2026-09-29-global-layout-foundation-design.md`.
+
 * 2026-09-28 — **공지 서비스의 조회·변경 책임을 분리했다.** 기존 `NoticeService`는 공개·관리자 조회, 등록·수정·삭제, 커버 파일 교체와 DTO 변환을 함께 맡고 있었다. `NoticeQueryService`와 `NoticeCommandService`로 나누고 DTO 변환은 `NoticeResponseAssembler`로 공유했다. HTTP 경로·응답 DTO·권한·soft delete·입력 검증·파일 교체 순서는 그대로 유지했다. 대상 테스트와 전체 BE 테스트를 JDK 21 Gradle 컨테이너로 통과했다. 정본: `docs/superpowers/specs/2026-09-28-notice-cqs-refactoring-design.md`.
 
 * 2026-09-27 — **API 페이지 계약을 안정화했다.** 공연 목록과 관리자 인증 심사 목록이 Spring `PageImpl` 내부 구조를 직접 직렬화하던 것을 공통 `PageResponse<T>`로 전환했다. FE의 공연·인증 심사 무한 목록도 `number` 대신 `page`를 사용하도록 맞췄다. TDD로 기존 구현에서 새 JSON 계약이 실패하는 것을 확인한 뒤 전환했고, BE 전체 테스트와 FE 전체 테스트·타입 검사·lint·색 토큰 검사·build를 통과했다. 채팅·구인 등 나머지 Spring 페이지 응답과 `clamp(size)`·관리자 판별 공용화는 별도 리팩터링 범위다.

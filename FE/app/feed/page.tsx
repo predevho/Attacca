@@ -6,6 +6,7 @@ import { getBff, postBff, deleteBff } from '@/lib/api';
 import { useInfiniteList } from '@/lib/feed/useInfiniteList';
 import { toggleLike } from '@/lib/feed/logic';
 import { PostCard } from '@/components/feed/PostCard';
+import { PageContainer } from '@/components/layout/PageContainer';
 import type { CursorPage, Post } from '@/lib/feed/types';
 
 export default function FeedPage() {
@@ -35,7 +36,7 @@ export default function FeedPage() {
   }
 
   return (
-    <main className="mx-auto mt-8 max-w-xl px-4">
+    <PageContainer width="narrow" className="mt-8">
       <div className="mb-6 flex items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">피드</h1>
         <button
@@ -60,6 +61,6 @@ export default function FeedPage() {
       {loaded && items.length === 0 && (
         <p className="py-8 text-center text-sm text-ink-faint">아직 게시글이 없습니다.</p>
       )}
-    </main>
+    </PageContainer>
   );
 }

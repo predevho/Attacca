@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { PageContainer } from '@/components/layout/PageContainer';
 import { useParams, useRouter } from 'next/navigation';
 import { getBff, putBff, putBffForm } from '@/lib/api';
 import { canEdit } from '@/lib/feed/logic';
@@ -66,10 +67,10 @@ export default function EditPerformancePage() {
     else setError(r.message ?? '포스터 업로드에 실패했습니다.');
   }
 
-  if (!performance || !me) return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-ink-faint">불러오는 중...</main>;
+  if (!performance || !me) return <PageContainer width="narrow" className="mt-16 text-sm text-ink-faint">불러오는 중...</PageContainer>;
 
   return (
-    <main className="mx-auto mt-8 max-w-xl px-4">
+    <PageContainer width="narrow" className="mt-8">
       <h1 className="mb-4 text-2xl font-bold">공연 수정</h1>
       {error && <p className="mb-4 text-sm text-danger">{error}</p>}
 
@@ -84,6 +85,6 @@ export default function EditPerformancePage() {
       </div>
 
       <PerformanceForm initial={toFormValues(performance)} submitting={submitting} submitLabel="저장" onSubmit={save} />
-    </main>
+    </PageContainer>
   );
 }

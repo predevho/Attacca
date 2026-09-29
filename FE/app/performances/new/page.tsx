@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { PageContainer } from '@/components/layout/PageContainer';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getBff, postBff, putBffForm } from '@/lib/api';
@@ -40,18 +41,18 @@ export default function NewPerformancePage() {
     router.push(`/performances/${id}`);
   }
 
-  if (canRegister === null) return <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-ink-faint">불러오는 중...</main>;
+  if (canRegister === null) return <PageContainer width="narrow" className="mt-16 text-sm text-ink-faint">불러오는 중...</PageContainer>;
   if (!canRegister) {
     return (
-      <main className="mx-auto mt-16 max-w-xl px-4 text-sm text-ink-muted">
+      <PageContainer width="narrow" className="mt-16 text-sm text-ink-muted">
         인증 연주자만 공연을 등록할 수 있습니다.
         <div className="mt-4"><Link href="/performances" className="text-brand-strong">공연 목록으로</Link></div>
-      </main>
+      </PageContainer>
     );
   }
 
   return (
-    <main className="mx-auto mt-8 max-w-xl px-4">
+    <PageContainer width="narrow" className="mt-8">
       <h1 className="mb-4 text-2xl font-bold">공연 등록</h1>
       {error && <p className="mb-4 text-sm text-danger">{error}</p>}
       {/* label로 감싸야 파일 입력에 접근명이 생긴다(수정 화면과 같은 방식). */}
@@ -60,6 +61,6 @@ export default function NewPerformancePage() {
         <input type="file" accept="image/*" onChange={(e) => setPoster(e.target.files?.[0] ?? null)} />
       </label>
       <PerformanceForm submitting={submitting} submitLabel="등록" onSubmit={submit} />
-    </main>
+    </PageContainer>
   );
 }

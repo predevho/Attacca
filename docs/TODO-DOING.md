@@ -2,6 +2,8 @@
 
 현재 진행 중인 작업.
 
+* **관리자 운영 화면 프레임 정리** — `AdminPageFrame`을 도입해 관리 허브, 공지 관리, 인증 심사의 제목·설명·주요 행동 영역과 콘텐츠 폭을 통일했다. BFF·권한·도메인 행동은 유지했다. 관리자 관련 18건, FE 전체 573건, 타입 검사, lint(기존 `<img>` 경고 4건), production build를 통과했다. 실제 운영 브라우저 확인과 배포는 커밋·푸시 후 진행한다. 설계: `docs/superpowers/specs/2026-09-29-admin-operations-layout-design.md`, 계획: `docs/superpowers/plans/2026-09-29-admin-operations-layout.md`.
+
 * **밝은 콘텐츠 커뮤니티 UI·게시글 첨부** — 피드 인라인 작성 폼을 `/feed/new` 독립 흐름으로 옮기고, 기본 밝은 전역 UI와 피드·구인 임시 첨부 업로드(ID 연결)를 구현했다. JPG/PNG/WebP/PDF, 파일당 10MB, 최대 5개를 검증하고 실패 파일은 사유 표시와 개별 재시도가 가능하다. 자동 검증(BE 전체 테스트, FE 전체 테스트·타입검사·lint·색 토큰 검사·build)은 통과했다. 실제 브라우저에서 신규 작성·첨부 조회·실패 재시도 스모크 검증과 배포는 남아 있다. 설계: `docs/superpowers/specs/2026-09-22-content-community-attachments-ui-design.md`, 계획: `docs/superpowers/plans/2026-09-22-content-community-attachments-ui-implementation.md`.
 
 * **관리자 진입점 정리** — ADMIN 계정에만 전역 헤더의 `/admin` 관리 버튼을 노출하고, 공지·인증 심사로 이동하는 관리 허브를 제공한다. `/admin/*` 경로에서는 버튼을 활성 상태로 표시한다. 각 하위 화면의 BE 권한 검사는 유지하며, 운영 브라우저 확인과 배포는 남아 있다.
