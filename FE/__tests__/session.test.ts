@@ -104,4 +104,20 @@ describe('authedBeFetch', () => {
     expect(res.status).toBe(401);
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it('access 쿠키가 없어도 refresh 세션이 있으면 재발급 후 원 요청을 호출한다', async () => {
+    const store = fakeStore(null, 'good-refresh');
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(json({ success: true, data: { accessToken: 'new-access' }, error: null }, 200)) // reissue
+      .mockResolvedValueOnce(json({ success: true, data: { hi: 3 }, error: null }, 200));                  // retry
+    vi.stubGlobal('fetch', fetchMock);
+
+    const res = await authedBeFetch(store, '/api/members/me/profile');
+
+    expect(res.ok).toBe(true);
+    expect(store.jar[ACCESS_COOKIE]).toBe('new-access');
+    expect(store.jar[REFRESH_COOKIE]).toBe('good-refresh');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[0][0]).toContain('/api/auth/reissue');
+  });
 });

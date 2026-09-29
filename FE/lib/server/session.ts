@@ -18,12 +18,14 @@ function withBearer(init: RequestInit | undefined, access: string): RequestInit 
  */
 export async function authedBeFetch(store: CookieStore, path: string, init?: RequestInit): Promise<BeResult> {
   const access = store.get(ACCESS_COOKIE)?.value;
-  if (!access) return UNAUTHENTICATED;
-
-  const first = await beFetch(path, withBearer(init, access));
-  if (first.status !== 401) return first;
-
   const refreshSession = store.get(REFRESH_COOKIE)?.value;
+  if (!access && !refreshSession) return UNAUTHENTICATED;
+
+  if (access) {
+    const first = await beFetch(path, withBearer(init, access));
+    if (first.status !== 401) return first;
+  }
+
   if (!refreshSession) {
     clearAuthCookies(store);
     return UNAUTHENTICATED;
