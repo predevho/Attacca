@@ -1,3 +1,6 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import type { AttachmentFile } from '@/lib/feed/types';
 
 function formatSize(size: number) {
@@ -11,6 +14,18 @@ function isImageAttachment(attachment: AttachmentFile) {
 
 /** 게시와 연결된 파일을 열람하는 읽기 전용 목록이다. */
 export function AttachmentList({ attachments }: { attachments?: AttachmentFile[] }) {
+  const [preview, setPreview] = useState<AttachmentFile | null>(null);
+
+  useEffect(() => {
+    if (!preview) return;
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setPreview(null);
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [preview]);
+
   if (!attachments || attachments.length === 0) return null;
 
   return (
@@ -19,20 +34,19 @@ export function AttachmentList({ attachments }: { attachments?: AttachmentFile[]
       <div className="space-y-3">
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {attachments.filter(isImageAttachment).map((attachment) => (
-            <a
+            <button
               key={attachment.id}
-              href={attachment.url}
-              target="_blank"
-              rel="noreferrer"
-              aria-label={`${attachment.originalName} 원본 이미지`}
-              className="group overflow-hidden rounded border border-line bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              type="button"
+              aria-label={`${attachment.originalName} 미리보기`}
+              onClick={() => setPreview(attachment)}
+              className="group overflow-hidden rounded border border-line bg-surface-muted text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
               <img
                 src={attachment.url}
                 alt={attachment.originalName}
                 className="aspect-[4/3] w-full object-cover transition-transform group-hover:scale-[1.02]"
               />
-            </a>
+            </button>
           ))}
         </div>
         {attachments.some((attachment) => !isImageAttachment(attachment)) && (
@@ -53,6 +67,38 @@ export function AttachmentList({ attachments }: { attachments?: AttachmentFile[]
           </ul>
         )}
       </div>
+      {preview && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setPreview(null);
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="attachment-preview-title"
+            className="relative max-h-[90vh] max-w-[min(90vw,960px)] rounded border border-line bg-surface p-3 shadow-xl"
+          >
+            <h2 id="attachment-preview-title" className="sr-only">
+              {preview.originalName} 미리보기
+            </h2>
+            <button
+              type="button"
+              aria-label="미리보기 닫기"
+              onClick={() => setPreview(null)}
+              className="absolute right-2 top-2 z-10 rounded border border-line bg-surface px-2 py-1 text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            >
+              닫기
+            </button>
+            <img
+              src={preview.url}
+              alt={`${preview.originalName} 원본`}
+              className="max-h-[calc(90vh-1.5rem)] max-w-full object-contain"
+            />
+          </div>
+        </div>
+      )}
     </section>
   );
 }

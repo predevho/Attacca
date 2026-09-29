@@ -2,7 +2,7 @@
 
 현재 진행 중인 작업.
 
-* **운영 첨부 기능 스모크 검증** — 밝은 전역 UI, `/feed/new` 작성 흐름, 피드·구인 임시 첨부 구현과 자동 검증은 완료됐다. JPG 404는 `PUBLIC_ORIGIN`으로 파일 URL을 만들던 Compose 설정이 Vercel FE 주소와 EC2 파일 호스트를 혼동한 것이 원인이었다. `STORAGE_LOCAL_BASE_URL=https://api.attacca.site/files`로 수정했으며, 배포 후 기존 JPG URL·신규 이미지 URL·실패 파일 재시도를 확인한다. 설계: `docs/superpowers/specs/2026-09-22-content-community-attachments-ui-design.md`, 계획: `docs/superpowers/plans/2026-09-22-content-community-attachments-ui-implementation.md`.
+* **운영 첨부 기능 스모크 검증** — 밝은 전역 UI, `/feed/new` 작성 흐름, 피드·구인 임시 첨부 구현과 자동 검증은 완료됐다. JPG 404는 `PUBLIC_ORIGIN`으로 파일 URL을 만들던 Compose 설정이 Vercel FE 주소와 EC2 파일 호스트를 혼동한 것이 원인이었다. `STORAGE_LOCAL_BASE_URL=https://api.attacca.site/files`로 수정했으며, 배포 후 기존 JPG URL·신규 이미지 URL·이미지 클릭 모달(닫기 버튼·배경·Escape)·PDF 링크·실패 파일 재시도를 확인한다. 설계: `docs/superpowers/specs/2026-09-22-content-community-attachments-ui-design.md`, 계획: `docs/superpowers/plans/2026-09-22-content-community-attachments-ui-implementation.md`.
 
 ---
 
