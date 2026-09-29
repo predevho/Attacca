@@ -41,6 +41,7 @@
 * [ ] FE 채팅: 대화창 `markRead`를 `setMessages` 업데이터 내부에서 호출 — StrictMode 이중호출 시 중복 read POST(BE 멱등이라 무해). 별도 effect로 분리 검토.
 * [x] ~~FE 채팅: 이력 더 보기 + 스크롤 하단 고정~~ — 2026-09-09 해소. `nextCursor`를 써서 과거를 앞에 붙이고(중복 제거·오름차순 유지) **스크롤 위치를 보정**한다. 새 메시지는 이미 바닥 근처일 때만 따라간다(`shouldStickToBottom`).
 * [x] ~~배포 시 `NEXT_PUBLIC_BE_WS_URL`을 실제 BE WS 주소(wss)로 설정 + Nginx WebSocket 프록시.~~ — 2026-09-21 완료. 운영 웹은 Vercel, API·WebSocket은 EC2 `wss://api.attacca.site/ws`로 분리했고 운영 브라우저에서 101 handshake와 채팅 송수신을 확인했다. 현재 주소 정본은 `docs/ops/inventory/2026-09-21-production-state.md`다.
+* [ ] FE 채팅: 이력 날짜 구분과 표시 시간대 정합성 — 운영 스모크(2026-09-28)에서 날짜 구분선이 없어 긴 대화를 읽기 어렵고, 일부 메시지 시각이 사용자 로컬 시각과 다르게 표시되는 것을 확인했다. 구현 전 서버 응답 `createdAt`의 offset/UTC 계약과 `formatTime`의 파싱·표시 기준(브라우저 local 또는 Asia/Seoul)을 함께 확인한다. 날짜가 바뀌는 지점에는 접근 가능한 날짜 구분선을 두고, 오늘은 시:분, 과거는 날짜+시:분 등 확정된 표현 규칙으로 테스트한다. 기존 메시지 순서·스크롤 고정·IME 전송 보호는 유지한다. 근거: 운영 화면 스모크(사용자 제공 화면), `docs/DOMAIN-CHAT-STATUTE.md` 8.2절.
 
 ## 기능
 
@@ -155,6 +156,7 @@
 ### B. 인프라 구성
 
 * [ ] **RDS 전환** — 데이터소스가 이미 env(`DB_URL`/`DB_USERNAME`/`DB_PASSWORD`)라 값 교체만으로 전환 가능. 함께 처리: RDS 퍼블릭 접근 차단(보안그룹으로 앱 서버만 허용), 파라미터 그룹 `utf8mb4`/타임존, HikariCP 풀 크기 vs 인스턴스 `max_connections`, 자격증명은 Secrets Manager 또는 env(커밋 금지 규칙 기존대로).
+* [ ] **단일 EC2 블루/그린 재검토** — 현재는 Vercel FE와 단일 EC2 BE/Nginx/Redis를 운영하고, 채팅은 인메모리 STOMP Simple Broker·presence에 의존한다. 따라서 REST health 기반 전환만으로는 채팅 연결·브로드캐스트의 무중단을 보장할 수 없다. 필요해질 때 외부 STOMP broker relay와 공유 presence, EC2 메모리·디스크 여유, Nginx 라우팅·rollback 절차를 함께 설계·검증한 뒤에만 도입한다. 사용자 승인 전에는 현행 Compose와 EC2 FE rollback 컨테이너를 변경하지 않는다. 참고: `docs/superpowers/specs/2026-09-17-vercel-api-blue-green-terraform-design.md`, `docs/ops/inventory/2026-09-21-production-state.md`.
 * [x] ~~**Nginx 리버스 프록시 + WebSocket 프록시**~~ — 2026-09-08 완료. 도메인이 없어 **2단계로 나눴다**: `deploy/nginx.conf`(1단계, IP+HTTP)와 `deploy/nginx.https.conf`(2단계, 도메인+TLS). 둘 다 문법 검증 통과(2단계는 인증서 파일만 없음). WS Upgrade 헤더·1시간 타임아웃, 업로드 상한을 BE multipart 10MB와 일치, actuator는 외부 차단. 원문: — `/ws` 업그레이드 헤더 통과 설정 포함. (기존 항목)
 * [x] ~~**CI/CD 구성**~~ — 2026-09-08 `.github/workflows/ci.yml` 작성. 한 워크플로 안에서 `dorny/paths-filter` + `needs`로 BE→FE 순서 강제. **배포 job은 아직 없다**(EC2 접속 방식 미정). 원문: — 모노레포 경로 필터로 BE/FE 파이프라인 분리. ⚠️ 워크플로 **파일**을 나누면 두 쪽이 같이 바뀐 커밋에서 배포 순서가 보장되지 않아 계약 변경 배포 때 깨진 창이 생긴다. 한 워크플로 안에서 job 레벨 변경 감지(`dorny/paths-filter`) + `needs`로 **BE → FE 순서 강제**.
 * [x] ~~**헬스체크 엔드포인트**~~ — 2026-09-08 완료. Actuator 추가, `health`만 노출하고 SecurityConfig에서 `/actuator/health`만 permitAll. `/actuator/env`·`/beans`가 401인 것까지 확인. 원문: — 현재 Spring Actuator 미도입(2026-08-18 확인). ALB/ECS 헬스체크·무중단 배포에 필요하므로 `actuator` 추가 후 `/actuator/health`만 노출(나머지 엔드포인트는 차단).
@@ -170,7 +172,7 @@
   모두 다시 확인하며 올린다. 에디션/라이선스 변경 여부도 함께 확인할 것.
 
 
-* [ ] **[결함] `STORAGE_TYPE=s3`는 지금 기동조차 안 된다** — `S3FileStorage`가 생성자로 `S3Client`를 받는데 **코드베이스에 `S3Client` 빈을 만드는 곳이 없다**(2026-09-08 확인. `S3Client.builder` grep 결과 0건). 켜면 `No qualifying bean of type S3Client`로 컨텍스트 로딩이 실패한다. 테스트가 `S3Client`를 목으로 주입해 와서 여태 드러나지 않았다 — "미검증"이 아니라 "동작 불가"다.
+* [ ] **S3 파일 저장소 실연동 검증** — `STORAGE_TYPE=s3`용 `S3Client` 구성은 코드에 존재한다. 아직 EC2 IAM 역할·버킷 정책·실제 업로드/삭제/조회 URL을 운영 수준으로 검증하지 않았고, 현재 운영은 `STORAGE_TYPE=local`이다. 검증 전까지 S3로 전환하지 않는다.
   * 고칠 때 함께 정할 것: 자격증명을 **액세스 키가 아니라 EC2 인스턴스 역할(IAM Role)**로 받는다. `S3Client.builder().region(...).build()`가 기본으로 쓰는 `DefaultCredentialsProvider`가 인스턴스 메타데이터를 읽으므로, 서버에 키 파일을 두지 않아도 된다(유출·로테이션 부담 없음). `storage.s3.access-key`/`secret-key` 설정은 로컬 테스트용으로만 남기거나 제거.
   * 그 뒤에야 실연동 검증(업로드/삭제/조회)이 의미가 있다. 1단계 배포는 `STORAGE_TYPE=local`이라 영향 없음.
 * [ ] 고아 파일 정리(GC) — 메타데이터 없는 물리 파일, 업로드 실패로 남은 파일 정리 배치
