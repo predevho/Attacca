@@ -5,6 +5,10 @@ function formatSize(size: number) {
   return `${(size / (1024 * 1024)).toFixed(1)}MB`;
 }
 
+function isImageAttachment(attachment: AttachmentFile) {
+  return attachment.contentType.startsWith('image/');
+}
+
 /** 게시와 연결된 파일을 열람하는 읽기 전용 목록이다. */
 export function AttachmentList({ attachments }: { attachments?: AttachmentFile[] }) {
   if (!attachments || attachments.length === 0) return null;
@@ -12,21 +16,43 @@ export function AttachmentList({ attachments }: { attachments?: AttachmentFile[]
   return (
     <section aria-label="첨부 파일" className="mt-4 border-t border-line pt-3">
       <h2 className="mb-2 text-sm font-medium text-ink-muted">첨부 파일</h2>
-      <ul className="divide-y divide-line rounded border border-line">
-        {attachments.map((attachment) => (
-          <li key={attachment.id}>
+      <div className="space-y-3">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {attachments.filter(isImageAttachment).map((attachment) => (
             <a
+              key={attachment.id}
               href={attachment.url}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center justify-between gap-3 px-3 py-2 text-sm hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              aria-label={`${attachment.originalName} 원본 이미지`}
+              className="group overflow-hidden rounded border border-line bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
-              <span className="min-w-0 truncate">{attachment.originalName}</span>
-              <span className="shrink-0 text-xs text-ink-faint">{formatSize(attachment.size)}</span>
+              <img
+                src={attachment.url}
+                alt={attachment.originalName}
+                className="aspect-[4/3] w-full object-cover transition-transform group-hover:scale-[1.02]"
+              />
             </a>
-          </li>
-        ))}
-      </ul>
+          ))}
+        </div>
+        {attachments.some((attachment) => !isImageAttachment(attachment)) && (
+          <ul className="divide-y divide-line rounded border border-line">
+            {attachments.filter((attachment) => !isImageAttachment(attachment)).map((attachment) => (
+              <li key={attachment.id}>
+                <a
+                  href={attachment.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-between gap-3 px-3 py-2 text-sm hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                >
+                  <span className="min-w-0 truncate">{attachment.originalName}</span>
+                  <span className="shrink-0 text-xs text-ink-faint">{formatSize(attachment.size)}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </section>
   );
 }
