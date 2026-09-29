@@ -19,11 +19,76 @@ export function mergeMessages(existing: ChatMessage[], incoming: ChatMessage[]):
   return [...map.values()].sort((a, b) => a.id - b.id);
 }
 
-/** ISO LocalDateTime → "HH:mm"(타임존 없이 문자열 파싱). */
-export function formatTime(iso: string): string {
-  const t = iso.split('T')[1] ?? '';
-  const [hh = '00', mm = '00'] = t.split(':');
-  return `${hh}:${mm}`;
+type ParsedChatDateTime = {
+  dateKey: string;
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+};
+
+export type ChatMessageDateGroup = {
+  dateKey: string;
+  label: string;
+  messages: ChatMessage[];
+};
+
+const CHAT_LOCAL_DATE_TIME = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::\d{2}(?:\.\d{1,6})?)?$/;
+const KOREAN_WEEKDAYS = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+
+/** KST 벽시계 문자열을 파싱한다. 브라우저 시간대 변환은 적용하지 않는다. */
+function parseChatDateTime(value: string): ParsedChatDateTime | null {
+  const match = CHAT_LOCAL_DATE_TIME.exec(value);
+  if (!match) return null;
+
+  const [year, month, day, hour, minute] = match.slice(1).map(Number);
+  const calendarDate = new Date(Date.UTC(year, month - 1, day));
+  const isValidDate = calendarDate.getUTCFullYear() === year
+    && calendarDate.getUTCMonth() === month - 1
+    && calendarDate.getUTCDate() === day;
+  if (!isValidDate || hour > 23 || minute > 59) return null;
+
+  return { dateKey: `${year}-${match[2]}-${match[3]}`, year, month, day, hour, minute };
+}
+
+/** KST LocalDateTime → "오전/오후 h:mm". */
+export function formatChatTime(value: string): string {
+  const dateTime = parseChatDateTime(value);
+  if (!dateTime) return value;
+
+  const meridiem = dateTime.hour < 12 ? '오전' : '오후';
+  const hour = dateTime.hour % 12 || 12;
+  return `${meridiem} ${hour}:${String(dateTime.minute).padStart(2, '0')}`;
+}
+
+/** KST LocalDateTime → "YYYY년 M월 D일 요일". */
+export function formatChatDate(value: string): string {
+  const dateTime = parseChatDateTime(value);
+  if (!dateTime) return value;
+
+  const weekday = KOREAN_WEEKDAYS[new Date(Date.UTC(dateTime.year, dateTime.month - 1, dateTime.day)).getUTCDay()];
+  return `${dateTime.year}년 ${dateTime.month}월 ${dateTime.day}일 ${weekday}`;
+}
+
+/** 순서가 정리된 메시지를 날짜별 그룹으로 나눈다. */
+export function groupMessagesByDate(messages: ChatMessage[]): ChatMessageDateGroup[] {
+  const groups: ChatMessageDateGroup[] = [];
+
+  for (const message of messages) {
+    const dateTime = parseChatDateTime(message.createdAt);
+    const dateKey = dateTime?.dateKey ?? `invalid:${message.id}`;
+    const label = dateTime ? formatChatDate(message.createdAt) : message.createdAt;
+    const lastGroup = groups.at(-1);
+
+    if (lastGroup?.dateKey === dateKey) {
+      lastGroup.messages.push(message);
+    } else {
+      groups.push({ dateKey, label, messages: [message] });
+    }
+  }
+
+  return groups;
 }
 
 /** 검색어 최소 길이. BE(STATUTE §3.2.1)와 같은 값 — 미만이면 아예 요청하지 않는다. */

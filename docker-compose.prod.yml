@@ -39,6 +39,7 @@ services:
       S3_REGION: ${S3_REGION:-ap-northeast-2}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
     volumes:
       # storage.type=local일 때 업로드 보존. s3로 전환하면 필요 없다.
       - be-uploads:/app/uploads

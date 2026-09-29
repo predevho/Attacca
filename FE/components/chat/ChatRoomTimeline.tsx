@@ -1,5 +1,7 @@
 import type { RefObject } from 'react';
+import { DateSeparator } from '@/components/chat/DateSeparator';
 import { MessageBubble } from '@/components/chat/MessageBubble';
+import { groupMessagesByDate } from '@/lib/chat/logic';
 import type { ChatMessage } from '@/lib/chat/types';
 
 type ChatRoomTimelineProps = {
@@ -19,6 +21,8 @@ export function ChatRoomTimeline({
   loadingOlder,
   onLoadOlder,
 }: ChatRoomTimelineProps) {
+  const messageGroups = groupMessagesByDate(messages);
+
   return (
     <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
       {olderCursor != null && (
@@ -30,7 +34,18 @@ export function ChatRoomTimeline({
         </div>
       )}
       <div className="flex flex-col gap-3 py-2">
-        {messages.map((message) => <MessageBubble key={message.id} message={message} mine={viewerId != null && message.sender.id === viewerId} />)}
+        {messageGroups.map((group) => (
+          <div key={group.dateKey} className="flex flex-col gap-3">
+            <DateSeparator label={group.label} />
+            {group.messages.map((message) => (
+              <MessageBubble
+                key={message.id}
+                message={message}
+                mine={viewerId != null && message.sender.id === viewerId}
+              />
+            ))}
+          </div>
+        ))}
       </div>
     </div>
   );

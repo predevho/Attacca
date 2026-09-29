@@ -146,4 +146,25 @@ describe('ChatRoomTimeline', () => {
     expect(onLoadOlder).toHaveBeenCalledOnce();
     expect(screen.getByText('안녕')).toBeInTheDocument();
   });
+
+  it('날짜별 구분선을 한 번씩 접근 가능하게 표시한다', () => {
+    render(
+      <ChatRoomTimeline
+        scrollRef={{ current: null }}
+        messages={[
+          { id: 1, roomId: 1, sender: { id: 2, nickname: '홍길동', verified: false }, content: '첫날', createdAt: '2026-08-01T09:00:00' },
+          { id: 2, roomId: 1, sender: { id: 2, nickname: '홍길동', verified: false }, content: '같은 날', createdAt: '2026-08-01T18:00:00' },
+          { id: 3, roomId: 1, sender: { id: 2, nickname: '홍길동', verified: false }, content: '다음 날', createdAt: '2026-08-02T09:00:00' },
+        ]}
+        viewerId={9}
+        olderCursor={null}
+        loadingOlder={false}
+        onLoadOlder={() => {}}
+      />,
+    );
+
+    expect(screen.getAllByRole('separator')).toHaveLength(2);
+    expect(screen.getByRole('separator', { name: '2026년 8월 1일 토요일 메시지' })).toBeInTheDocument();
+    expect(screen.getByRole('separator', { name: '2026년 8월 2일 일요일 메시지' })).toBeInTheDocument();
+  });
 });
