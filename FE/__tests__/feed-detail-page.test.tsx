@@ -21,11 +21,8 @@ const postData = {
   id: 1, author: { id: 5, nickname: '글쓴이', verified: false }, content: '상세본문',
   likeCount: 0, commentCount: 1, likedByMe: false, createdAt: 'x', updatedAt: 'x',
 };
-// 댓글 작성자는 게시글 작성자(=me, id 5)와 의도적으로 다른 id를 쓴다.
-// 동일 id로 두면 게시글/댓글의 "삭제" 버튼이 둘 다 렌더링되어
-// getByRole('button', { name: '삭제' })가 다중 매치로 실패한다(브리프 픽스처 충돌, 페이지 로직 문제 아님).
 const comment = {
-  id: 9, postId: 1, author: { id: 6, nickname: '댓쓴이', verified: false },
+  id: 9, postId: 1, author: { id: 5, nickname: '댓쓴이', verified: false },
   content: '첫 댓글', likeCount: 0, likedByMe: false, createdAt: 'x',
 };
 
@@ -49,7 +46,27 @@ describe('FeedDetailPage', () => {
   it('작성자 본인이면 수정/삭제 버튼을 보여준다', async () => {
     render(<FeedDetailPage />);
     expect(await screen.findByRole('button', { name: '수정' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '삭제' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '게시글 삭제' })).toBeInTheDocument();
+  });
+
+  it('게시글 삭제 확인을 취소하면 삭제 요청을 보내지 않는다', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    render(<FeedDetailPage />);
+
+    fireEvent.click(await screen.findByRole('button', { name: '게시글 삭제' }));
+
+    expect(window.confirm).toHaveBeenCalledWith('이 게시글을 삭제하시겠습니까? 삭제하면 되돌릴 수 없습니다.');
+    expect(deleteBff).not.toHaveBeenCalled();
+  });
+
+  it('댓글 삭제 확인을 취소하면 삭제 요청을 보내지 않는다', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    render(<FeedDetailPage />);
+
+    fireEvent.click(await screen.findByRole('button', { name: '삭제' }));
+
+    expect(window.confirm).toHaveBeenCalledWith('이 댓글을 삭제하시겠습니까? 삭제하면 되돌릴 수 없습니다.');
+    expect(deleteBff).not.toHaveBeenCalled();
   });
 
   it('댓글을 작성하면 목록에 추가된다', async () => {

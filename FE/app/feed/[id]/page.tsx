@@ -74,6 +74,7 @@ export default function FeedDetailPage() {
   }
 
   async function deleteComment(c: Comment) {
+    if (!window.confirm('이 댓글을 삭제하시겠습니까? 삭제하면 되돌릴 수 없습니다.')) return;
     const r = await deleteBff(`/api/bff/feed/comments/${c.id}`);
     if (r.ok) {
       setComments((prev) => prev.filter((x) => x.id !== c.id));
@@ -90,6 +91,7 @@ export default function FeedDetailPage() {
 
   async function deletePost() {
     if (!post) return;
+    if (!window.confirm('이 게시글을 삭제하시겠습니까? 삭제하면 되돌릴 수 없습니다.')) return;
     const r = await deleteBff(`/api/bff/feed/posts/${post.id}`);
     if (r.ok) router.push('/feed');
     else setError(r.message ?? '삭제에 실패했습니다.');
@@ -112,7 +114,7 @@ export default function FeedDetailPage() {
               <button type="button" onClick={() => { setDraft(post.content); setEditing(true); }} className="text-xs text-ink-faint">수정</button>
             )}
             {canDelete(me, post.author.id) && (
-              <button type="button" onClick={deletePost} className="text-xs text-ink-faint">삭제</button>
+              <button type="button" aria-label="게시글 삭제" onClick={deletePost} className="text-xs text-ink-faint">삭제</button>
             )}
           </div>
         </div>

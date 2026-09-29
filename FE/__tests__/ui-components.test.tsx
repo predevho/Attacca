@@ -6,6 +6,11 @@ import { Field } from '@/components/ui/Field';
 import { StatusMessage } from '@/components/ui/StatusMessage';
 
 describe('공통 UI 컴포넌트', () => {
+  it('활성 Button은 클릭 가능한 커서를 보여준다', () => {
+    render(<Button>저장</Button>);
+    expect(screen.getByRole('button', { name: '저장' })).toHaveClass('cursor-pointer');
+  });
+
   it('Button은 loading 중 비활성화하고 진행 상태를 알린다', () => {
     render(<Button loading>저장</Button>);
     expect(screen.getByRole('button', { name: '저장 중' })).toBeDisabled();

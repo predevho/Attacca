@@ -43,6 +43,7 @@ export default function PerformanceDetailPage() {
 
   async function remove() {
     if (!performance) return;
+    if (!window.confirm('이 공연을 삭제하시겠습니까? 삭제하면 되돌릴 수 없습니다.')) return;
     const r = await deleteBff(`/api/bff/performances/${performance.id}`);
     if (r.ok) router.push('/performances');
     else setError(r.message ?? '삭제에 실패했습니다.');

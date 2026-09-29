@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 
 const push = vi.fn();
 let searchParams = new URLSearchParams('');
@@ -46,6 +46,16 @@ describe('PerformanceDetailPage', () => {
     render(<PerformanceDetailPage />);
     expect(await screen.findByRole('button', { name: '공연 수정' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '공연 삭제' })).toBeInTheDocument();
+  });
+
+  it('공연 삭제 확인을 취소하면 삭제 요청을 보내지 않는다', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    render(<PerformanceDetailPage />);
+
+    fireEvent.click(await screen.findByRole('button', { name: '공연 삭제' }));
+
+    expect(window.confirm).toHaveBeenCalledWith('이 공연을 삭제하시겠습니까? 삭제하면 되돌릴 수 없습니다.');
+    expect(deleteBff).not.toHaveBeenCalled();
   });
 
   it('주최자가 아니면 수정/삭제가 없다', async () => {

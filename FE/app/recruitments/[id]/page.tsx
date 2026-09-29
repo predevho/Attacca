@@ -90,6 +90,7 @@ export default function RecruitmentDetailPage() {
 
   async function remove() {
     if (!posting || pending) return;
+    if (!window.confirm('이 공고를 삭제하시겠습니까? 삭제하면 되돌릴 수 없습니다.')) return;
     setPending('remove');
     const r = await deleteBff(`/api/bff/recruitments/${posting.id}`);
     if (!r.ok) setPending(null); // 성공하면 목록으로 떠나므로 그대로 잠가 둔다

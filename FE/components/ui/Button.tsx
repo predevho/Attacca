@@ -19,7 +19,7 @@ export function Button({ variant = 'primary', loading = false, disabled, childre
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       aria-label={loading ? (String(children).endsWith('중') ? String(children) : `${children} 중`) : props['aria-label']}
-      className={`rounded px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:opacity-50 ${variants[variant]} ${className}`}
+      className={`cursor-pointer rounded px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:opacity-50 ${variants[variant]} ${className}`}
     >
       {children}
     </button>

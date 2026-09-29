@@ -64,6 +64,17 @@ describe('RecruitmentDetailPage', () => {
     expect(screen.getByText('삭제')).toBeInTheDocument();
   });
 
+  it('공고 삭제 확인을 취소하면 삭제 요청을 보내지 않는다', async () => {
+    mockGet(9);
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    render(<RecruitmentDetailPage />);
+
+    fireEvent.click(await screen.findByRole('button', { name: '공고 삭제' }));
+
+    expect(window.confirm).toHaveBeenCalledWith('이 공고를 삭제하시겠습니까? 삭제하면 되돌릴 수 없습니다.');
+    expect(deleteBff).not.toHaveBeenCalled();
+  });
+
   it('마감된 공고는 지원하기 대신 마감 안내', async () => {
     getBff.mockImplementation((p: string) => {
       if (p.startsWith('/api/bff/me/identity')) return Promise.resolve({ ok: true, data: { id: 2, nickname: 'X', role: 'USER', verified: false } });
