@@ -440,8 +440,10 @@ sudo systemctl disable --now attacca-update.timer   # 자동 배포 중단
 * **이미지 식별자** — CI는 BE/FE 이미지에 커밋 SHA 태그와 함께
   `org.opencontainers.image.revision` 라벨을 기록한다. 운영에서 `latest`를 사용하더라도
   실제 컨테이너 이미지의 커밋을 `docker inspect`로 확인할 수 있다. `update.sh`는 pull 뒤
-  BE와 FE 라벨이 모두 있고 서로 같은지 확인한 뒤에만 컨테이너를 교체한다. 기존 라벨 없는
-  이미지는 새 CI 이미지가 생성될 때까지 배포를 중단하지만, 이미 실행 중인 컨테이너는 유지한다.
+  BE와 FE 라벨이 모두 있고 서로 같은지 확인한 뒤에만 컨테이너를 교체한다. BE·FE·CI workflow가
+  바뀐 커밋은 두 라벨이 서버가 받은 목표 Git 커밋과도 같아야 한다. GHCR의 `latest` 갱신이 늦으면
+  다음 타이머 주기까지 기존 컨테이너를 유지해, 이전 이미지로 불필요하게 재기동하지 않는다. 기존
+  라벨 없는 이미지는 새 CI 이미지가 생성될 때까지 배포를 중단하지만, 이미 실행 중인 컨테이너는 유지한다.
 
   ```bash
   docker inspect -f '{{ index .Config.Labels "org.opencontainers.image.revision" }}' \

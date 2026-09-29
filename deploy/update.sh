@@ -18,10 +18,15 @@
 
 set -euo pipefail
 
+image_matches_target_revision() {
+  local be_revision=$1 fe_revision=$2 target_revision=$3
+  [ "$be_revision" = "$target_revision" ] && [ "$fe_revision" = "$target_revision" ]
+}
+
 main() {
   cd "$(dirname "$0")/.."
   local DC=./deploy/dc.sh
-  local repo_changed=0 nginx_changed=0
+  local repo_changed=0 nginx_changed=0 image_build_required=0 target_revision
 
   # --- 1. 저장소 따라가기 ---------------------------------------------------
   # compose 파일·nginx 설정·이 스크립트 자신이 저장소에 있다. 안 당겨오면
@@ -48,6 +53,10 @@ main() {
         # nginx 설정은 파일 마운트라 compose가 변화를 모른다. 직접 reload해야 한다.
         git diff --name-only "$before_head" "$after_head" | grep -q '^deploy/nginx' \
           && nginx_changed=1
+        # CI는 BE/FE 또는 workflow 변경에서만 두 이미지를 함께 다시 만든다.
+        # 설정·문서 전용 커밋은 이미지 라벨이 HEAD와 달라도 컨테이너를 교체할 이유가 없다.
+        git diff --name-only "$before_head" "$after_head" | grep -Eq '^(BE/|FE/|\.github/workflows/ci\.yml$)' \
+          && image_build_required=1
       fi
     else
       echo "경고: fast-forward가 안 된다(로컬 커밋?). git pull을 건너뛴다."
@@ -76,6 +85,13 @@ main() {
     exit 1
   fi
   echo "이미지 커밋 확인: $be_revision"
+
+  target_revision=$(git rev-parse HEAD)
+  if [ "$image_build_required" -eq 1 ] \
+    && ! image_matches_target_revision "$be_revision" "$fe_revision" "$target_revision"; then
+    echo "대기: 목표 커밋($target_revision)의 GHCR 이미지가 아직 준비되지 않았다. 기존 컨테이너를 유지한다."
+    exit 0
+  fi
 
   # --- 3. 배포가 필요한가 ---------------------------------------------------
   local drifted
@@ -176,4 +192,6 @@ drifted_services() {
   echo "${out# }"
 }
 
-main "$@"
+if [ "${ATTACCA_UPDATE_TEST_MODE:-0}" != "1" ]; then
+  main "$@"
+fi

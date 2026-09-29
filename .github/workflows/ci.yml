@@ -20,6 +20,7 @@ jobs:
     outputs:
       be: ${{ steps.filter.outputs.be }}
       fe: ${{ steps.filter.outputs.fe }}
+      deploy: ${{ steps.filter.outputs.deploy }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -32,6 +33,17 @@ jobs:
             fe:
               - 'FE/**'
               - '.github/workflows/ci.yml'
+            deploy:
+              - 'deploy/**'
+              - '.github/workflows/ci.yml'
+
+  deployment-scripts:
+    needs: changes
+    if: needs.changes.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash deploy/test-update.sh
 
   backend:
     needs: changes

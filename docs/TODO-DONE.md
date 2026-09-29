@@ -2,6 +2,11 @@
 
 완료된 작업 기록.
 
+* [x] (2026-09-29) 자동 배포의 이전 이미지 재기동을 막았다.
+  * BE·FE·CI workflow 변경을 받은 뒤에는 두 GHCR 이미지의 커밋 라벨이 서버 목표 `HEAD`와 같을 때만 컨테이너를 교체한다. 이미지 전파가 늦으면 기존 서비스를 유지하고 다음 타이머 주기에 다시 확인한다.
+  * 문서·nginx·compose만 바뀐 커밋은 이미지 빌드 대상이 아니므로 기존처럼 설정 반영을 허용한다.
+  * `deploy/test-update.sh`에서 목표 일치, 이전 이미지, BE·FE 불일치 경우를 검증하고 CI의 `deployment-scripts` 작업으로 `deploy/**` 변경마다 실행한다.
+
 * [x] (2026-09-29) 채팅 시각을 KST로 보정하고 날짜 구분선을 추가했다.
   * BE JVM 기본 시간대를 `Asia/Seoul`로 고정하고, Flyway V9에서 기존 `chat_message`·`chat_room`·`chat_participant`의 비어 있지 않은 시각값만 KST 기준으로 보정했다.
   * 채팅 이력은 날짜별로 `YYYY년 M월 D일 요일` 구분선을 표시하며, 메시지 시각은 브라우저 시간대와 무관하게 서버가 전달한 KST `LocalDateTime`을 `오전/오후 h:mm` 형식으로 표시한다.
