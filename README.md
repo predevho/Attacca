@@ -62,21 +62,60 @@ CI와 운영 smoke를 단계별 게이트로 사용하고, 결정 이유와 미�
 
 ## 기술 스택
 
-**백엔드** — Spring Boot 3.4.5 / Java 21 / MySQL 8.4 / Gradle 8.11.1
+### Backend
 
-- Spring Security + JWT access token + Redis allowlist 기반 refresh token rotation + OAuth2(카카오)
+![Java 21](https://img.shields.io/badge/Java-21-007396?logo=openjdk&logoColor=white)
+![Spring Boot 3.4.5](https://img.shields.io/badge/Spring%20Boot-3.4.5-6DB33F?logo=springboot&logoColor=white)
+![Spring Security](https://img.shields.io/badge/Spring%20Security-6DB33F?logo=springsecurity&logoColor=white)
+![Spring Data JPA](https://img.shields.io/badge/Spring%20Data%20JPA-6DB33F?logo=spring&logoColor=white)
+![WebSocket STOMP](https://img.shields.io/badge/WebSocket-STOMP-6DB33F?logo=spring&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT-0.12.6-000000?logo=jsonwebtokens&logoColor=white)
+![Gradle](https://img.shields.io/badge/Gradle-8.11.1-02303A?logo=gradle&logoColor=white)
+
+- Spring Security + JWT access token + Redis allowlist 기반 refresh session rotation + 카카오 OAuth2
 - WebSocket(STOMP) — 단일 BE 인스턴스의 인메모리 Simple Broker
-- Spring Data JPA, Bean Validation
-- 파일 저장 추상화(`FileStorage`): 현재 EC2 Docker volume의 로컬 저장, S3 구현은 opt-in 후보
+- Spring Data JPA, Bean Validation, Actuator
+- 파일 저장 추상화(`FileStorage`) — 현재 EC2 Docker volume 로컬 저장, S3 구현은 미검증
 
-**프론트엔드** — Next.js 16(App Router) / React 19 / TypeScript / Tailwind CSS v4 / Vitest
+### Database & Infra
 
-- **BFF 3계층**으로 토큰을 UI에서 격리 (`lib/server/*` → `app/api/bff/**` → UI)
-- 통신은 네이티브 `fetch`. HTTP 라이브러리를 두지 않았습니다
-- 실시간 채팅만 예외적으로 `@stomp/stompjs` 사용
+![MySQL 8.4](https://img.shields.io/badge/MySQL-8.4-4479A1?logo=mysql&logoColor=white)
+![Redis 7](https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white)
+![Flyway](https://img.shields.io/badge/Flyway-Migrations-CC0200?logo=flyway&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
+![Nginx](https://img.shields.io/badge/Nginx-1.27-009639?logo=nginx&logoColor=white)
+![AWS EC2](https://img.shields.io/badge/AWS-EC2-FF9900?logo=amazonaws&logoColor=white)
+![Terraform](https://img.shields.io/badge/Terraform-Infrastructure-844FBA?logo=terraform&logoColor=white)
 
-**운영 인프라** — Vercel(Next.js+BFF) / EC2(Nginx+Spring BE+WebSocket+Redis+로컬 업로드 볼륨) /
-RDS MySQL / Docker Compose / GitHub Actions + GHCR / systemd pull timer
+- 운영 경로: Vercel FE / AWS EC2의 Nginx·Spring BE·WebSocket·Redis
+- 스키마 변경: Flyway + `ddl-auto: validate`
+- 업로드: EC2 Docker volume 로컬 저장. S3 전환과 백업 정책은 별도 검증 항목
+- RDS·Blue/Green은 현재 운영 스택으로 과장하지 않고, 확장 검토 항목으로 관리
+
+### Frontend
+
+![Next.js 16.2.10](https://img.shields.io/badge/Next.js-16.2.10-000000?logo=nextdotjs&logoColor=white)
+![React 19.2.4](https://img.shields.io/badge/React-19.2.4-61DAFB?logo=react&logoColor=20232A)
+![TypeScript 5](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![Tailwind CSS 4](https://img.shields.io/badge/Tailwind%20CSS-4-06B6D4?logo=tailwindcss&logoColor=white)
+![Vitest 4.1.10](https://img.shields.io/badge/Vitest-4.1.10-6E9F18?logo=vitest&logoColor=white)
+![STOMP.js 7.3.0](https://img.shields.io/badge/STOMP.js-7.3.0-111827?logo=websocket&logoColor=white)
+
+- App Router 기반 Next.js + same-origin BFF 3계층
+- 토큰은 UI에서 격리하고 서버 BFF가 httpOnly 쿠키를 Bearer 헤더로 변환
+- 통신은 네이티브 `fetch`, 실시간 채팅만 `@stomp/stompjs` 사용
+
+### CI / Delivery
+
+![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-CI-2088FF?logo=githubactions&logoColor=white)
+![GHCR](https://img.shields.io/badge/GHCR-Container%20Images-2088FF?logo=github&logoColor=white)
+![Vercel](https://img.shields.io/badge/Vercel-Frontend-000000?logo=vercel&logoColor=white)
+
+- GitHub Actions가 BE·FE를 검사하고 같은 commit SHA의 이미지를 GHCR에 게시
+- EC2 systemd pull timer가 이미지를 확인해 컨테이너를 갱신
+- 배포 후 컨테이너 health, image revision, 브라우저 smoke를 별도로 검증
+
+데이터베이스 테이블과 관계는 [ERD 문서](docs/ERD.md)에서 확인할 수 있습니다.
 
 ---
 
@@ -210,3 +249,4 @@ BE 7개 도메인과 FE 전 화면이 동작하고, 운영 경로(`attacca.site`
 | `docs/AI-MAJOR-EVENT*.md` | 주요 결정과 사건 |
 | `docs/TIL/` | 학습 기록 |
 | `docs/portfolio/attacca-agent-harness.md` | 에이전트 코딩 하네스, 검증 게이트, 실제 적용 사례 |
+| `docs/ERD.md` | Flyway 기준 현재 데이터베이스 테이블과 관계 |
