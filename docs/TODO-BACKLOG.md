@@ -2,6 +2,8 @@
 
 아직 시작하지 않은 예정 작업.
 
+> 미완료 항목은 후보 목록이며, 모두 승인되었거나 현재 유효하다는 뜻은 아니다. 날짜가 붙은 구간은 당시 계획/관찰 기록으로 읽고, 착수 전 현재 코드·`docs/system-architecture.md`·`docs/DEPLOY.md`·운영 인벤토리와 대조한다. 바로 시작할 항목은 `TODO-READY.md`, 진행 중인 작업은 `TODO-DOING.md`가 기준이다.
+
 ---
 
 ## 도메인 문서화 (구현 전 필수)
@@ -88,7 +90,7 @@
 ## BE 공통 정리 (도메인 리뷰에서 이연된 Minor)
 
 * [x] ~~BE: 오프셋 페이징 응답을 안정적 `PageResponse<T>` DTO로 공통화~~ — 2026-09-27 완료. VERIFIED-PERFORMER 어드민 목록·PERFORMANCE 목록을 기존 공통 DTO로 전환하고, FE의 `number` 의존도 `page` 계약으로 바꿨다. 다른 도메인은 별도 전환 작업으로 남긴다.
-* [ ] FEED/PERFORMANCE: `clamp(size)`·`isAdmin(Authentication)`가 여러 컨트롤러에 중복 — 공용 헬퍼로 추출. (2026-07-17/07-22 리뷰 식별)
+* [x] ~~FEED/PERFORMANCE: 목록 크기 보정·관리자 판별 공용화~~ — 2026-09-29 `PageRequestPolicy`와 `AuthorizationRoles`로 통합했다. 회원 검색·고정 공지는 다른 범위 규칙이라 제외했다. 상세: `TODO-DONE.md`의 2026-09-29 기록.
 * [x] ~~FEED: `VerificationApplicationRepository.findApprovedMemberIds`의 JPQL이 enum을 FQN 리터럴로 사용~~ — 2026-09-29 완료. `findMemberIdsByStatus(ids, status)`가 `@Param`으로 enum을 바인딩하며, 인증 연주자 서비스는 기존처럼 `APPROVED`만 전달한다. 리포지터리 테스트로 승인 회원 ID 배치 조회 결과를 고정했다.
 
 * [ ] HSTS 적용 검토 — 지금은 헤더가 없다. 넣으면 브라우저가 이후 https만 쓰지만, HTTPS가 깨졌을 때 되돌리기 어려워진다(max-age 동안 http 접속 불가). 짧은 max-age로 시작해 늘리는 방식 검토. `includeSubDomains`/`preload`는 신중히.
@@ -155,14 +157,14 @@
 
 ### B. 인프라 구성
 
-* [ ] **RDS 전환** — 데이터소스가 이미 env(`DB_URL`/`DB_USERNAME`/`DB_PASSWORD`)라 값 교체만으로 전환 가능. 함께 처리: RDS 퍼블릭 접근 차단(보안그룹으로 앱 서버만 허용), 파라미터 그룹 `utf8mb4`/타임존, HikariCP 풀 크기 vs 인스턴스 `max_connections`, 자격증명은 Secrets Manager 또는 env(커밋 금지 규칙 기존대로).
+* [x] ~~**RDS 전환**~~ — RDS MySQL 8.4는 이미 운영 중인 관리형 DB다. 현재 상태와 EC2 관계는 `docs/system-architecture.md` 및 `docs/ops/inventory/2026-09-21-production-state.md`를 기준으로 한다. 남은 보안·파라미터·용량 설정 검증은 별도 운영 점검 항목으로 다루며, 전환 작업으로 표현하지 않는다.
 * [ ] **단일 EC2 블루/그린 재검토** — 현재는 Vercel FE와 단일 EC2 BE/Nginx/Redis를 운영하고, 채팅은 인메모리 STOMP Simple Broker·presence에 의존한다. 따라서 REST health 기반 전환만으로는 채팅 연결·브로드캐스트의 무중단을 보장할 수 없다. 필요해질 때 외부 STOMP broker relay와 공유 presence, EC2 메모리·디스크 여유, Nginx 라우팅·rollback 절차를 함께 설계·검증한 뒤에만 도입한다. 사용자 승인 전에는 현행 Compose와 EC2 FE rollback 컨테이너를 변경하지 않는다. 참고: `docs/superpowers/specs/2026-09-17-vercel-api-blue-green-terraform-design.md`, `docs/ops/inventory/2026-09-21-production-state.md`.
 * [x] ~~**Nginx 리버스 프록시 + WebSocket 프록시**~~ — 2026-09-08 완료. 도메인이 없어 **2단계로 나눴다**: `deploy/nginx.conf`(1단계, IP+HTTP)와 `deploy/nginx.https.conf`(2단계, 도메인+TLS). 둘 다 문법 검증 통과(2단계는 인증서 파일만 없음). WS Upgrade 헤더·1시간 타임아웃, 업로드 상한을 BE multipart 10MB와 일치, actuator는 외부 차단. 원문: — `/ws` 업그레이드 헤더 통과 설정 포함. (기존 항목)
 * [x] ~~**CI/CD 구성**~~ — 2026-09-08 `.github/workflows/ci.yml` 작성. 한 워크플로 안에서 `dorny/paths-filter` + `needs`로 BE→FE 순서 강제. **배포 job은 아직 없다**(EC2 접속 방식 미정). 원문: — 모노레포 경로 필터로 BE/FE 파이프라인 분리. ⚠️ 워크플로 **파일**을 나누면 두 쪽이 같이 바뀐 커밋에서 배포 순서가 보장되지 않아 계약 변경 배포 때 깨진 창이 생긴다. 한 워크플로 안에서 job 레벨 변경 감지(`dorny/paths-filter`) + `needs`로 **BE → FE 순서 강제**.
 * [x] ~~**헬스체크 엔드포인트**~~ — 2026-09-08 완료. Actuator 추가, `health`만 노출하고 SecurityConfig에서 `/actuator/health`만 permitAll. `/actuator/env`·`/beans`가 401인 것까지 확인. 원문: — 현재 Spring Actuator 미도입(2026-08-18 확인). ALB/ECS 헬스체크·무중단 배포에 필요하므로 `actuator` 추가 후 `/actuator/health`만 노출(나머지 엔드포인트는 차단).
 * [x] ~~**프로덕션 환경변수 목록 정리**~~ — 2026-09-08 완료. `docs/DEPLOY.md`에 주입 시점까지 포함한 표, `.env.prod.example` 추가. `NEXT_PUBLIC_BE_WS_URL`이 **빌드 시점**에 박힌다는 점을 명시. 원문: — `DB_*`, `JWT_SECRET`, `KAKAO_CLIENT_ID`/`SECRET`, `STORAGE_TYPE`/`S3_*`, `DDL_AUTO`, FE의 `BE_BASE_URL`/`NEXT_PUBLIC_BE_WS_URL`(wss)/`KAKAO_REDIRECT_URI`. 한 곳에 표로 정리(어디에 주입하는지 포함). 카카오 `redirect_uri`는 개발자 콘솔에도 운영 주소 등록 필요.
 * [x] ~~**도메인 확보 후 HTTPS 전환(2단계)**~~ — 2026-09-08 완료. `attacca.site`·`www.attacca.site` HTTPS와 카카오 callback, WebSocket 보안 연결을 확인했다. 이후 2026-09-21 웹은 Vercel Production, API·WebSocket은 `api.attacca.site`로 분리했다. 초기 구축 절차는 `docs/DEPLOY.md`에 역사 기록으로 보존한다.
-* [ ] CI 배포 job — EC2 접속 방식(SSH 키/SSM/ECR)이 정해지면 `.github/workflows/ci.yml`에 붙인다. 지금은 서버에서 `git pull` + `up -d --build`가 배포다.
+* [x] ~~CI의 SSH 기반 push 배포 job은 도입하지 않음~~ — 현재는 GitHub Actions가 동일 SHA의 이미지를 GHCR에 게시하고 EC2 `attacca-update.timer`가 주기적으로 pull·검증·갱신한다. 서버 SSH 자격증명을 GitHub에 보관하는 push 배포는 선택하지 않았다. 자동 배포의 기준은 `docs/DEPLOY.md`이며, timer 상태는 운영 변경 전 재확인한다.
 
 ### C. 배포 후 / 최적화
 
@@ -191,10 +193,10 @@
 * [x] ~~채팅 대화창 스크롤~~ — 2026-09-09 해소. 새 메시지는 바닥 근처일 때만 따라가고, 과거 이력을 앞에 붙일 때는 읽던 위치를 보정한다. `ChatRoomTimeline`과 `shouldStickToBottom` 테스트로 계약을 고정했다.
 * [x] ~~채팅 1:1 시작이 회원 id 입력이라 실사용 불가 수준~~ — 2026-09-09 해소. `MemberSearchInput`으로 닉네임을 검색·선택해 DIRECT 방을 만들며, 회원 검색 API의 인증·최소 검색어·표시 정보 규칙도 함께 도입했다.
 
-## 악보지 테마 후속 (2026-08-18 범위 밖)
+## 테마·상호작용 디자인 후속 (2026-08-18 범위 밖)
 
 * [ ] 상호작용 요소 색상 대비 재점검 — 버튼·링크의 hover/active/disabled 상태가 배경과 충분히 구분되는지 화면별로 확인한다. 기능 안정화 후 진행하는 후순위 작업이다.
-* [ ] 사용자 테마 토글(종이/밤 직접 선택) — 현재는 OS 설정(`prefers-color-scheme`)만 따른다. 두 팔레트가 이미 정의돼 있어 토글·저장(쿠키/localStorage)·SSR 깜박임 처리만 남는다.
+* [x] ~~사용자 테마 선택~~ — `ThemeControl`에서 시스템/라이트/다크를 선택하고 `ThemeProvider`가 선택을 저장한다. 기본값은 라이트다. 세부 대비 점검은 상호작용 색상 대비 항목과 별개로 유지한다.
 * [ ] 폼/패널 컨테이너의 `bg-surface` 여부 일관성 재검토 — 치환 작업에서 목록 항목·상세 패널에는 `bg-surface`를 넣고, 입력 폼을 감싼 래퍼(`ComposeForm`·`NewChatForm`·`ApplyPanel`의 폼 패널, `ApplicationReviewItem`의 사유 입력 패널)에는 넣지 않는 판단을 했다. 여러 담당이 독립적으로 같은 결론을 냈고 실화면상 문제는 없으나, 디자인 의도상 폼도 카드로 보여야 한다면 한 번에 정리할 것.
 * [ ] `body`의 `font-family: Arial, Helvetica, sans-serif`가 Geist 변수 폰트를 덮어쓰고 있다 — 프로젝트 초기부터 있던 것으로 이번 범위 밖이었으나, 폰트를 의도대로 쓰려면 정리 필요.
 * [ ] 테스트 플레이크: `__tests__/chat-room-page.test.tsx`의 "DIRECT 헤더는 본인을 제외한 참여자만 표시"가 전체 병렬 실행에서 드물게 실패하고 단독·재실행에서는 통과한다(2026-08-18 관측 1회). 원인 규명 필요 — 목 `useRouter` 참조 변화로 인한 기존 flakiness와 같은 계열일 가능성.

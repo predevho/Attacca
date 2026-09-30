@@ -1,107 +1,22 @@
 # CONTEXT
 
-현재 작업 수행에 필요한 최소 정보만 유지한다. 로그 저장소로 쓰지 않는다.
+현재 작업 수행에 필요한 최소 정보만 유지한다. 기능별 상세·작업 로그는 복제하지 않고 정본 문서를 참조한다.
 
 ---
 
 ## 현재 상태
 
-* **디자인 시스템(2026-09-23)**: 밝은 콘텐츠 중심을 기본값으로 둔다. `globals.css`의 시맨틱 색 토큰 15종(`paper`/`surface`/`surface-muted`/`ink`/`ink-muted`/`ink-faint`/`line`/`brand`/`brand-strong`/`on-brand`/`header`/`on-header`/`danger`/`warn`/`success`)을 Tailwind v4 `@theme inline`으로 정의하며, 컴포넌트는 토큰만 사용한다. 기본과 초기 로딩은 라이트, 사용자가 `system`을 선택했을 때만 OS 테마를 따른다. 수동 다크는 유지하되 헤더는 라이트에서 흰 배경과 얇은 구분선으로 표현한다. 새 색이 필요하면 하드코딩하지 말고 토큰을 추가한다. `npm run check:colors`와 `__tests__/color-tokens.test.ts`가 토큰 사용·완전성을 검증한다. 카카오 버튼의 `#FEE500`은 외부 브랜드 식별색 예외다.
-* **전역 헤더(2026-08-18)**: `components/layout/Header.tsx`. 루트 레이아웃에 있고 인증 화면(`/login`·`/signup`)에서는 스스로 렌더를 건너뛴다(신원 요청도 안 보냄). 판정 로직은 `lib/layout/header.ts`(`NAV_ITEMS`/`isActive`/`shouldShowHeader`). 활성 경로는 접두 일치. 신원 조회 실패·fetch reject 시 렌더하지 않는다. **홈은 `/feed`이고 `/dashboard`는 제거됐다.**
-* 단계: BE 6개 도메인 + **FE 전 도메인 화면 완료, 전부 main 병합 완료**(피드·공연 FE도 main에 있음 — 2026-08-18 확인, 과거 "병합 대기" 기술은 오기였음). **2026-08-18 첫 실환경 통합 스모크 검증 완료**(BE+MySQL+FE 동시 기동, 전 도메인 브라우저 실왕복 통과, WS 실왕복 포함). 검증에서 결함 2건 발견·수정(채팅 실시간 수신 불가 / BE 파라미터 바인딩 500). **남은 건 배포·인프라와 BACKLOG의 정리 항목**.
-* FE 공연(PERFORMANCE): `/performances`(scope 탭·무한스크롤)/`/performances/new`(2단계 마법사·등록 자격 게이팅)/`/performances/[id]`(상세)/`/performances/[id]/edit`(수정)/포스터. BFF `/api/bff/performances/**`, BE 오프셋 페이징을 `useInfiniteList`+`toCursorPage`로 커서 인터페이스처럼 재사용. (2026-08-02, 8태스크 TDD, main 병합 완료.)
-* 확정된 기술 스택
-  * BE: Spring Boot 3.4.x / Java 21 / MySQL / Spring Security(JWT + OAuth2) / WebSocket(STOMP) Simple Broker(단일 인스턴스) / Redis refresh token allowlist / FileStorage 추상화(현재 로컬 볼륨, S3 opt-in 미검증)
-  * FE: Next.js 16(App Router)/React 19/TS/Tailwind/Vitest, 위치 `FE/`. BFF+httpOnly 쿠키. `cd FE && npm run dev`(:3000)
-* 도메인 7개: MEMBER, VERIFIED-PERFORMER, FEED, PERFORMANCE, RECRUITMENT(구인/구직), CHAT, **NOTICE(2026-09-08 BE 구현 완료)**. 외부 반입(IMPORT)은 2026-09-26 운영 부담 대비 초기 효용이 낮아 의도적으로 폐기했으며, 과거 DB 이력 테이블·Flyway 이력만 보존한다. 재도입은 새 설계와 별도 승인 필요: `docs/superpowers/specs/2026-09-26-retire-external-import-design.md`.
-* 어드민: 별도 도메인 아님. MEMBER의 ROLE_ADMIN.
-* **NOTICE(공지·소식·운영 일정)**: 새 홈 화면의 캐러셀·달력 원천. 엔티티 1종 `Notice`(`type` NOTICE/NEWS/EVENT, `scheduledAt` **nullable — 값이 있으면 달력에 뜬다는 단일 상태**, `pinned`=캐러셀 노출, coverImageKey, soft delete). 쓰기 `/api/admin/notices`(경로로 ROLE_ADMIN 게이팅, 소유자 판정 없음), 읽기 `/api/public/notices?scope=PINNED|SCHEDULED|ALL&from=&to=`(비인증). `EVENT`는 등록·수정 시 `scheduledAt` 필수(없으면 400-01), `SCHEDULED` 조회는 `from`·`to` 필수. 달력 범위는 **from 포함 / to 미포함**. `PINNED`은 최대 5건(그 외 기본 20/최대 50). 에러코드 404-12. 문서: `DOMAIN-NOTICE-CONSTITUTION.md`/`STATUTE.md`.
-* **공개 API 3종(2026-09-08, 새 홈이 소비)**: `/api/public/notices` · `/api/public/performances?scope=UPCOMING|PAST|ALL|SCHEDULED&from=&to=` · `/api/public/feed/posts?sort=LATEST|POPULAR`. 전부 **읽기 전용**이고 인증 경로와 컨트롤러·DTO가 분리돼 있다. 공개 응답의 회원 표시는 반드시 **`PublicMemberDisplay`**(닉네임+뱃지, 회원 id 없음) — `MemberDisplay`는 `@JsonProperty("id")`로 회원 id를 흘리므로 공개 응답에 쓰지 말 것. NOTICE는 작성자 자체를 담지 않고(운영 주체 명의), PERFORMANCE·FEED는 담는다. FEED 공개는 목록만(상세 비공개 = 로그인 유도 동선), `likedByMe` 없음. 인기글은 **최근 30일 창** 안의 (좋아요+댓글) 순, 오프셋 페이징(`FeedPublicService.POPULAR_WINDOW_DAYS`).
-* 공통 `PageResponse<T>`(`global.common`) — 공개 API 3종과 NOTICE 어드민이 사용. 기존 도메인(`Page<T>` 직렬화) 전환은 BACKLOG.
-* **405 매핑 추가(2026-09-08)**: 경로는 맞고 메서드만 다른 요청이 500으로 응답되던 결함 수정 → `METHOD_NOT_ALLOWED`(405-01). 이제 클라이언트 실수 계열은 400-01(검증·본문·파라미터)/404-02(경로 없음)/405-01(메서드)로 모두 매핑된다.
-* **공개 조회 규칙(NOTICE가 처음 도입, 이후 도메인 표준)**: 경로 `/api/public/**` permitAll, 컨트롤러·DTO를 인증용과 **분리**(같은 DTO 공유 금지 — 필드 추가가 조용히 공개로 새는 것을 막기 위함), 공개 응답에 회원 식별자·작성자·내부 상태 비노출, 공개는 **읽기 전용**. 홈 달력의 공연+일정 **합성은 BE가 아니라 BFF가 한다**(ARCHITECTURE-CONSTITUTION §2 "BE는 화면 로직을 갖지 않는다").
-* **FE 홈(2026-09-08 완료)**: `/`가 공개 랜딩(예전엔 `/feed` 리다이렉트). 캐러셀·게시글 위젯(최신/인기 탭)·월간 달력. BFF `/api/bff/public/**` 4종(공지·공연·게시글 패스스루 + `calendar` 합성)만 쓰고 신원 조회를 하지 않는다. 공개 프록시는 `proxyPublic`(쿠키를 읽지도 붙이지도 않음). 순수 로직은 `lib/home/logic.ts`, 컴포넌트는 `components/home/*`.
-  * **헤더**: 비로그인이면 로그인·회원가입을 보여준다(예전엔 신원 못 얻으면 헤더 자체를 렌더하지 않았음). 신원 미확정 동안엔 오른쪽만 비운다. `NAV_ITEMS`에 홈 포함(5개), 컨테이너 `max-w-5xl`.
-  * **로그인 복귀**: 미들웨어가 `?next=`를 붙이고 `LoginForm`이 `safeNext`로 내부 경로만 허용해 이동한다(열린 리다이렉트 방지).
-  * ⚠️ 그리드에서 `1fr`은 최소 크기가 `auto`라 `truncate`된 긴 텍스트가 열을 부풀린다. 사이드바가 있는 2단 레이아웃은 **`minmax(0,1fr)`**을 쓸 것(홈에서 가로 스크롤로 드러난 실제 결함).
-* `lib/api.ts`의 모든 헬퍼는 공용 `request()`를 거친다 — fetch reject를 `{ok:false, message}`로 흡수하므로 호출부에 `.catch`가 따로 필요 없다.
-* 이 PC 기동 편의: `BE/gradle.properties`에 `org.gradle.java.home`(graalvm-jdk-21) 고정해 뒀다(커밋 대상 아님). 그래서 `export JAVA_HOME` 없이 `./gradlew`가 동작한다. `.claude/launch.json`의 `be`는 preview 샌드박스 권한 문제로 실패하므로 BE는 셸에서 직접 띄운다.
+* **시스템 아키텍처 정본**: `docs/system-architecture.md`. 현재 운영은 Vercel Next.js FE/BFF, AWS EC2의 Nginx·Spring Boot BE·Redis·로컬 파일 볼륨, AWS RDS MySQL 8.4, Kakao OAuth2다. EC2 FE 컨테이너는 rollback 후보로 남아 있다.
+* **인증 핵심**: 브라우저 인증 쿠키는 HttpOnly다. access token은 JWT, refresh session은 opaque 값이며 Redis에서 TTL로 관리한다. 일반 API는 Vercel BFF가 access cookie를 Bearer로 변환한다. 상세 흐름과 WebSocket 예외는 `system-architecture.md` 및 보안 문서를 확인한다.
+* **채팅·배포 제약**: STOMP Simple Broker와 presence가 단일 BE 메모리에 있다. 현재 배포는 무중단이 아니며, Blue/Green 전환에는 외부 STOMP broker relay와 공유 presence 검토가 선행되어야 한다.
+* **파일 저장**: 운영은 EC2 Docker volume 기반 local storage다. S3 코드는 있으나 운영 자격증명·권한·업로드/삭제/URL 동작은 검증되지 않았다.
+* **폐기 기능**: 외부 반입(IMPORT)은 2026-09-26 제거했다. 재도입은 별도 설계와 사용자 승인 전까지 하지 않는다. 결정 근거는 `docs/superpowers/specs/2026-09-26-retire-external-import-design.md`.
+* **문서 정본**: 운영 절차=`docs/DEPLOY.md`, 테이블 구조=`docs/ERD.md`, 원칙·규칙=`docs/ARCHITECTURE-CONSTITUTION.md`·`docs/ARCHITECTURE-STATUTE.md`, 진행 상태=`docs/TODO-*.md`, 운영 실측=`docs/ops/inventory/`.
+* **외부 참고 자료**: 설계·계획·트러블슈팅 판단에 사용한 외부 URL과 적용 범위는 해당 문서의 `참고 자료`에 기록한다. 참고 자료가 없으면 없다고 명시한다.
 
-## 주의
+## 작업 시 주의
 
-* **문서 참고 자료 규칙(2026-09-22)**: 외부 자료가 설계·계획·트러블슈팅의 의사결정에 영향을 주면 문서에 `참고 자료` 섹션을 두고 원본 URL, 적용 범위, 적용하지 않는 범위를 기록한다. 외부 자료가 없으면 그 사실을 명시한다.
-
-* BE 스택: Spring Boot 3.4.5 / Gradle 8.11.1 / JDK 21(toolchain). Gradle 9는 Boot 3.4 미지원이므로 래퍼 올리지 말 것.
-  * ⚠️ 이 개발 PC의 기본 `java`는 **JDK 25**라 Gradle 8.11.1이 Kotlin DSL 컴파일 단계에서 실패한다(에러 메시지가 "What went wrong: 25"로만 나와 원인 파악이 어렵다). 빌드 전 `export JAVA_HOME=/Users/predevho/Library/Java/JavaVirtualMachines/graalvm-jdk-21.0.7/Contents/Home` 필요.
-  * ⚠️ 로컬 8080/3000은 다른 프로젝트(Pokade)가 점유 중일 수 있다. 그럴 땐 Attacca를 BE 8081 / FE 3001로 띄운다: `./gradlew bootRun "--args=--spring.datasource.password=attacca-local --server.port=8081 --storage.local.base-url=http://localhost:8081/files"` + `FE/.env.local`의 `BE_BASE_URL`/`NEXT_PUBLIC_BE_WS_URL`을 8081로, FE는 `npm run dev -- -p 3001`. (`FE/.env.local`·`.claude/launch.json`은 PC별 값이라 gitignore 대상.)
-* 런타임 DB: MySQL(레포 루트 `docker-compose.yml`, `docker compose up -d` 후 `bootRun`). 데이터소스는 env 기본값(DB_URL/DB_USERNAME/DB_PASSWORD).
-* **스키마는 Flyway가 만든다(2026-09-08). `ddl-auto: validate`.** 엔티티를 바꾸면 Hibernate가 자동으로 따라오지 않고 **기동이 실패한다** — `db/migration/V2__*.sql`을 직접 추가할 것. 기존 DB는 `baseline-on-migrate`로 V1을 흡수한다. 테스트는 `BE/src/test/resources/application.properties`에서 Flyway를 끄고 `create-drop`을 쓴다(파일명이 `application.yaml`과 달라야 메인 설정을 가리지 않는다).
-* Actuator 도입 — `health`만 노출하고 `/actuator/health`만 permitAll. 나머지는 401.
-* **refresh 로테이션·철회(2026-09-08, Redis)**: refresh만 서버가 기억한다(화이트리스트 `rt:{memberId}` Set, 멤버=jti). access는 여전히 무상태(30분). `reissue`는 access·refresh를 **둘 다** 새로 주고 옛 것을 즉시 무효화한다. 화이트리스트에 없는 refresh가 오면 탈취로 보고 **전 기기 무효화**(401-09 `REVOKED_TOKEN`). `POST /api/auth/logout` 신설. **`reissue`는 role을 DB에서 다시 읽는다** — 예전에는 refresh claim의 role을 옮겨 담아 강등이 14일간 안 먹혔다.
-  * **fail-closed**: Redis 장애 시 503-01. 막히는 건 **토큰 발급 전체**(로그인 포함)이고, 공개 조회와 이미 발급된 access 요청은 계속 산다.
-  * 발급은 반드시 `TokenIssuer.issue()`를 거친다(발급+등록을 한 곳에 묶어 어긋날 수 없게). 저장소는 `RefreshTokenStore` 인터페이스 — 테스트는 `app.auth.token-store=memory`로 Redis 없이 돈다.
-  * role 조회는 `global.security.MemberRoleProvider` 포트 ↔ `domain.member` 구현. `global`이 `domain`을 참조하지 않기 위함.
-  * FE: `session.ts`가 쿠키 **두 개**를 갱신하고, `/api/bff/logout`이 BE 철회를 먼저 호출한다.
-* Redis는 로컬·운영 모두 compose 컨테이너(`attacca-redis`). ElastiCache 미사용(단일 인스턴스 전제, 프리티어 없음).
-* **회원 입력 검증·동의·탈퇴(2026-09-09)**: 규칙은 `docs/DOMAIN-MEMBER-STATUTE.md` §3.3~3.5.
-  * **검증이 하나도 없었다.** 운영에서 비밀번호 `1` / 이메일 `not-an-email` / 닉네임 공백 한 칸으로 가입·로그인이 됐다. 다른 도메인 DTO에는 있었는데 가장 바깥 입구인 MEMBER만 빠져 있었다. 이제 `@Valid` + DTO 제약. 닉네임은 저장 전 trim(MySQL이 후행 공백을 무시해 유니크 제약이 어긋난다).
-  * **동의는 기록이다.** `member_consent`에 누가·언제·어느 버전에(현재 `2026-09-09`) 동의했는지 남긴다. 이력 전부를 남기고 탈퇴해도 지우지 않는다. 없으면 `CONSENT_REQUIRED`(400-04).
-  * 카카오는 최초 사용 시 곧바로 가입되므로 **버튼 누르기 전에** 동의를 받아 httpOnly 쿠키로 콜백까지 나른다. BE는 신규 생성 경로에서만 요구한다.
-  * **탈퇴**(`DELETE /api/members/me`)는 사람을 지우고 글은 남긴다. refresh 전부 철회. access는 만료(30분)까지 살아 있다(로그아웃과 같은 절충).
-  * ⚠️ 약관·개인정보처리방침 문안(`FE/lib/legal/policy.ts`)은 **초안이고 법적 검토를 받지 않았다.**
-* **운영 주소(2026-09-21)**: 웹은 Vercel의 `https://attacca.site`·`https://www.attacca.site`, API·WebSocket은 EC2의 `https://api.attacca.site`·`wss://api.attacca.site/ws`다. `staging.attacca.site`는 폐기했다. `WS_ALLOWED_ORIGINS`는 두 웹 origin만 허용한다.
-  * **이걸로 로그인이 처음 동작했다.** `NODE_ENV=production`이라 쿠키에 `Secure`가 붙는데 HTTP에서는 브라우저가 저장을 거부해, 그전까지 브라우저 로그인이 아예 불가능했다.
-  * 인증서는 Let's Encrypt(attacca.site + www, ~2026-12-07). `attacca-renew.timer`가 하루 2회 확인하고 nginx를 reload한다. 갱신 리허설(`--dry-run`) 통과 확인.
-  * ⚠️ `NEXT_PUBLIC_BE_WS_URL`은 번들에 박힌다. 주소가 바뀌면 저장소 Variables를 고치고 **이미지를 다시 구워야** 한다(Actions의 `workflow_dispatch`).
-* **자동 배포(2026-09-08, 2026-09-22 운영 확인)**: main 푸시 → Actions가 이미지를 구워 GHCR에 `:latest`/`:<sha>` → EC2의 systemd 타이머(2분)가 받아서 교체. `attacca-update.timer`는 `enabled`·`active`이고, 최근 service는 `Result=success`·`ExecMainStatus=0`으로 완료됐다. 절차·근거는 `docs/DEPLOY.md`의 "자동 배포(CD)".
-  * **미는 게 아니라 당겨온다** — 인바운드 포트를 하나도 열지 않고 GitHub에 서버 자격증명도 두지 않기 위해. 대가는 최대 2분 지연.
-  * 서버에서는 **굽지 않는다**. t3.micro(1GB)에서 빌드하면 스왑을 긁고 캐시가 5GB까지 불었다(정리 후 디스크 35%→20%).
-  * `update.sh`는 저장소도 fast-forward로 따라가므로 compose·nginx 변경도 자동 반영된다.
-  * ⚠️ prod compose에 `build:`를 넣으면 안 된다 — `--no-build`와 만나면 이미지 변경 검사를 건너뛰어 배포가 헛돈다.
-  * 배포 중 약 30초 끊긴다(컨테이너 1벌). 롤백은 수동이고 타이머를 먼저 멈춰야 한다.
-* WS origin은 `WS_ALLOWED_ORIGINS`(기본 로컬 주소). 채팅은 브라우저가 BE에 직접 붙어 BFF를 안 거치므로 이 값이 실제 접근 통제다.
-* 배포 산출물: `BE/Dockerfile`·`FE/Dockerfile`(standalone)·`docker-compose.prod.yml`·`deploy/nginx.conf`·`.github/workflows/ci.yml`·`.env.prod.example`. 절차와 환경변수 표는 `docs/DEPLOY.md`. **단일 인스턴스 전제**(채팅 인메모리 브로커).
-  * ⚠️ 이 개발 PC엔 시스템 환경변수 `DB_PASSWORD=1234`가 설정돼 있어 compose 기본값(`attacca-local`)을 덮어써 `bootRun`이 `Access denied`로 실패한다. 해결: `gradlew bootRun --args=--spring.datasource.password=attacca-local`로 override(명령행이 env보다 우선)하거나 `DB_PASSWORD`를 unset. compose 볼륨이 낡으면 `docker compose down -v` 후 재기동.
-* 테스트는 H2 `test` 프로파일: `@SpringBootTest`에는 반드시 `@ActiveProfiles("test")`를 붙일 것(없으면 MySQL 접속 시도로 실패). `application-test.yaml`이 datasource/storage 루트를 덮어쓴다.
-* 검증: Bean Validation 도입(`@Valid`). 검증 실패·본문 파싱 실패(enum 오타)·multipart 파트 누락·**쿼리 파라미터 바인딩 실패(enum 변환 실패, 필수 파라미터 누락)** 는 400-01로 매핑(각각 과거 500 결함 수정, 마지막 건은 2026-08-18).
-* **쿼리 파라미터 enum은 상수명 그대로 대문자**로 보낸다: `?scope=OPEN|CLOSED|ALL`(구인), `?scope=UPCOMING|PAST|ALL`(공연), `?status=PENDING|...`(어드민). 소문자를 보내면 400-01. FE는 대문자로 보내고 있다.
-* 도메인 문서 없이 해당 도메인 구현 금지. 현재 구현된 도메인: COMMON, MEMBER, VERIFIED-PERFORMER(2026-07-16 BE), FEED(2026-07-17 BE), PERFORMANCE(2026-07-22 BE), RECRUITMENT(2026-07-23 BE), CHAT(2026-07-27 BE). BE 6개 도메인 전부 구현 완료.
-* PERFORMANCE(연주회): 엔티티 `Performance`(organizerId=원시 Long, title/description/performedAt/venue/program(자유텍스트)/ticketInfo/ticketUrl/posterImageKey, soft delete). API 모두 `/api/performances`(인증 필요): 등록(POST)·목록(GET `?scope=UPCOMING|PAST|ALL`, Spring Pageable)·상세(GET/{id})·수정(PUT/{id})·삭제(DELETE/{id})·포스터(PUT/{id}/poster, image/*). **등록=인증 연주자 또는 ROLE_ADMIN**(`VerifiedPerformerService.isVerified` 협력, 아니면 403-02), 수정=주최자, 삭제=주최자 또는 ADMIN(어드민 전용 경로 없음). 주최자 표시(닉네임+인증뱃지)는 `MemberQueryService.findDisplaysByIds` 배치 재사용(N+1 없음). 포스터는 FileService(교체 시 옛파일 삭제). 목록 size 기본 20/최대 50. 에러코드 404-07(PERFORMANCE_NOT_FOUND)/403-02(NOT_VERIFIED_PERFORMER).
-* RECRUITMENT(구인): 엔티티 2종 `RecruitmentPosting`(authorId=원시 Long, instruments=다중 악기 `@ElementCollection`+`@BatchSize(100)`, recruitCount/location/fee/deadline(nullable=상시), status OPEN/CLOSED, soft delete) + `RecruitmentApplication`(postingId/applicantId 원시 Long, message, 상태머신 PENDING→ACCEPTED/REJECTED/WITHDRAWN). API 모두 `/api/recruitments`(인증 필요). **구인만**(구직 범위 밖). 공고: 등록(POST, **인증 회원 누구나** — PERFORMANCE와 달리 게이팅 없음)·목록(GET `?scope=OPEN|CLOSED|ALL&instrument=`, Pageable)·상세·수정(PUT, 작성자)·마감(POST `/{id}/close`, 작성자)·삭제(DELETE, 작성자·ADMIN). 지원: `POST /{id}/applications`(본인공고/마감/중복 시 409)·`GET /{id}/applications`(작성자만)·`GET /applications/me`·`POST /applications/{aid}/accept|reject`(작성자)·`/withdraw`(지원자). 마감 판정 파생=`status==CLOSED || (deadline!=null && now>=deadline)`, deadline==now는 CLOSED. 활성 지원(PENDING/ACCEPTED) 유일(best-effort check-then-save), 거절/철회 뒤 재지원 허용. 표시정보는 `MemberQueryService.findDisplaysByIds` 배치(N+1 없음). 에러코드 404-08(RECRUITMENT_NOT_FOUND)/404-09(RECRUITMENT_APPLICATION_NOT_FOUND)/409-07(RECRUITMENT_CLOSED)/409-08(ALREADY_APPLIED)/409-09(CANNOT_APPLY_OWN_RECRUITMENT)/409-10(RECRUITMENT_INVALID_APPLICATION_STATE). 목록 size 기본 20/최대 50.
-* CHAT(채팅): 통합 방 모델 엔티티 3종 `ChatRoom`(type DIRECT/GROUP, title(그룹만), createdBy, `directKey`(1:1 "min:max" unique·GROUP은 null), `lastMessageAt`(비정규화 정렬키·생성시각 초기화)) + `ChatParticipant`(roomId/memberId 원시 Long, `leftAt` soft leave, `lastReadMessageId` 읽음커서, `(roomId,memberId)` unique) + `ChatMessage`(append-only, 정렬·읽음판정=id). **REST=상태·이력, WebSocket(STOMP)=실시간** 역할 분리. REST `/api/chat/**`(인증): 방 생성(POST `/rooms`, DIRECT는 find-or-create — 동시경합은 `DirectRoomInitializer` REQUIRES_NEW 격리+재조회 멱등)·목록(GET `/rooms`, 안읽은수·마지막메시지·displayName(DIRECT=상대 닉네임/GROUP=title))·상세·이력(GET `/rooms/{id}/messages` 커서 최신→과거)·초대(POST `/rooms/{id}/participants`, 평평한 모델=활성 참여자 누구나, GROUP만)·퇴장(DELETE `/rooms/{id}/participants/me`)·읽음(POST `/rooms/{id}/read`). STOMP: 엔드포인트 `/ws`, app `/app`·broker `/topic`,`/user`(**인메모리 Simple Broker** — 다중 서버는 외부 STOMP broker relay로 교체, 도메인 코드 불변), 인증=CONNECT 프레임 `Authorization: Bearer`(`StompAuthChannelInterceptor`→Principal=memberId, `JwtProvider` 재사용), SUBSCRIBE/SEND는 활성 참여자 인가(fail-closed). `SEND /app/rooms/{id}/send`(영속화 후 `/topic/rooms/{id}` 브로드캐스트)·`/typing`(비영속). presence=`PresenceRegistry`(연결수 카운팅, **인메모리·단일서버만 정확** — 공유 구현은 Redis 보조 저장소 등을 별도 설계) + 연결/해제 이벤트로 참여 방에 broadcast. 표시정보는 `MemberQueryService.findDisplaysByIds` 배치(N+1 없음, `countUnreadPerRoom`은 참여검증 roomIds만 전달하는 불변식). 에러코드 404-10(CHAT_ROOM_NOT_FOUND)/404-11(CHAT_MESSAGE_NOT_FOUND)/403-03(NOT_ROOM_PARTICIPANT)/400-03(CHAT_INVALID_PARTICIPANTS). 목록 size 기본 20/최대 50. main 병합 완료(커밋 `7b5cff4`).
-* FEED(피드): 엔티티 4종 Post/Comment/PostLike/CommentLike(soft delete, 좋아요 유니크·멱등). 작성자는 원시 `authorId`(Long), 표시정보(닉네임+인증뱃지)는 `MemberQueryService.findDisplaysByIds` 배치 협력으로 파생(N+1 없음, fetch join 불가 — 도메인 경계상 연관 없음). API 모두 `/api/feed/**`(인증 필요): 게시글 CRUD+커서 타임라인(최신순), 댓글 작성/목록(커서 오래된순)/삭제, 좋아요(게시글·댓글) 멱등. 수정=작성자, 삭제=작성자 또는 ROLE_ADMIN(동일 엔드포인트, 어드민 전용 경로 없음). 커서 size 기본 20/최대 50. 에러코드 404-05(POST_NOT_FOUND)/404-06(COMMENT_NOT_FOUND). 좋아요 동시성은 유니크 제약+`saveAndFlush` catch로 멱등 200 보장.
-* 코드 스타일: 단순 필드 접근자는 Lombok `@Getter`로 통일(수동 getter 금지).
-* 응답 에러 본문은 `ErrorBody(resultCode:String, code:String, message)`. `resultCode`는 `HTTP상태-일련번호` 문자열(400-01/405-01/500-01).
-* 보안: JWT access token + Redis allowlist 기반 refresh token rotation(`/api/auth/reissue`). `jwt.secret`은 env(`JWT_SECRET`) 주입·커밋 금지. 인증 ErrorCode 401-01~08, 403-01.
-* MEMBER 식별자: `loginId`=자체 로그인 열쇠(unique, nullable) / `email`=인증·소셜연결 키(unique, 전원 필수) / `nickname`=활동명(unique) / 내부 신원=`id`. `password`/`loginId`는 소셜 전용 회원에서 null(자체 로그인 경로에 null 가드).
-* MEMBER API(모두 `/api/auth/**` permit): `POST /signup{loginId,password,email,nickname}`, `POST /login{loginId,password}`, `POST /oauth/kakao{code,redirectUri}`. 로그인/소셜 모두 access+refresh 발급. 비번 BCrypt.
-* MEMBER 프로필 API(인증 필요): `GET/PUT /api/members/me/profile`, `PUT /api/members/me/profile/image`(image/*만), `GET /api/members/profile-options`. `Instrument` enum 21종(VOICE=성악/VOCAL=보컬 분리, 장르 없음). `MEMBER_NOT_FOUND`(404-03).
-* MEMBER 신원 API(인증 필요): `GET /api/members/me` → `{id,nickname,role,verified}`(FEED FE의 "내 신원" 프로브·작성자 판정용, 2026-08-02 FEED FE 선행 구현).
-* 소셜: 프론트 인가코드→백엔드 교환(`OAuthClient`/`KakaoOAuthClient`). 검증된 이메일만 자동연결, 미검증 거절(401-08). 카카오 키는 env(`KAKAO_CLIENT_ID`/`KAKAO_CLIENT_SECRET`) 주입·커밋 금지.
-* VERIFIED-PERFORMER(인증 연주자): 상태머신 엔티티 `VerificationApplication`(PENDING/APPROVED/REJECTED/REVOKED, `memberId`=원시 Long, 재신청=새 레코드). 회원 API `POST/GET /api/verified-performers/applications(/me)`. 어드민 API `/api/admin/verified-performers/**`(ROLE_ADMIN): 목록(`?status`+Pageable)·`{id}/approve|reject|revoke`·`grant`(직접지정). 활성 신청(PENDING/APPROVED) 유일 → 재신청 409. 뱃지는 `VerifiedPerformerService.isVerified`(APPROVED만 true)로 파생, MEMBER `ProfileResponse.verified`가 서비스 협력으로 채움(엔티티 직접참조 없음). 에러코드 409-04(ALREADY_PENDING)/409-05(ALREADY_APPROVED)/409-06(INVALID_APPLICATION_STATE)/404-04(APPLICATION_NOT_FOUND).
-* MEMBER 에러코드(전역 `ErrorCode`): EMAIL/NICKNAME/LOGIN_ID_ALREADY_EXISTS 409-01/02/03, LOGIN_FAILED 401-07, OAUTH_EMAIL_UNVERIFIED 401-08, OAUTH_PROVIDER_ERROR 502-01.
-* 파일 저장: `FileStorage`(바이트) + `FileService`(key생성·메타데이터). 도메인은 `FileService`만 사용. `storage.type`=local(기본)/s3. 로컬은 `/files/**`로 서빙(SecurityConfig permit).
-* S3 키(`S3_BUCKET`/`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`)는 env 주입·커밋 금지. **실제 S3 연동은 아직 미검증**(자격증명 미발급, 자동 테스트는 S3Client 목).
-* 일반 에러코드에 `RESOURCE_NOT_FOUND`(404-02) 추가: 매칭되는 핸들러가 없는 모든 URL(앱 전역, `NoResourceFoundException`)이 이전에는 catch-all(`Exception.class`)에 걸려 500으로 잘못 응답되던 버그를 수정. `FILE_NOT_FOUND`(404-01)와는 별개(파일 저장소 전용이 아님).
-* `LocalFileServingConfig`는 `WebMvcConfigurer`를 구현해 `@WebMvcTest`가 자동으로 끌어온다. 신규 `@WebMvcTest` 슬라이스 작성 시 `StorageProperties` 빈이 없으면 컨텍스트 로딩이 실패하므로 목/설정 빈을 함께 준비할 것.
-* FE 인증: BFF 3계층(`lib/server/*`→`app/api/bff/**`→UI). 토큰은 httpOnly 쿠키, UI는 토큰 안 만짐. 통신은 네이티브 fetch(라이브러리 미도입). BE 주소는 서버 env `BE_BASE_URL`. 미들웨어가 쿠키 존재로 보호(보호 경로 7종, `__tests__/middleware.test.ts`가 커버리지 단언 — 2026-08-18 `/recruitments` 누락 복구), reissue는 `lib/server/session.ts`가 401 시 1회 재시도. 실연동은 BE 기동 후 수동 검증.
-* FE 카카오 로그인: `/login` 버튼→`/api/bff/oauth/kakao/start`(CSRF state httpOnly 쿠키+카카오 302)→카카오→`/api/bff/oauth/kakao/callback`(state 대조→BE `/api/auth/oauth/kakao` 교환→인증쿠키→/dashboard). 에러는 `/login?error=`. `KAKAO_CLIENT_ID`/`KAKAO_REDIRECT_URI` 서버 env. **실제 카카오 왕복은 앱 키 미확보로 미검증**(배선만 목/로컬 확인).
-* FE 프로필: `/profile`(인증 필요, 미들웨어 보호). 조회 기본 + 수정 모드(악기 칩 최대10·자기소개 500자, `PUT /api/bff/me/profile`). 이미지는 파일 선택 즉시 업로드(`PUT /api/bff/me/profile/image`, 멀티파트). 악기 코드↔label은 `/api/bff/profile-options`로 변환. `beFetch`는 FormData면 content-type 미설정(멀티파트).
-* FE 피드: `/feed`(무한스크롤 타임라인+인라인 작성)·`/feed/[id]`(상세+댓글, 인증 필요·미들웨어 보호). BFF `/api/bff/feed/**`(게시글/댓글 CRUD+좋아요) + `/api/bff/me/identity`(위 MEMBER `GET /api/members/me` 프록시, 작성자 판정용). 인증 프록시는 신설 `proxyAuthed` 헬퍼(`res.status || 502`, 기존 BFF `status||200` 폴백 버그를 신규 라우트에서 선제 회피)로 통일. 좋아요는 낙관적 업데이트+실패 롤백, 커서 페이지는 `mergeCursorPage`로 중복 없이 병합.
-* FE 구인(RECRUITMENT): `/recruitments`(scope 탭 OPEN/CLOSED/ALL·악기 필터·무한스크롤, 등록 게이팅 없음=로그인 회원 누구나)·`/new`·`/[id]`(상세·역할별 분기)·`/[id]/edit`·`/applications/me`(내 지원·철회). 상세 분기: 작성자→ApplicantList(지원자 첫 페이지·수락/거절)+수정·마감·삭제 / 비작성자·미마감→ApplyPanel(인라인 펼 토글) / 마감→안내. 지원 여부는 낙관적 제출+409 피드백(추가 왕복 없음). BFF `/api/bff/recruitments/**` 8라우트(proxyAuthed, 지원 액션 세그먼트=aid). 타입/로직 `lib/recruitment/*`(closed는 BE 파생값 사용, deadline 비우면 상시모집). 공용 `InstrumentPicker`(등록/수정 폼의 다중 선택에 사용, 프로필 리팩터는 미적용). 목록의 악기 필터는 단일 선택이라 네이티브 `<select>`. 악기는 현재 enum명 표시(라벨 변환 후속). 내 지원 응답에 공고 제목 없어 postingId 링크. main 병합 완료(2026-08-12).
-* FE 인증연주자(VERIFIED-PERFORMER): `/verified-performer`(회원 — `GET /applications/me` 상태별 분기: 이력없음/REJECTED/REVOKED→신청·재신청 폼, PENDING/APPROVED→상태 카드) + `/admin/verified-performers`(어드민 — 신원 게이트 `role!=='ADMIN'`→/dashboard, status 탭 PENDING/APPROVED/REJECTED/REVOKED 무한스크롤, 승인 즉시·거절/철회 인라인 사유 토글, 직접지정 grant 폼). 프로필에 진입 링크 추가. BFF `/api/bff/verified-performers/**`(회원 2) + `/api/bff/admin/verified-performers/**`(어드민 5, approve는 무body). 타입/로직 `lib/verification/*`. 어드민 액션 성공 시 목록 재조회는 `<ReviewList>` key 리마운트. **제약**: 응답에 memberId만 있어 어드민 목록은 "회원 #{id}"로 표시(닉네임 없음, BE 표시정보 확장 시 개선). main 병합 완료(2026-08-12).
-* FE 채팅(CHAT, **MVP**): `/chat`(방 목록·안읽은 배지·새 대화)·`/chat/[id]`(대화창·이력+실시간 송수신+읽음). **실시간=STOMP 직결**: 클라이언트가 `NEXT_PUBLIC_BE_WS_URL`(로컬 `ws://localhost:8080/ws`)로 BE에 직접 STOMP 연결(BFF 프록시 아님), CONNECT 토큰은 BFF `GET /api/bff/chat/ws-token`이 httpOnly access 쿠키를 읽어 반환(**WS 연결 동안 토큰 JS 노출** — 사용자 승인 트레이드오프). STOMP 로직은 `lib/chat/stompClient.ts`(`@stomp/stompjs` — 프로젝트 유일 라이브러리 예외)에 캡슐화. `SEND /app/rooms/{id}/send`→`/topic/rooms/{id}` 구독, 자기 전송분 브로드캐스트 재수신은 `mergeMessages` id 중복 제거, typing 프레임(id 없음)은 필터. REST는 `/api/bff/chat/**`(rooms/messages/read + ws-token). 1:1 시작은 회원 id 입력(검색 API 부재). **WS 실왕복 검증 완료(2026-08-18)** — 이때 '연결 전 구독'으로 실시간 수신이 전혀 안 되던 결함을 발견·수정(`stompClient`가 구독 요청을 보관했다가 `onConnect`에서 구독, 재연결 시 자동 재구독). main 병합 완료(2026-08-12). 범위 밖(후속): 그룹/타이핑/presence/검색/WS reissue 완전화/알림.
-
-## 보류된 결정
-
-* `ErrorCode`를 인터페이스로 승격해 도메인별 에러 코드(예: `MemberErrorCode`)를 분리할지 여부 → 지금 확정하지 않음. 개발 진행하며 명확해질 때 결정. (현재는 전역 enum 단일 구조)
-
-## 다음 작업
-
-* 외부 반입(IMPORT)은 2026-09-26 폐기 완료다. 다음 제품 작업은 TODO-READY.md와 TODO-BACKLOG.md를 기준으로 고른다.
-* 배포 구조는 Vercel FE(`attacca.site`)와 EC2 BE(`api.attacca.site`) 분리로 전환했다. 현행 Compose는 운영 정본이며, 블루/그린 전 외부 STOMP broker relay·presence 공유와 Terraform 기존 자원 import가 선행한다. 설계 초안은 `docs/superpowers/specs/2026-09-17-vercel-api-blue-green-terraform-design.md`.
-  * 2026-09-17 기준선은 당시 스냅샷으로 보존한다. 현재 운영 DNS·배포 상태 정본은 `docs/ops/inventory/2026-09-21-production-state.md`다.
-  * **비용 가드레일(2026-09-18)**: 기존 Paid Plan 운영 account에 월 전체 비용 예산 `$40`을 만들고 실제 50%·100%, 예상 75% 이메일 알림을 설정했다. 서비스별 비용 이상 탐지는 예상 추가 지출 `$10` 및 40% 초과 시 일일 이메일 요약을 보낸다. 새 Free Plan project account는 Sydney 지정 리전·SCP 제약으로 서울 이전 대상에서 제외했고, 그 계정의 임시 migration IAM user는 삭제했다.
-  * **현재 전환 관문(2026-09-20)**: `api.attacca.site`와 Vercel 고정 검증 주소 `staging.attacca.site`의 REST·카카오 OAuth·WebSocket·채팅 송수신을 확인했다. 사용자 승인 뒤 가비아에서 apex를 `A @ -> 216.198.79.1`, `www`를 `CNAME -> 335cd7f1e6a8d4bc.vercel-dns-017.com.`으로 전환했고, 공개 DNS로 `api -> 3.39.184.71`과 기존 staging CNAME 유지도 확인했다. Vercel Domains는 모두 `Valid Configuration`이며, 사용자가 운영 홈·카카오 로그인·세션 유지·보호 데이터 동선이 정상이라고 확인했다. EC2 rollback FE `attacca-fe-1`도 `Up 19 hours`, `3000/tcp`로 확인됐다. SSH 22/TCP timeout은 security group의 current `My IP` rule 갱신으로 복구했다. 현재 Production이 아닌 이전 `Ready` deployment에서 Vercel `Promote`가 활성화되어 rollback 경로도 검증했다. 실제 Promote·DNS rollback은 실행하지 않았다. 다음은 관찰을 계속하며, 사용자 별도 승인 전 EC2 FE를 보존하는 단계다. 실행 기준은 `docs/superpowers/plans/2026-09-19-vercel-production-cutover.md`.
-  * **staging 폐기 완료(2026-09-21)**: 원격에는 `main`만 있고 staging은 독립 환경이 아니었으므로, Vercel Domain·카카오 OAuth 콜백·가비아 `staging` CNAME·EC2 `WS_ALLOWED_ORIGINS`의 staging 참조를 제거했다. 가비아 원본은 `@` A, `api` A, `www` CNAME의 3개이며 공개 DNS 리졸버에서도 staging CNAME은 조회되지 않는다. BE만 재생성해 `healthy`를 확인하고, 운영 브라우저에서 로그인 상태 WebSocket 채팅 연결과 입력창 노출도 확인했다. `attacca.site`, `www.attacca.site`, `api.attacca.site`와 EC2 rollback FE `attacca-fe-1`은 유지한다.
-  * **배포 파이프라인 재검토(2026-09-21~22)**: CI는 코드 변경 시 BE 테스트와 FE 타입검사·테스트·lint·색 토큰 검사·build를 통과한 뒤 동일 SHA 라벨의 BE/FE GHCR 이미지를 만든다. EC2 pull 갱신 스크립트는 라벨 불일치면 중단하고 BE health를 기다린다. 스크립트·Compose 정적 문법을 통과했고, 실제 `attacca-update.timer`도 `enabled`·`active`, 최근 service도 `Result=success`·`ExecMainStatus=0`으로 확인했다.
+* 배포·AWS 변경 전 `docs/DEPLOY.md`와 최신 운영 인벤토리를 확인한다. 비밀값은 EC2 `.env.prod`에서만 관리하며 저장소·이미지·Actions 로그에 넣지 않는다.
+* 운영 자동 배포의 마지막 기록된 확인은 2026-09-22다. 현재 상태가 필요한 작업은 실행 전에 다시 확인한다.
+* FE/BE 로직의 구체적인 클래스·API 계약은 CONTEXT에 복사하지 말고 각 도메인 문서와 현재 코드를 확인한다.
+* 작업 우선순위는 `TODO-DOING.md` → `TODO-READY.md` → `TODO-BACKLOG.md`를 따른다. CONTEXT는 작업 이력 저장소가 아니다.

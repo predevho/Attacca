@@ -15,7 +15,9 @@
 
 `WS_ALLOWED_ORIGINS`는 `https://attacca.site,https://www.attacca.site`만 허용한다. 런타임 비밀값은 EC2 `.env.prod`에서만 관리하며 Git·이미지·Actions 로그에 넣지 않는다.
 
-## AWS 계정 준비
+## 초기 AWS 계정 준비 기록
+
+> 아래 내용은 최초 구축 당시의 계정 준비 기록이다. 현재 IAM 사용자 생성이나 `AdministratorAccess` 권한 부여 지침으로 사용하지 않는다. 현재 Terraform 작업은 IAM Identity Center의 전용 `attacca-terraform` SSO 프로필을 사용하고, 변경 작업 전 `aws sts get-caller-identity`로 대상 계정을 확인한다. 현재 권한·상태가 달라졌을 수 있으므로 운영 변경 전 최신 인벤토리와 AWS 콘솔을 확인한다. 근거: `docs/ops/inventory/2026-09-21-production-state.md`, `docs/AI-ACTION-LOGS.md`.
 
 **루트 계정으로는 아래 네 가지만 하고 그 뒤로는 쓰지 않는다.**
 
@@ -26,16 +28,16 @@
    모르고 지나간다
 4. **Budgets 알림**(예: 월 $5 초과 시 메일)
 
-IAM 사용자 권한은 1인 프로젝트 기준 `AdministratorAccess` + MFA가 현실적이다. 좁히려면
+초기 구축 당시 IAM 사용자 권한은 1인 프로젝트 기준 `AdministratorAccess` + MFA가 현실적이라고 기록했다. 좁히려면
 `AmazonEC2FullAccess` + `AmazonRDSFullAccess` + `IAMReadOnlyAccess`로도 이 문서의 작업은 된다.
 
 **액세스 키(프로그래매틱 액세스)는 만들지 않는다.** 콘솔로만 작업하므로 필요 없고,
 키 유출이 가장 흔한 사고다. 앱도 1단계에서는 AWS 자격증명이 필요 없다
 (`STORAGE_TYPE=local`). `.env.prod`의 `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`는 비워 둔다.
 
-> S3로 전환할 때도 서버에 키를 두지 말고 **EC2 인스턴스 역할(IAM Role)**을 붙인다.
-> 단, **현재 코드는 `STORAGE_TYPE=s3`로 기동되지 않는다**(`S3Client` 빈이 없음 —
-> TODO-BACKLOG 참고). 전환은 그 결함을 고친 뒤에 한다.
+> S3 저장소 구현과 `S3Client`의 조건부 빈 구성은 코드에 있다(`StorageConfig`, `S3FileStorage`).
+> 다만 EC2 인스턴스 역할·버킷 정책·실제 업로드/삭제/조회 URL을 운영에서 검증하지 않았으므로,
+> 현재 운영은 계속 `STORAGE_TYPE=local` + Docker 볼륨을 사용한다. 실연동 검증 전에는 전환하지 않는다.
 
 ---
 
