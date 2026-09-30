@@ -1,9 +1,9 @@
 package com.back.domain.feed.controller;
 
-import com.back.domain.feed.dto.CreatePostRequest;
+import com.back.domain.feed.dto.request.CreatePostRequest;
 import com.back.domain.feed.dto.CursorPage;
-import com.back.domain.feed.dto.PostResponse;
-import com.back.domain.feed.dto.UpdatePostRequest;
+import com.back.domain.feed.dto.response.PostResponse;
+import com.back.domain.feed.dto.request.UpdatePostRequest;
 import com.back.domain.feed.service.FeedPostService;
 import com.back.global.common.ApiResponse;
 import com.back.global.common.PageRequestPolicy;

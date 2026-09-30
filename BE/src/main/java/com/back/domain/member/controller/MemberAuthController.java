@@ -1,11 +1,11 @@
 package com.back.domain.member.controller;
 
-import com.back.domain.member.dto.LoginRequest;
+import com.back.domain.member.dto.request.LoginRequest;
 import jakarta.validation.Valid;
-import com.back.domain.member.dto.OAuthLoginRequest;
-import com.back.domain.member.dto.SignupRequest;
-import com.back.domain.member.dto.SignupResponse;
-import com.back.domain.member.dto.TokenPairResponse;
+import com.back.domain.member.dto.request.OAuthLoginRequest;
+import com.back.domain.member.dto.request.SignupRequest;
+import com.back.domain.member.dto.response.SignupResponse;
+import com.back.domain.member.dto.response.TokenPairResponse;
 import com.back.domain.member.entity.OAuthProvider;
 import com.back.domain.member.service.MemberOAuthService;
 import com.back.domain.member.service.MemberService;

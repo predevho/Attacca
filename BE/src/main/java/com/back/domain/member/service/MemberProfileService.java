@@ -1,10 +1,10 @@
 package com.back.domain.member.service;
 
-import com.back.domain.member.dto.MemberIdentityResponse;
-import com.back.domain.member.dto.ProfileImageResponse;
-import com.back.domain.member.dto.ProfileResponse;
-import com.back.domain.member.dto.UpdateProfileRequest;
-import com.back.domain.member.dto.UpdateNicknameRequest;
+import com.back.domain.member.dto.response.MemberIdentityResponse;
+import com.back.domain.member.dto.response.ProfileImageResponse;
+import com.back.domain.member.dto.response.ProfileResponse;
+import com.back.domain.member.dto.request.UpdateProfileRequest;
+import com.back.domain.member.dto.request.UpdateNicknameRequest;
 import com.back.domain.member.entity.Instrument;
 import com.back.domain.member.entity.Member;
 import com.back.domain.member.entity.MemberProfile;
@@ -16,7 +16,7 @@ import com.back.global.exception.ErrorCode;
 import com.back.global.storage.FileService;
 import com.back.global.storage.StoredFile;
 import com.back.global.security.token.TokenIssuer;
-import com.back.domain.member.dto.TokenPairResponse;
+import com.back.domain.member.dto.response.TokenPairResponse;
 import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

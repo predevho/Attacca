@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.back.domain.member.dto.MemberDisplay;
 import com.back.domain.member.entity.Member;
 import com.back.domain.member.repository.MemberRepository;
-import com.back.domain.verifiedperformer.dto.GrantRequest;
+import com.back.domain.verifiedperformer.dto.request.GrantRequest;
 import com.back.domain.verifiedperformer.repository.VerificationApplicationRepository;
 import com.back.domain.verifiedperformer.service.VerifiedPerformerService;
 import java.util.Map;

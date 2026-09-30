@@ -10,7 +10,7 @@ import com.back.global.security.jwt.JwtProperties;
 import com.back.global.security.jwt.JwtProvider;
 import com.back.global.security.onboarding.OnboardingCompletionFilter;
 import com.back.domain.member.repository.MemberRepository;
-import com.back.global.storage.StorageProperties;
+import com.back.global.storage.config.StorageProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

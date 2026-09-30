@@ -10,7 +10,7 @@ import com.back.domain.member.entity.Member;
 import com.back.domain.member.repository.MemberRepository;
 import com.back.domain.performance.entity.Performance;
 import com.back.domain.performance.repository.PerformanceRepository;
-import com.back.domain.verifiedperformer.dto.GrantRequest;
+import com.back.domain.verifiedperformer.dto.request.GrantRequest;
 import com.back.domain.verifiedperformer.service.VerifiedPerformerService;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;

@@ -3,10 +3,10 @@ package com.back.domain.member.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.back.domain.member.dto.ProfileImageResponse;
-import com.back.domain.member.dto.ProfileResponse;
-import com.back.domain.member.dto.UpdateProfileRequest;
-import com.back.domain.member.dto.UpdateNicknameRequest;
+import com.back.domain.member.dto.response.ProfileImageResponse;
+import com.back.domain.member.dto.response.ProfileResponse;
+import com.back.domain.member.dto.request.UpdateProfileRequest;
+import com.back.domain.member.dto.request.UpdateNicknameRequest;
 import com.back.domain.member.entity.Instrument;
 import com.back.domain.member.entity.Member;
 import com.back.domain.member.repository.MemberConsentRepository;
@@ -16,10 +16,10 @@ import com.back.domain.verifiedperformer.repository.VerificationApplicationRepos
 import com.back.domain.verifiedperformer.service.VerifiedPerformerService;
 import com.back.global.exception.BusinessException;
 import com.back.global.exception.ErrorCode;
-import com.back.global.storage.AttachmentFilePolicy;
-import com.back.global.storage.FileMetadataRepository;
+import com.back.global.storage.attachment.AttachmentFilePolicy;
+import com.back.global.storage.metadata.FileMetadataRepository;
 import com.back.global.storage.FileService;
-import com.back.global.storage.FileStorage;
+import com.back.global.storage.adapter.FileStorage;
 import com.back.global.security.jwt.JwtProperties;
 import com.back.global.security.jwt.JwtProvider;
 import com.back.global.security.token.TokenIssuer;
@@ -211,7 +211,7 @@ class MemberProfileServiceTest {
     void 인증_승인된_회원의_프로필은_verified가_true다() {
         Member member = savedMember("v2");
         verifiedPerformerService.grant(
-                new com.back.domain.verifiedperformer.dto.GrantRequest(member.getId(), "직접지정"), 99L);
+                new com.back.domain.verifiedperformer.dto.request.GrantRequest(member.getId(), "직접지정"), 99L);
 
         ProfileResponse response = service.getMyProfile(member.getId());
 
@@ -223,7 +223,7 @@ class MemberProfileServiceTest {
         // 프로필 미생성(악기/소개 없음) 상태에서 어드민 직접지정만 있는 경우.
         Member member = savedMember("v3");
         verifiedPerformerService.grant(
-                new com.back.domain.verifiedperformer.dto.GrantRequest(member.getId(), "직접지정"), 99L);
+                new com.back.domain.verifiedperformer.dto.request.GrantRequest(member.getId(), "직접지정"), 99L);
 
         ProfileResponse response = service.getMyProfile(member.getId());
 
@@ -235,7 +235,7 @@ class MemberProfileServiceTest {
     void 수정_응답에도_인증_뱃지가_실린다() {
         Member member = savedMember("v4");
         verifiedPerformerService.grant(
-                new com.back.domain.verifiedperformer.dto.GrantRequest(member.getId(), "직접지정"), 99L);
+                new com.back.domain.verifiedperformer.dto.request.GrantRequest(member.getId(), "직접지정"), 99L);
 
         ProfileResponse response = service.updateMyProfile(member.getId(),
                 new UpdateProfileRequest(List.of(Instrument.PIANO), "소개"));

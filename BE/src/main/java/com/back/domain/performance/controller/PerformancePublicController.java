@@ -1,6 +1,6 @@
 package com.back.domain.performance.controller;
 
-import com.back.domain.performance.dto.PublicPerformanceResponse;
+import com.back.domain.performance.dto.response.PublicPerformanceResponse;
 import com.back.domain.performance.dto.PublicPerformanceScope;
 import com.back.domain.performance.service.PerformanceService;
 import com.back.global.common.ApiResponse;

@@ -2,8 +2,8 @@ package com.back.domain.recruitment.service;
 
 import com.back.domain.member.dto.MemberDisplay;
 import com.back.domain.member.service.MemberQueryService;
-import com.back.domain.recruitment.dto.ApplyRecruitmentRequest;
-import com.back.domain.recruitment.dto.RecruitmentApplicationResponse;
+import com.back.domain.recruitment.dto.request.ApplyRecruitmentRequest;
+import com.back.domain.recruitment.dto.response.RecruitmentApplicationResponse;
 import com.back.domain.recruitment.entity.RecruitmentApplication;
 import com.back.domain.recruitment.entity.RecruitmentApplicationStatus;
 import com.back.domain.recruitment.entity.RecruitmentPosting;

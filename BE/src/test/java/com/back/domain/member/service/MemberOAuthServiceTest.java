@@ -3,7 +3,7 @@ package com.back.domain.member.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.back.domain.member.dto.TokenPairResponse;
+import com.back.domain.member.dto.response.TokenPairResponse;
 import com.back.domain.member.entity.Member;
 import com.back.domain.member.entity.OAuthProvider;
 import com.back.domain.member.entity.SocialAccount;

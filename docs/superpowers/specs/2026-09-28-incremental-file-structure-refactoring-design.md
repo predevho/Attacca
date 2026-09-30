@@ -1,7 +1,7 @@
 # 점진적 파일 구조 리팩터링 설계
 
 > 작성일: 2026-09-28
-> 상태: 사용자 설계 승인 완료, 구현 계획 작성 전
+> 상태: FE 기능 슬라이스, BE DTO 분리, 공용 파일 저장 모듈 정리를 완료했다. 패키지 이동 후 전체 BE 테스트가 통과했다.
 > 관련 문서: `docs/ARCHITECTURE-CONSTITUTION.md §2·§5`, `docs/ARCHITECTURE-STATUTE.md §1·§2`, `docs/DOMAIN-MEMBER-STATUTE.md`, `docs/superpowers/specs/2026-07-16-fe-member-profile-design.md`
 > 참고 코드: `FE/app/profile/page.tsx`, `FE/app/chat/[id]/page.tsx`, `BE/src/main/java/com/back/domain/notice/service/NoticeService.java`, `BE/src/main/java/com/back/global/storage/FileService.java`
 
@@ -115,6 +115,49 @@ BE/src/main/java/com/back/domain/notice/
 ### 3단계: 채팅 화면 분리 검토
 
 채팅은 `useChatRoom` 같은 수명주기 훅, 메시지 목록 표현, 초대·퇴장 행동으로 나눌 수 있다. 단, WebSocket 구독 중복, 재연결, 스크롤 위치 보존 테스트가 준비되지 않으면 구현하지 않는다.
+
+### 후속 단계: 홈 화면 데이터 책임 분리
+
+기존 세 단계의 적용 후, `FE/app/page.tsx`에 공개 공연·공지·피드·달력 요청과 각 로딩·오류·탐색 상태가 함께 남아 있는 것을 확인했다. 화면을 전면 이동하지 않고 조회/상태 조정만 `features/home/hooks/useHomePageData.ts`로 옮겼다. 라우트, BFF URL, DTO, 화면 표현은 유지하며 검증 계획은 `docs/superpowers/plans/2026-09-30-home-feature-slice-refactoring.md`에 둔다.
+
+### 완료: BE 요청·응답 DTO 패키지 분리
+
+현재 BE는 도메인별 `dto/` 패키지 안에 inbound 요청 타입과 outbound 응답 타입이 함께 있다. 컨트롤러 경계를 빠르게 파악할 수 있도록 도메인별 DTO를 다음처럼 나눈다.
+
+```text
+domain/<domain>/dto/
+├── request/   // 컨트롤러로 들어오는 HTTP 요청 DTO
+├── response/  // 컨트롤러가 반환하는 응답 DTO
+└── 기타 타입  // 뷰 조각, 정렬/범위 enum 등 요청·응답 본문이 아닌 타입
+```
+
+`global/security/auth/dto`에도 같은 원칙을 적용한다. 현재 `ParticipantView`, `MemberDisplay`, `PublicMemberDisplay`, `CursorPage`, `PostSort`, 각 도메인의 `*Scope`처럼 이름만으로 요청·응답을 단정하기 어려운 타입은 사용처를 확인해 분류한다. 이를 억지로 `request`나 `response`에 넣지 않으며, 별도 `model` 패키지가 실제 응집도를 높이는지 확인하기 전까지 독립 패키지를 추가하지 않는다.
+
+범위는 패키지·import 이동과 필요 최소한의 타입명 정리다. JSON 필드, 검증 규칙, 컨트롤러 경로·메서드, 상태 코드, 서비스 동작은 변경하지 않는다. 전체 도메인을 한 번에 이동하지 않고 도메인별로 적용·검증한다.
+
+도메인과 `global/security/auth`의 요청 22개·응답 19개를 `dto/request`, `dto/response`로 이동했다. `ParticipantView`, `MemberDisplay`, `PublicMemberDisplay`, `CursorPage`, `PostSort`, `*Scope` 등은 요청 본문/응답 본문이 아닌 타입으로 기존 DTO 패키지에 남겼다. 검증 규칙과 외부 계약은 유지했고 `./gradlew test`가 통과했다.
+
+### 완료: `global/storage` 책임별 구조 정리
+
+현재 `global/storage`에는 저장소 인터페이스와 로컬/S3 구현뿐 아니라 첨부 HTTP 컨트롤러·응답, 파일 메타데이터·저장소, 업로드 정책, 임시 첨부 수명주기와 정리 스케줄러가 평면적으로 함께 있다. `StorageConfig`와 로컬 파일 서빙 설정은 `global/config`에 있어 설정 소유 위치도 분산되어 있다.
+
+이 기능은 FEED·MEMBER·RECRUITMENT가 공유하므로 `global/storage`의 공용 성격을 유지한다. 호출 방향을 확인한 뒤 아래처럼 나눴다. `FileService`와 `StoredFile`은 도메인이 사용하는 공용 조정/API 경계로 루트에 남겼다.
+
+```text
+global/storage/
+├── FileService, StoredFile
+├── adapter/    FileStorage, LocalFileStorage, S3FileStorage
+├── attachment/ AttachmentController, AttachmentFilePolicy, AttachmentResponse
+├── cleanup/    TemporaryAttachmentCleanupProperties, TemporaryAttachmentCleanupScheduler
+├── config/     StorageProperties, StorageConfig, LocalFileServingConfig
+└── metadata/   AttachmentState, FileMetadata, FileMetadataRepository
+```
+
+파일 수만 보고 세부 패키지를 과도하게 만들거나 첨부 기능을 새 도메인으로 승격하지 않았다.
+
+범위는 패키지 경계와 설정 클래스 위치 검토 및 필요한 이동이다. `storage.type` 선택, 로컬 볼륨과 `/files/**` 서빙, S3 선택 활성화, 업로드 key 형식, `FileMetadata` 스키마, 첨부 API 경로·응답, 임시 파일 보유·정리 동작은 변경하지 않는다. 운영 S3 전환, 보유 정책 변경, 업로드 API 개편은 비목표다.
+
+저장소·첨부 관련 테스트와 전체 `./gradlew test`가 통과했다. 패키지 변경 외에 설정 선택, 로컬 저장/서빙, 임시 업로드와 claim, 만료 첨부 정리, S3 조건부 활성화, 첨부 응답 계약은 변경하지 않았다. 실제 구조를 `docs/ARCHITECTURE-STATUTE.md`, `BE/README.md`, `docs/DOMAIN-COMMON-STATUTE.md`에 반영했다.
 
 ## 호환성과 위험 관리
 

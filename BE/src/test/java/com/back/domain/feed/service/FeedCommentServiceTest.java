@@ -3,8 +3,8 @@ package com.back.domain.feed.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.back.domain.feed.dto.CommentResponse;
-import com.back.domain.feed.dto.CreateCommentRequest;
+import com.back.domain.feed.dto.response.CommentResponse;
+import com.back.domain.feed.dto.request.CreateCommentRequest;
 import com.back.domain.feed.dto.CursorPage;
 import com.back.domain.feed.entity.Post;
 import com.back.domain.feed.repository.CommentLikeRepository;

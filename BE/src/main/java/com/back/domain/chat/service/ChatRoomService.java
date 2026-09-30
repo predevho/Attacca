@@ -1,10 +1,10 @@
 package com.back.domain.chat.service;
 
-import com.back.domain.chat.dto.ChatRoomResponse;
-import com.back.domain.chat.dto.ChatRoomSummaryResponse;
-import com.back.domain.chat.dto.ChatRoomSummaryResponse.LastMessage;
-import com.back.domain.chat.dto.CreateRoomRequest;
-import com.back.domain.chat.dto.InviteRequest;
+import com.back.domain.chat.dto.response.ChatRoomResponse;
+import com.back.domain.chat.dto.response.ChatRoomSummaryResponse;
+import com.back.domain.chat.dto.response.ChatRoomSummaryResponse.LastMessage;
+import com.back.domain.chat.dto.request.CreateRoomRequest;
+import com.back.domain.chat.dto.request.InviteRequest;
 import com.back.domain.chat.dto.ParticipantView;
 import com.back.domain.chat.entity.ChatMessage;
 import com.back.domain.chat.entity.ChatParticipant;

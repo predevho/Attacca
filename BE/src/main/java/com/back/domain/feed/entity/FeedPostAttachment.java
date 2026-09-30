@@ -1,7 +1,7 @@
 package com.back.domain.feed.entity;
 
 import com.back.global.common.BaseEntity;
-import com.back.global.storage.FileMetadata;
+import com.back.global.storage.metadata.FileMetadata;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;

@@ -2,9 +2,9 @@ package com.back.domain.notice.service;
 
 import com.back.domain.member.dto.MemberDisplay;
 import com.back.domain.member.service.MemberQueryService;
-import com.back.domain.notice.dto.NoticeResponse;
+import com.back.domain.notice.dto.response.NoticeResponse;
 import com.back.domain.notice.dto.NoticeScope;
-import com.back.domain.notice.dto.PublicNoticeResponse;
+import com.back.domain.notice.dto.response.PublicNoticeResponse;
 import com.back.domain.notice.entity.Notice;
 import com.back.domain.notice.entity.NoticeType;
 import com.back.domain.notice.repository.NoticeRepository;

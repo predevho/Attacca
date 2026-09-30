@@ -2,6 +2,12 @@ package com.back.global.storage;
 
 import com.back.global.exception.BusinessException;
 import com.back.global.exception.ErrorCode;
+import com.back.global.storage.adapter.FileStorage;
+import com.back.global.storage.attachment.AttachmentFilePolicy;
+import com.back.global.storage.metadata.AttachmentState;
+import com.back.global.storage.metadata.FileMetadata;
+import com.back.global.storage.metadata.FileMetadataRepository;
+import com.back.global.storage.config.StorageProperties;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;

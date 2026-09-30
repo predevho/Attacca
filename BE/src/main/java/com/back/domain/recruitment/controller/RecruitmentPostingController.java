@@ -1,8 +1,8 @@
 package com.back.domain.recruitment.controller;
 
 import com.back.domain.member.entity.Instrument;
-import com.back.domain.recruitment.dto.RecruitmentPostingRequest;
-import com.back.domain.recruitment.dto.RecruitmentPostingResponse;
+import com.back.domain.recruitment.dto.request.RecruitmentPostingRequest;
+import com.back.domain.recruitment.dto.response.RecruitmentPostingResponse;
 import com.back.domain.recruitment.dto.RecruitmentScope;
 import com.back.domain.recruitment.service.RecruitmentPostingService;
 import com.back.global.common.ApiResponse;

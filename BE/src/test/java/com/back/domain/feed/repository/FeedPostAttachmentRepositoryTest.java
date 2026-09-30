@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.back.domain.feed.entity.FeedPostAttachment;
 import com.back.domain.feed.entity.Post;
-import com.back.global.storage.FileMetadata;
+import com.back.global.storage.metadata.FileMetadata;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;

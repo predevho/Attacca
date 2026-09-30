@@ -1,7 +1,7 @@
 package com.back.domain.recruitment.controller;
 
-import com.back.domain.recruitment.dto.ApplyRecruitmentRequest;
-import com.back.domain.recruitment.dto.RecruitmentApplicationResponse;
+import com.back.domain.recruitment.dto.request.ApplyRecruitmentRequest;
+import com.back.domain.recruitment.dto.response.RecruitmentApplicationResponse;
 import com.back.domain.recruitment.service.RecruitmentApplicationService;
 import com.back.global.common.ApiResponse;
 import com.back.global.common.PageRequestPolicy;

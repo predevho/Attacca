@@ -8,7 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.back.domain.member.dto.OAuthLoginRequest;
+import com.back.domain.member.dto.request.OAuthLoginRequest;
 import com.back.domain.member.entity.OAuthProvider;
 import com.back.domain.member.oauth.KakaoOAuthClient;
 import com.back.domain.member.oauth.OAuthUserInfo;

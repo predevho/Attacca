@@ -3,10 +3,10 @@ package com.back.domain.member.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.back.domain.member.dto.LoginRequest;
-import com.back.domain.member.dto.SignupRequest;
-import com.back.domain.member.dto.SignupResponse;
-import com.back.domain.member.dto.TokenPairResponse;
+import com.back.domain.member.dto.request.LoginRequest;
+import com.back.domain.member.dto.request.SignupRequest;
+import com.back.domain.member.dto.response.SignupResponse;
+import com.back.domain.member.dto.response.TokenPairResponse;
 import com.back.domain.member.entity.Member;
 import com.back.domain.member.repository.MemberRepository;
 import com.back.global.exception.BusinessException;

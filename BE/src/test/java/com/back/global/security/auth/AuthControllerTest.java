@@ -9,7 +9,7 @@ import com.back.global.exception.GlobalExceptionHandler;
 import com.back.global.security.MemberRoleProvider;
 import com.back.global.security.Role;
 import com.back.global.security.auth.controller.AuthController;
-import com.back.global.security.auth.dto.ReissueRequest;
+import com.back.global.security.auth.dto.request.ReissueRequest;
 import com.back.global.security.jwt.JwtProperties;
 import com.back.global.security.jwt.JwtProvider;
 import com.back.global.security.session.InMemoryRefreshSessionStore;

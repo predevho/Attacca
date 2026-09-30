@@ -1,9 +1,9 @@
 package com.back.domain.feed.service;
 
-import com.back.domain.feed.dto.CreatePostRequest;
+import com.back.domain.feed.dto.request.CreatePostRequest;
 import com.back.domain.feed.dto.CursorPage;
-import com.back.domain.feed.dto.PostResponse;
-import com.back.domain.feed.dto.UpdatePostRequest;
+import com.back.domain.feed.dto.response.PostResponse;
+import com.back.domain.feed.dto.request.UpdatePostRequest;
 import com.back.domain.feed.entity.FeedPostAttachment;
 import com.back.domain.feed.entity.Post;
 import com.back.domain.feed.repository.CommentRepository;
@@ -15,8 +15,8 @@ import com.back.domain.member.dto.MemberDisplay;
 import com.back.domain.member.service.MemberQueryService;
 import com.back.global.exception.BusinessException;
 import com.back.global.exception.ErrorCode;
-import com.back.global.storage.AttachmentResponse;
-import com.back.global.storage.FileMetadata;
+import com.back.global.storage.attachment.AttachmentResponse;
+import com.back.global.storage.metadata.FileMetadata;
 import com.back.global.storage.FileService;
 import java.util.ArrayList;
 import java.util.HashMap;

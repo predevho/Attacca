@@ -38,13 +38,14 @@ H2 `test` 프로파일에서 돕니다. **`@SpringBootTest`에는 `@ActiveProfil
 ```
 com.back
 ├── domain/{member,verifiedperformer,feed,performance,recruitment,chat,notice}
-│   └── {controller,service,repository,entity,dto}
+│   └── {controller,service,repository,entity,dto/{request,response}}
 └── global
-    ├── config      설정(Security·WebSocket·JPA·S3)
-    ├── security    인증/인가, JWT, OAuth2
+    ├── config      공통 JPA·MVC 설정
+    ├── security    인증/인가, JWT, refresh 세션
+    ├── websocket   STOMP 인증·접속 상태·설정
     ├── exception   전역 예외 처리, ErrorCode
     ├── common      BaseEntity, ApiResponse, PageResponse
-    └── storage     FileStorage 인터페이스와 구현
+    └── storage     FileService와 첨부·어댑터·설정·메타데이터·정리 하위 패키지
 ```
 
 도메인 간에는 **엔티티를 직접 참조하지 않고 서비스 계층으로만** 협력합니다.

@@ -1,7 +1,7 @@
 package com.back.domain.performance.controller;
 
-import com.back.domain.performance.dto.PerformanceRequest;
-import com.back.domain.performance.dto.PerformanceResponse;
+import com.back.domain.performance.dto.request.PerformanceRequest;
+import com.back.domain.performance.dto.response.PerformanceResponse;
 import com.back.domain.performance.dto.PerformanceScope;
 import com.back.domain.performance.service.PerformanceService;
 import com.back.global.common.ApiResponse;

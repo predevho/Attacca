@@ -1,6 +1,6 @@
 package com.back.domain.chat.service;
 
-import com.back.domain.chat.dto.ChatMessageResponse;
+import com.back.domain.chat.dto.response.ChatMessageResponse;
 import com.back.domain.chat.entity.ChatMessage;
 import com.back.domain.chat.entity.ChatRoom;
 import com.back.domain.chat.repository.ChatMessageRepository;

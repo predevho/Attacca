@@ -2,7 +2,7 @@ package com.back.domain.verifiedperformer.service;
 
 import com.back.domain.member.dto.MemberDisplay;
 import com.back.domain.member.service.MemberQueryService;
-import com.back.domain.verifiedperformer.dto.ApplicationResponse;
+import com.back.domain.verifiedperformer.dto.response.ApplicationResponse;
 import com.back.domain.verifiedperformer.entity.VerificationStatus;
 import java.util.Map;
 import java.util.Set;

@@ -1,9 +1,9 @@
 package com.back.domain.verifiedperformer.controller;
 
-import com.back.domain.verifiedperformer.dto.ApplicationResponse;
-import com.back.domain.verifiedperformer.dto.DecisionReasonRequest;
-import com.back.domain.verifiedperformer.dto.DecisionRequest;
-import com.back.domain.verifiedperformer.dto.GrantRequest;
+import com.back.domain.verifiedperformer.dto.response.ApplicationResponse;
+import com.back.domain.verifiedperformer.dto.request.DecisionReasonRequest;
+import com.back.domain.verifiedperformer.dto.request.DecisionRequest;
+import com.back.domain.verifiedperformer.dto.request.GrantRequest;
 import com.back.domain.verifiedperformer.entity.VerificationStatus;
 import com.back.domain.verifiedperformer.service.VerificationReviewService;
 import com.back.domain.verifiedperformer.service.VerifiedPerformerService;

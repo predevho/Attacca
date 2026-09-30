@@ -1,7 +1,7 @@
 package com.back.domain.notice.controller;
 
 import com.back.domain.notice.dto.NoticeScope;
-import com.back.domain.notice.dto.PublicNoticeResponse;
+import com.back.domain.notice.dto.response.PublicNoticeResponse;
 import com.back.domain.notice.service.NoticeQueryService;
 import com.back.global.common.ApiResponse;
 import com.back.global.common.PageResponse;

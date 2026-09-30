@@ -123,7 +123,7 @@ Redis에는 세션 원문이나 refresh JWT를 저장하지 않는다. raw 세�
 
 * 파일 업로드가 필요한 도메인은 `com.back.global.storage.FileService`를 통해 저장한다.
   `FileStorage`(바이트 저장소)를 직접 호출하지 않는다.
-* `FileStorage`는 DB를 모른다. key 생성과 메타데이터 영속화는 `FileService`의 책임이다.
+* `com.back.global.storage.adapter.FileStorage`는 DB를 모른다. key 생성과 메타데이터 영속화는 `FileService`의 책임이다.
 * 모든 업로드는 공용 `FileMetadata` 엔티티(`storageKey`/`originalName`/`contentType`/`size`/`uploaderId`)에 기록한다.
 * 도메인 엔티티는 `storageKey`를 보관한다. 접근 URL은 `FileService.getUrl(key)`로 만든다(저장하지 않는다).
 * key 형식: `{디렉터리}/{yyyy}/{MM}/{dd}/{UUID}.{확장자}`. 원본 파일명은 key에 넣지 않는다.

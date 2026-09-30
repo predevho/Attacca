@@ -1,7 +1,7 @@
 package com.back.domain.chat.controller;
 
-import com.back.domain.chat.dto.ChatMessageResponse;
-import com.back.domain.chat.dto.SendMessageRequest;
+import com.back.domain.chat.dto.response.ChatMessageResponse;
+import com.back.domain.chat.dto.request.SendMessageRequest;
 import com.back.domain.chat.service.ChatMessageService;
 import jakarta.validation.Valid;
 import java.security.Principal;

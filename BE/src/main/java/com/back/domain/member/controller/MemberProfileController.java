@@ -1,18 +1,18 @@
 package com.back.domain.member.controller;
 
-import com.back.domain.member.dto.MemberIdentityResponse;
-import com.back.domain.member.dto.ProfileImageResponse;
-import com.back.domain.member.dto.ProfileOptionsResponse;
-import com.back.domain.member.dto.ProfileResponse;
-import com.back.domain.member.dto.UpdateProfileRequest;
-import com.back.domain.member.dto.UpdateNicknameRequest;
+import com.back.domain.member.dto.response.MemberIdentityResponse;
+import com.back.domain.member.dto.response.ProfileImageResponse;
+import com.back.domain.member.dto.response.ProfileOptionsResponse;
+import com.back.domain.member.dto.response.ProfileResponse;
+import com.back.domain.member.dto.request.UpdateProfileRequest;
+import com.back.domain.member.dto.request.UpdateNicknameRequest;
 import com.back.domain.member.service.MemberProfileService;
 import com.back.global.common.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import com.back.domain.member.dto.ChangePasswordRequest;
-import com.back.domain.member.dto.TokenPairResponse;
+import com.back.domain.member.dto.request.ChangePasswordRequest;
+import com.back.domain.member.dto.response.TokenPairResponse;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;

@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.back.domain.member.entity.Instrument;
 import com.back.domain.recruitment.entity.RecruitmentPosting;
 import com.back.domain.recruitment.entity.RecruitmentPostingAttachment;
-import com.back.global.storage.FileMetadata;
+import com.back.global.storage.metadata.FileMetadata;
 import java.util.Set;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.Test;

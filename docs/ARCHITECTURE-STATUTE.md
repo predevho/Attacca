@@ -24,7 +24,7 @@
 * Next.js 16 (App Router) / React 19 / TypeScript / Tailwind CSS v4 / Vitest. 패키지 매니저 npm.
 * 위치: `FE/`. BE와 독립 실행(`cd FE && npm run dev`, 기본 :3000).
 * **BFF 패턴**: 브라우저는 Next(same-origin)하고만 통신하고, Next 서버가 Spring을 서버 간 호출한다.
-  토큰은 httpOnly 쿠키(`access_token`/`refresh_token`)로 다루며 UI JavaScript는 토큰을 만지지 않는다.
+  인증 정보는 httpOnly 쿠키(`access_token`/`refresh_session`)로 다루며 UI JavaScript는 쿠키를 읽지 않는다. `refresh_session`은 불투명 세션 값이고 BE는 원문이 아닌 해시를 Redis 키로 사용한다. 기존 `refresh_token` 쿠키는 호환 삭제 대상이다.
   * 계층: `lib/server/*`(순수 로직·쿠키·reissue) → `app/api/bff/**`(라우트 핸들러 글루) → `app/**`(UI).
   * BE 호출 주소는 서버 env `BE_BASE_URL`(클라이언트 노출 금지). 통신은 네이티브 fetch(라이브러리 미도입).
   * 소셜 로그인: 카카오는 서버 라우트 `/api/bff/oauth/kakao/start`(state 발급→카카오 302)와 `/api/bff/oauth/kakao/callback`(state 대조→BE 코드교환→쿠키)로 처리. CSRF `state`는 서버 생성·httpOnly 쿠키(`oauth_state`)·단일사용. 신규 회원은 정식 access/refresh가 아닌 짧은 수명의 온보딩 티켓으로 닉네임 설정·필수 동의 화면에 진입하고, 완료 시 정식 토큰을 발급한다. BE `OnboardingCompletionFilter`가 완료 전 일반 API를 막는다. `KAKAO_CLIENT_ID`/`KAKAO_REDIRECT_URI`는 서버 env.
@@ -55,15 +55,31 @@ com.back
 │   ├── chat
 │   ├── notice
 └── global
-    ├── config          // 설정 (Security, WebSocket, JPA, S3 등)
-    ├── security        // 인증/인가, JWT, OAuth2
+    ├── config          // 공통 JPA·MVC 설정
+    ├── security        // 인증/인가 공통 정책, JWT, 세션 저장소
+    │   ├── auth        // 인증 API와 요청·응답 DTO
+    │   ├── handler     // 인증·인가 오류 처리
+    │   ├── jwt
+    │   ├── onboarding
+    │   ├── session
+    │   └── token
+    ├── websocket       // STOMP 인증, 채팅 접속 상태, WebSocket 설정
     ├── exception       // 전역 예외 처리, 공통 예외, 에러 코드
     ├── common          // BaseEntity, 공통 응답 래퍼 등
-    └── storage         // FileStorage 인터페이스 및 구현
+    └── storage         // 공용 파일 처리
+        ├── attachment  // 첨부 API·정책·응답
+        ├── adapter     // FileStorage 포트와 local/S3 구현
+        ├── cleanup     // 임시 첨부 정리 스케줄
+        ├── config      // 저장소 설정과 로컬 파일 서빙
+        ├── metadata    // 파일 메타데이터·저장소·상태
+        ├── FileService // 업로드 조정·메타데이터 수명주기
+        └── StoredFile  // 업로드 결과
 ```
 
 * 각 도메인은 위 계층(controller/service/repository/entity/dto)을 자체적으로 갖는다.
 * 도메인 간 협력은 서비스 계층을 통해서만 한다.
+* 도메인 DTO의 HTTP 입력·출력 타입은 `dto/request`와 `dto/response`로 분리한다. 뷰 모델·정렬/범위 타입은 사용처에 따라 기존 DTO 패키지에 둔다.
+* `FileService`는 파일 저장 어댑터와 메타데이터 수명주기를 조정한다. 도메인은 계속 `FileService`를 통해 파일을 다루며 저장 API·DB 계약은 바꾸지 않는다.
 
 ---
 

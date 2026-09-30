@@ -1,7 +1,7 @@
 package com.back.domain.verifiedperformer.controller;
 
-import com.back.domain.verifiedperformer.dto.ApplicationResponse;
-import com.back.domain.verifiedperformer.dto.ApplyRequest;
+import com.back.domain.verifiedperformer.dto.response.ApplicationResponse;
+import com.back.domain.verifiedperformer.dto.request.ApplyRequest;
 import com.back.domain.verifiedperformer.service.VerifiedPerformerService;
 import com.back.global.common.ApiResponse;
 import jakarta.validation.Valid;

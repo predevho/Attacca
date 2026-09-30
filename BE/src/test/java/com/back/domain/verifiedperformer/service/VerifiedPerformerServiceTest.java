@@ -3,9 +3,9 @@ package com.back.domain.verifiedperformer.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.back.domain.verifiedperformer.dto.ApplicationResponse;
-import com.back.domain.verifiedperformer.dto.ApplyRequest;
-import com.back.domain.verifiedperformer.dto.GrantRequest;
+import com.back.domain.verifiedperformer.dto.response.ApplicationResponse;
+import com.back.domain.verifiedperformer.dto.request.ApplyRequest;
+import com.back.domain.verifiedperformer.dto.request.GrantRequest;
 import com.back.domain.verifiedperformer.entity.VerificationApplication;
 import com.back.domain.verifiedperformer.entity.VerificationStatus;
 import com.back.domain.verifiedperformer.repository.VerificationApplicationRepository;

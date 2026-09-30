@@ -1,7 +1,7 @@
 package com.back.domain.member.service;
 
-import com.back.domain.member.dto.ChangePasswordRequest;
-import com.back.domain.member.dto.TokenPairResponse;
+import com.back.domain.member.dto.request.ChangePasswordRequest;
+import com.back.domain.member.dto.response.TokenPairResponse;
 import com.back.domain.member.entity.Member;
 import com.back.domain.member.repository.MemberRepository;
 import com.back.global.exception.BusinessException;

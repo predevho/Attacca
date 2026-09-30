@@ -3,8 +3,8 @@ package com.back.domain.chat.websocket;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.back.domain.chat.dto.ChatRoomResponse;
-import com.back.domain.chat.dto.CreateRoomRequest;
+import com.back.domain.chat.dto.response.ChatRoomResponse;
+import com.back.domain.chat.dto.request.CreateRoomRequest;
 import com.back.domain.chat.entity.RoomType;
 import com.back.domain.chat.service.ChatRoomService;
 import com.back.domain.member.entity.Member;

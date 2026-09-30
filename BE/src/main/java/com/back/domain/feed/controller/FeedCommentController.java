@@ -1,7 +1,7 @@
 package com.back.domain.feed.controller;
 
-import com.back.domain.feed.dto.CommentResponse;
-import com.back.domain.feed.dto.CreateCommentRequest;
+import com.back.domain.feed.dto.response.CommentResponse;
+import com.back.domain.feed.dto.request.CreateCommentRequest;
 import com.back.domain.feed.dto.CursorPage;
 import com.back.domain.feed.service.FeedCommentService;
 import com.back.global.common.ApiResponse;
