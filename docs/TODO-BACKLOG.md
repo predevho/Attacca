@@ -41,7 +41,7 @@
 * [ ] FE 채팅: 대화창 `markRead`를 `setMessages` 업데이터 내부에서 호출 — StrictMode 이중호출 시 중복 read POST(BE 멱등이라 무해). 별도 effect로 분리 검토.
 * [x] ~~FE 채팅: 이력 더 보기 + 스크롤 하단 고정~~ — 2026-09-09 해소. `nextCursor`를 써서 과거를 앞에 붙이고(중복 제거·오름차순 유지) **스크롤 위치를 보정**한다. 새 메시지는 이미 바닥 근처일 때만 따라간다(`shouldStickToBottom`).
 * [x] ~~배포 시 `NEXT_PUBLIC_BE_WS_URL`을 실제 BE WS 주소(wss)로 설정 + Nginx WebSocket 프록시.~~ — 2026-09-21 완료. 운영 웹은 Vercel, API·WebSocket은 EC2 `wss://api.attacca.site/ws`로 분리했고 운영 브라우저에서 101 handshake와 채팅 송수신을 확인했다. 현재 주소 정본은 `docs/ops/inventory/2026-09-21-production-state.md`다.
-* [ ] FE 채팅: 이력 날짜 구분과 표시 시간대 정합성 — 운영 스모크(2026-09-28)에서 날짜 구분선이 없어 긴 대화를 읽기 어렵고, 일부 메시지 시각이 사용자 로컬 시각과 다르게 표시되는 것을 확인했다. 구현 전 서버 응답 `createdAt`의 offset/UTC 계약과 `formatTime`의 파싱·표시 기준(브라우저 local 또는 Asia/Seoul)을 함께 확인한다. 날짜가 바뀌는 지점에는 접근 가능한 날짜 구분선을 두고, 오늘은 시:분, 과거는 날짜+시:분 등 확정된 표현 규칙으로 테스트한다. 기존 메시지 순서·스크롤 고정·IME 전송 보호는 유지한다. 근거: 운영 화면 스모크(사용자 제공 화면), `docs/DOMAIN-CHAT-STATUTE.md` 8.2절.
+* [x] ~~FE 채팅: 이력 날짜 구분과 표시 시간대 정합성~~ — 2026-09-29 완료. BE JVM/Flyway 시각 보정과 FE 날짜 구분선·KST 표시를 적용하고 운영 기동·브라우저 화면을 확인했다. 상세: `docs/TODO-DONE.md`의 2026-09-29 기록.
 
 ## 기능
 
@@ -82,7 +82,7 @@
 * [x] ~~FE(전역): 신원 조회에 네트워크 레벨 fetch reject용 `.catch` 없음~~ — 2026-09-08 해소. 개별 호출부가 아니라 **`lib/api.ts`의 공용 `request()`에서 한 번에** 흡수한다(fetch reject → `{ok:false, message:'서버에 연결할 수 없습니다.'}`). 모든 호출부가 이미 `ok===false`를 다루고 있어 반환 모양은 그대로다. 원문: `getBff('/api/bff/me/identity')` 등 신원 조회에 네트워크 레벨 fetch reject용 `.catch` 없음 — 정상 경로는 middleware 쿠키 보장으로 동작하나, fetch 자체가 reject하면 unhandled rejection + 페이지가 "불러오는 중…"에 영구 정지. 피드+공연 8+개 호출부 공통 → `getBff`/`beClient` 레벨 또는 공용 훅으로 **한 번에** 처리(개별 페이지 말고). (opus 최종 리뷰 Important, 비블로커)
 * [x] ~~FE 공연 a11y: 포스터 입력 접근명~~ — 2026-09-09 해소. 수정 화면과 같이 `<label>`로 감쌌다. 원문:  `<input type=file>`에 접근명 없음(다른 폼 필드는 aria-label 있음). edit 페이지는 `<label>` 래핑으로 회피 — new도 동일 처리.
 * [x] ~~FE 목록 empty-state 1프레임 flash~~ — 2026-09-09 해소. `useInfiniteList`가 `loaded`를 내보내고, 목록 6곳(피드·채팅·공연·구인·인증심사·댓글)이 `!hasMore && !isLoading` 대신 `loaded`로 게이팅한다. 원문: : `/performances`(및 피드)에서 첫 렌더 시 `isLoading` 세팅 전 "등록된 공연이 없습니다"가 한 프레임 노출 → 훅의 `loaded` 플래그로 게이팅하면 해소.
-* [ ] FE 공연: 삭제 확인(confirm) 없음 — 상세에서 삭제 1클릭 즉시 실행(BE soft delete라 서버측 복구 가능). 피드와 동일 정책이나 확인 다이얼로그 검토 여지.
+* [x] ~~FE 공연: 삭제 확인(confirm) 없음~~ — 2026-09-29 해소. 상세 삭제 전에 확인창을 표시하고 취소 시 삭제 API를 호출하지 않는다.
 * [ ] FE 공연 테스트 갭: ADMIN 비주최자 삭제버튼 페이지레벨 미테스트(canDelete 단위테스트는 있음), 포스터 즉시업로드 성공 후 `<img>` 재렌더 미단언.
 
 ## BE 공통 정리 (도메인 리뷰에서 이연된 Minor)
@@ -138,7 +138,7 @@
 
 ## 배포 (AWS 전환) — 2026-08-18 정리
 
-* [ ] **FE를 Vercel로 분리 검토 — 2단계(도메인+HTTPS) 이후로 미룸** (2026-09-08 결정)
+* [x] ~~**FE를 Vercel로 분리 검토 — 2단계(도메인+HTTPS) 이후로 미룸**~~ — 2026-09-21 Vercel Production 전환을 완료했다. 현재 운영 정본은 Vercel FE + EC2 API/WebSocket이며, 아래 설명은 전환 전 판단 근거로 보존한다.
   * 동기는 "AWS 관리 부담 줄이기"였는데, **수치가 그걸 지지하지 않았다.** FE 컨테이너는 메모리 28MB(전체 911MB의 3%)다. 빼도 서버가 가벼워지지 않는다. 실제 병목은 t3.micro에서 굽는 빌드였고(캐시 5GB), 그건 GHCR 도입으로 이미 해결됐다.
   * 지금 옮기면 선행 조건이 줄줄이 생긴다: BFF가 Vercel→EC2를 공개 인터넷으로 호출하므로 **HTTPS 필수**(HTTP면 토큰 평문), 브라우저가 https 페이지에서 `ws://`를 못 여니 **wss 필수**(안 하면 채팅이 죽는다), `WS_ALLOWED_ORIGINS`에 Vercel 오리진 추가, BFF 합성(달력은 BE 2회 호출)이 도커 브리지 대신 인터넷 왕복이라 지연 증가.
   * **순서가 반대다.** 2단계를 먼저 하면 이 선행 조건이 저절로 충족되고, 그때는 CDN·프리뷰 배포라는 진짜 이득만 남는다. 그 시점에 다시 판단한다.
@@ -193,6 +193,7 @@
 
 ## 악보지 테마 후속 (2026-08-18 범위 밖)
 
+* [ ] 상호작용 요소 색상 대비 재점검 — 버튼·링크의 hover/active/disabled 상태가 배경과 충분히 구분되는지 화면별로 확인한다. 기능 안정화 후 진행하는 후순위 작업이다.
 * [ ] 사용자 테마 토글(종이/밤 직접 선택) — 현재는 OS 설정(`prefers-color-scheme`)만 따른다. 두 팔레트가 이미 정의돼 있어 토글·저장(쿠키/localStorage)·SSR 깜박임 처리만 남는다.
 * [ ] 폼/패널 컨테이너의 `bg-surface` 여부 일관성 재검토 — 치환 작업에서 목록 항목·상세 패널에는 `bg-surface`를 넣고, 입력 폼을 감싼 래퍼(`ComposeForm`·`NewChatForm`·`ApplyPanel`의 폼 패널, `ApplicationReviewItem`의 사유 입력 패널)에는 넣지 않는 판단을 했다. 여러 담당이 독립적으로 같은 결론을 냈고 실화면상 문제는 없으나, 디자인 의도상 폼도 카드로 보여야 한다면 한 번에 정리할 것.
 * [ ] `body`의 `font-family: Arial, Helvetica, sans-serif`가 Geist 변수 폰트를 덮어쓰고 있다 — 프로젝트 초기부터 있던 것으로 이번 범위 밖이었으나, 폰트를 의도대로 쓰려면 정리 필요.
@@ -202,7 +203,7 @@
 
 * [x] ~~**README 부재**~~ — 2026-09-08 작성. 루트(서비스 소개·LLM 에이전트 개발 방식·아키텍처·실행·현재 상태와 한계) + `BE/README.md`(경로 규약·응답 형식·JDK 21 함정) + `FE/README.md`(BFF 3계층·색 토큰·레이아웃 주의). FE의 create-next-app 기본 README를 교체했다. **스크린샷만 아직 비어 있다**(아래 항목). 원문: 루트·FE·BE 어디에도 README가 없다. 포트폴리오에서는 사실상 첫인상이므로 우선순위가 높다. 담을 것: 서비스 소개, 스택, 아키텍처(BFF·도메인 6개·JWT/OAuth·STOMP), 실행법(docker compose + bootRun + npm run dev, JDK 21 주의), 화면 스크린샷(라이트/다크), 그리고 LLM 에이전트 기반 개발 방식과 `docs/` 문서 체계 소개.
 * [ ] 화면 스크린샷 확보 — 새 홈·피드·공연·구인·채팅을 라이트/다크 각각. `docs/images/`에 넣고 루트 README "화면" 절의 주석 자리를 채운다. 홈이 생겼으니 이제 찍어도 다시 찍을 일이 없다.
-* [ ] 헤더 로그아웃 버튼에 `cursor: pointer` 피드백 추가 — 현재 hover 색상은 있으나 마우스 커서가 바뀌지 않아 클릭 가능 여부를 빠르게 알아보기 어렵다. 요청에 따라 문서화만 하고 구현은 보류한다. (2026-09-17)
+* [x] ~~헤더 로그아웃 버튼에 `cursor: pointer` 피드백 추가~~ — 2026-09-29 해소. 전역 버튼·버튼 역할 요소에 클릭 커서와 hover/active 피드백을 적용했다.
 
 ## 홈 화면 신설 (2026-09-08 목업 → BE → FE 완료)
 

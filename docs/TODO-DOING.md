@@ -2,8 +2,6 @@
 
 현재 진행 중인 작업.
 
-* **운영 첨부 기능 스모크 검증** — 밝은 전역 UI, `/feed/new` 작성 흐름, 피드·구인 임시 첨부 구현과 자동 검증은 완료됐다. JPG 404는 `PUBLIC_ORIGIN`으로 파일 URL을 만들던 Compose 설정이 Vercel FE 주소와 EC2 파일 호스트를 혼동한 것이 원인이었다. `STORAGE_LOCAL_BASE_URL=https://api.attacca.site/files`로 수정했으며, 배포 후 기존 JPG URL·신규 이미지 URL·이미지 클릭 모달(닫기 버튼·배경·Escape)·PDF 링크·실패 파일 재시도를 확인한다. 설계: `docs/superpowers/specs/2026-09-22-content-community-attachments-ui-design.md`, 계획: `docs/superpowers/plans/2026-09-22-content-community-attachments-ui-implementation.md`.
-
 ---
 
 * **Vercel FE 분리·EC2 BE 블루/그린·Terraform 전환 설계** — `attacca.site`는 Vercel, `api.attacca.site`는 EC2 BE/Nginx/WebSocket/파일로 분리하는 방향을 사용자와 합의했다. 현행 단일 Compose를 유지한 채, Terraform import-first→API subdomain→Vercel 사전 검증→apex DNS 전환→외부 STOMP broker relay·공유 presence 설계→BE 블루/그린 순서로 진행한다. 설계 초안: `docs/superpowers/specs/2026-09-17-vercel-api-blue-green-terraform-design.md`.

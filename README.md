@@ -29,6 +29,15 @@ BE는 도메인별 범위 조회만 제공합니다. 이런 판단과 근거는 
 기존 `MemberDisplay`는 `@JsonProperty("id")`로 회원 id를 직렬화합니다. 그래서 공개 응답 전용으로
 회원 id가 **아예 없는** `PublicMemberDisplay`를 따로 두었습니다 — 실수로 새는 일이 구조적으로 불가능해집니다.
 
+### 에이전트 코딩 하네스
+
+이 프로젝트에서 에이전트 코딩은 “AI에게 코드를 맡긴다”는 뜻이 아닙니다. 사람이 우선순위와 운영 변경을 승인하고,
+에이전트는 `AGENTS.md`와 `docs/`의 원칙·규칙을 읽은 뒤 작은 단위로 구현합니다. 테스트·타입 검사·lint·색상 토큰 검사·빌드,
+CI와 운영 smoke를 단계별 게이트로 사용하고, 결정 이유와 미검증 범위는 다시 문서에 기록합니다.
+시크릿·DNS·AWS·OAuth 콘솔 변경은 사람이 수행하며, 에이전트는 명령과 확인 기준을 준비합니다.
+
+실제 작업 흐름과 포트폴리오용 사례는 [`docs/portfolio/attacca-agent-harness.md`](docs/portfolio/attacca-agent-harness.md)에 정리했습니다.
+
 ---
 
 ## 화면
@@ -200,3 +209,4 @@ BE 7개 도메인과 FE 전 화면이 동작하고, 운영 경로(`attacca.site`
 | `docs/AI-ACTION-LOGS.md` | 작업 로그 — 무엇을 왜 그렇게 했는지 |
 | `docs/AI-MAJOR-EVENT*.md` | 주요 결정과 사건 |
 | `docs/TIL/` | 학습 기록 |
+| `docs/portfolio/attacca-agent-harness.md` | 에이전트 코딩 하네스, 검증 게이트, 실제 적용 사례 |
