@@ -1,198 +1,50 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { getBff, putBff, putBffForm, deleteBff } from '@/lib/api';
-import {
-  validatePasswordChange,
-  hasError as hasPwError,
-  type PasswordChangeForm,
-} from '@/lib/auth/passwordChangeValidation';
 import { AuthorBadge } from '@/components/feed/AuthorBadge';
-import type { Me } from '@/lib/feed/types';
-
-type Option = { code: string; label: string };
-type Profile = { instruments: string[]; bio: string | null; profileImageUrl: string | null };
-
-const MAX_INSTRUMENTS = 10;
+import { PasswordChangeForm } from '@/features/profile/components/PasswordChangeForm';
+import { ProfileEditForm } from '@/features/profile/components/ProfileEditForm';
+import { ProfileImageControl } from '@/features/profile/components/ProfileImageControl';
+import { WithdrawSection } from '@/features/profile/components/WithdrawSection';
+import { useProfileEditor } from '@/features/profile/hooks/useProfileEditor';
 
 export default function ProfilePage() {
   const router = useRouter();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [me, setMe] = useState<Me | null>(null);
-  const [options, setOptions] = useState<Option[]>([]);
-  const [editing, setEditing] = useState(false);
-  const EMPTY_PW: PasswordChangeForm = {
-    currentPassword: '', newPassword: '', newPasswordConfirm: '',
-  };
-  const [pwForm, setPwForm] = useState<PasswordChangeForm>(EMPTY_PW);
-  const [pwTouched, setPwTouched] = useState<Partial<Record<keyof PasswordChangeForm, boolean>>>({});
-  const [pwPending, setPwPending] = useState(false);
-  const [pwError, setPwError] = useState<string | null>(null);
-  const [pwDone, setPwDone] = useState(false);
-  const [withdrawing, setWithdrawing] = useState(false);
-  const [confirmText, setConfirmText] = useState('');
-  const [withdrawPending, setWithdrawPending] = useState(false);
-  const [withdrawError, setWithdrawError] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const {
+    profile,
+    me,
+    options,
+    editing,
+    error,
+    loadError,
+    uploading,
+    saving,
+    draftInstruments,
+    draftBio,
+    setDraftBio,
+    startEdit,
+    toggleInstrument,
+    save,
+    onImageChange,
+    cancelEdit,
+  } = useProfileEditor();
 
-  const [draftInstruments, setDraftInstruments] = useState<string[]>([]);
-  const [draftBio, setDraftBio] = useState('');
-
-  useEffect(() => {
-    Promise.all([
-      getBff('/api/bff/me'),
-      getBff('/api/bff/profile-options'),
-      getBff('/api/bff/me/identity'),
-    ]).then(([profileRes, optionRes, identityRes]) => {
-      if (!profileRes.ok) { router.push('/login'); return; }
-      setProfile(profileRes.data as Profile);
-      if (optionRes.ok) setOptions((optionRes.data as { instruments: Option[] }).instruments);
-      if (identityRes.ok) setMe(identityRes.data as Me);
-    }).catch(() => setLoadError('프로필을 불러오지 못했습니다.'));
-  }, [router]);
+  if (!profile) {
+    return (
+      <main className="mx-auto mt-24 max-w-md px-4">
+        {loadError
+          ? <p role="alert" className="text-sm text-danger">{loadError}</p>
+          : <p role="status" aria-live="polite">불러오는 중...</p>}
+      </main>
+    );
+  }
 
   function labelOf(code: string) {
-    return options.find((o) => o.code === code)?.label ?? code;
-  }
-
-  function startEdit() {
-    if (!profile) return;
-    setDraftInstruments(profile.instruments);
-    setDraftBio(profile.bio ?? '');
-    setError(null);
-    setEditing(true);
-  }
-
-  function toggleInstrument(code: string) {
-    setDraftInstruments((cur) => {
-      if (cur.includes(code)) { setError(null); return cur.filter((c) => c !== code); }
-      if (cur.length >= MAX_INSTRUMENTS) { setError(`악기는 최대 ${MAX_INSTRUMENTS}개까지 선택할 수 있습니다.`); return cur; }
-      setError(null);
-      return [...cur, code];
-    });
-  }
-
-  async function save() {
-    if (saving) return;
-    setError(null);
-    setSaving(true);
-    try {
-      const res = await putBff<Profile>('/api/bff/me/profile', { instruments: draftInstruments, bio: draftBio });
-      if (res.ok) { setProfile(res.data as Profile); setEditing(false); }
-      else setError(res.message ?? '저장에 실패했습니다.');
-    } catch {
-      setError('저장에 실패했습니다. 네트워크를 확인해 주세요.');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function onImageChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-    if (!file.type.startsWith('image/')) { setError('이미지 파일만 업로드할 수 있습니다.'); return; }
-    setError(null);
-    setUploading(true);
-    const fd = new FormData();
-    fd.append('file', file);
-    try {
-      const res = await putBffForm<{ profileImageUrl: string }>('/api/bff/me/profile/image', fd);
-      if (res.ok && profile) setProfile({ ...profile, profileImageUrl: (res.data as { profileImageUrl: string }).profileImageUrl });
-      else setError(res.message ?? '이미지 업로드에 실패했습니다.');
-    } catch {
-      setError('이미지 업로드에 실패했습니다. 네트워크를 확인해 주세요.');
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  if (!profile) return <main className="mx-auto mt-24 max-w-md px-4">
-    {loadError ? <p role="alert" className="text-sm text-danger">{loadError}</p> : <p role="status" aria-live="polite">불러오는 중...</p>}
-  </main>;
-
-  const pwErrors = validatePasswordChange(pwForm);
-
-  async function changePassword(e: React.FormEvent) {
-    e.preventDefault();
-    if (hasPwError(pwErrors)) {
-      setPwTouched({ currentPassword: true, newPassword: true, newPasswordConfirm: true });
-      return;
-    }
-    setPwPending(true);
-    setPwError(null);
-    // 확인란은 서버로 보내지 않는다 — 서버가 확인할 것이 없다.
-    try {
-      const res = await putBff('/api/bff/members/me/password', {
-        currentPassword: pwForm.currentPassword,
-        newPassword: pwForm.newPassword,
-      });
-      if (res.ok) {
-        setPwForm(EMPTY_PW);
-        setPwTouched({});
-        setPwDone(true);
-      } else {
-        setPwError(res.message ?? '비밀번호를 바꾸지 못했습니다.');
-      }
-    } catch {
-      setPwError('비밀번호를 바꾸지 못했습니다. 네트워크를 확인해 주세요.');
-    } finally {
-      setPwPending(false);
-    }
-  }
-
-  // 확인 문구를 그대로 입력해야 눌린다. 되돌릴 수 없는 동작이라
-  // 실수로 누르는 경로를 만들지 않는다.
-  async function withdraw() {
-    setWithdrawPending(true);
-    setWithdrawError(null);
-    try {
-      const res = await deleteBff('/api/bff/members/me');
-      if (res.ok) {
-      // 전체 새로고침으로 나간다. `router.push` 로 나가면 클라이언트 상태가 살아 있어,
-      // 헤더가 들고 있던 신원 때문에 **방금 계정을 지운 사람에게 '로그아웃' 메뉴가
-      // 계속 보인다**(2026-09-09 로컬에서 확인). 헤더는 신원을 마운트 때 한 번만 읽고
-      // 경로가 바뀌어도 다시 읽지 않는다. `router.refresh()` 는 서버 컴포넌트만
-      // 새로 그리므로 이 상태를 지우지 못한다.
-        window.location.assign('/');
-      } else {
-        setWithdrawError(res.message ?? '탈퇴에 실패했습니다.');
-      }
-    } catch {
-      setWithdrawError('탈퇴에 실패했습니다. 네트워크를 확인해 주세요.');
-    } finally {
-      setWithdrawPending(false);
-    }
+    return options.find((option) => option.code === code)?.label ?? code;
   }
 
   const controlClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand';
-
-  function pwField(key: keyof PasswordChangeForm, label: string, hint?: string) {
-    const msg = pwTouched[key] ? pwErrors[key] : undefined;
-    return (
-      <label className="flex flex-col gap-1 text-sm">{label}
-        <input
-          type="password"
-          value={pwForm[key]}
-          onChange={(e) => { setPwForm({ ...pwForm, [key]: e.target.value }); setPwDone(false); }}
-          onBlur={() => setPwTouched((t) => ({ ...t, [key]: true }))}
-          aria-invalid={msg ? true : undefined}
-          aria-describedby={msg ? `${key}-error` : undefined}
-            className={`${msg
-            ? 'rounded border border-danger px-3 py-2'
-            : 'rounded border border-line px-3 py-2'} min-h-11 ${controlClass}`}
-        />
-        {msg
-          ? <span id={`${key}-error`} role="alert" className="text-xs text-danger">{msg}</span>
-          : hint && <span className="text-xs text-ink-faint">{hint}</span>}
-      </label>
-    );
-  }
 
   return (
     <main className="mx-auto mt-10 max-w-md px-4 pb-10 sm:mt-16">
@@ -203,25 +55,16 @@ export default function ProfilePage() {
         </p>
       )}
 
-      <div className="mb-6 flex items-center gap-4">
-        {profile.profileImageUrl
-          ? <img src={profile.profileImageUrl} alt="프로필" className="h-20 w-20 rounded-full object-cover" />
-          : <div className="flex h-20 w-20 items-center justify-center rounded-full bg-surface-muted text-xs text-ink-muted">사진 없음</div>}
-        <label aria-label={uploading ? '이미지 업로드 중' : '이미지 변경'} className={`inline-flex min-h-11 items-center cursor-pointer rounded border border-line px-3 text-sm ${controlClass}`}>
-          {uploading ? '업로드 중...' : '이미지 변경'}
-          <input aria-label={uploading ? '이미지 업로드 중' : '이미지 변경'} type="file" accept="image/*" className="hidden" onChange={onImageChange} disabled={uploading} />
-        </label>
-      </div>
-
-      {error && <p className="mb-4 text-sm text-danger">{error}</p>}
+      <ProfileImageControl profileImageUrl={profile.profileImageUrl} uploading={uploading} onChange={onImageChange} />
+      {error && !editing && <p className="mb-4 text-sm text-danger">{error}</p>}
 
       {!editing ? (
         <section className="flex flex-col gap-4">
           <div>
             <h2 className="mb-2 text-sm font-medium text-ink-muted">악기</h2>
             {profile.instruments.length > 0
-              ? <div className="flex flex-wrap gap-2">{profile.instruments.map((c) => (
-                  <span key={c} className="rounded-full bg-brand px-3 py-1 text-sm text-on-brand">{labelOf(c)}</span>))}</div>
+              ? <div className="flex flex-wrap gap-2">{profile.instruments.map((code) => (
+                  <span key={code} className="rounded-full bg-brand px-3 py-1 text-sm text-on-brand">{labelOf(code)}</span>))}</div>
               : <p className="text-sm text-ink-faint">등록된 악기가 없습니다.</p>}
           </div>
           <div>
@@ -235,88 +78,21 @@ export default function ProfilePage() {
           </div>
         </section>
       ) : (
-        <section className="flex flex-col gap-4">
-          <div>
-            <h2 className="mb-2 text-sm font-medium text-ink-muted">악기 (최대 {MAX_INSTRUMENTS}개)</h2>
-            <div className="flex flex-wrap gap-2">
-              {options.map((o) => {
-                const on = draftInstruments.includes(o.code);
-                return (
-                  <button key={o.code} type="button" onClick={() => toggleInstrument(o.code)}
-                    className={`min-h-11 rounded-full px-3 text-sm ${controlClass} ${on ? 'bg-brand text-on-brand' : 'bg-surface-muted text-ink-muted'}`}>
-                    {o.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-ink-muted">자기소개 ({draftBio.length}/500)</label>
-            <textarea value={draftBio} maxLength={500} onChange={(e) => setDraftBio(e.target.value)}
-              className="h-32 w-full rounded border border-line px-3 py-2 text-sm" />
-          </div>
-          <div className="mt-2 flex gap-2">
-            <button onClick={save} disabled={saving} aria-busy={saving} className={`min-h-11 rounded bg-brand px-4 text-on-brand disabled:opacity-50 ${controlClass}`}>{saving ? '저장 중' : '저장'}</button>
-            <button onClick={() => { setEditing(false); setError(null); }} disabled={saving} className={`min-h-11 rounded border border-line px-4 ${controlClass}`}>취소</button>
-          </div>
-        </section>
+        <ProfileEditForm
+          options={options}
+          draftInstruments={draftInstruments}
+          draftBio={draftBio}
+          error={error}
+          saving={saving}
+          onToggleInstrument={toggleInstrument}
+          onBioChange={(event) => setDraftBio(event.target.value)}
+          onSave={save}
+          onCancel={cancelEdit}
+        />
       )}
 
-      <section className="mt-12 border-t border-line pt-6">
-        <h2 className="text-sm font-medium text-ink-muted">비밀번호 변경</h2>
-        <p className="mt-2 text-sm text-ink-muted">
-          바꾸면 <b>다른 기기의 로그인이 모두 끊깁니다.</b> 이 화면은 그대로 쓸 수 있습니다.
-        </p>
-
-        <form onSubmit={changePassword} noValidate className="mt-4 flex max-w-sm flex-col gap-3">
-          {pwField('currentPassword', '현재 비밀번호')}
-          {pwField('newPassword', '새 비밀번호', '8자 이상 64자 이하')}
-          {pwField('newPasswordConfirm', '새 비밀번호 확인')}
-          {pwError && <p role="alert" className="text-sm text-danger">{pwError}</p>}
-          {pwDone && (
-            <p role="status" className="text-sm text-success">
-              비밀번호를 바꿨습니다. 다른 기기는 다시 로그인해야 합니다.
-            </p>
-          )}
-          <button type="submit" disabled={pwPending} aria-busy={pwPending}
-            className={`min-h-11 w-fit rounded bg-brand px-4 text-sm text-on-brand disabled:opacity-50 ${controlClass}`}>
-            {pwPending ? '변경 중' : '비밀번호 변경'}
-          </button>
-        </form>
-      </section>
-
-      <section className="mt-12 border-t border-line pt-6">
-        <h2 className="text-sm font-medium text-ink-muted">회원 탈퇴</h2>
-        <p className="mt-2 text-sm">
-          탈퇴하면 아이디·이메일·닉네임·프로필이 지워집니다. <b>되돌릴 수 없습니다.</b>
-        </p>
-        <p className="mt-1 text-sm text-ink-muted">
-          이미 올린 글과 댓글은 남고 작성자만 “탈퇴한 회원”으로 바뀝니다.
-          다른 분들의 대화가 함께 무너지기 때문입니다. 글까지 지우려면 탈퇴 전에 직접 지워 주세요.
-        </p>
-
-        {!withdrawing ? (
-          <button onClick={() => setWithdrawing(true)}
-            className={`mt-4 min-h-11 rounded border border-danger px-4 text-sm text-danger ${controlClass}`}>탈퇴하기</button>
-        ) : (
-          <div className="mt-4 rounded border border-danger p-4">
-            <label className="block text-sm">
-              확인을 위해 <b>탈퇴합니다</b> 를 그대로 입력해 주세요.
-              <input value={confirmText} onChange={(e) => setConfirmText(e.target.value)}
-                className="mt-2 w-full rounded border border-line px-3 py-2 text-sm" />
-            </label>
-            {withdrawError && <p role="alert" className="mt-2 text-sm text-danger">{withdrawError}</p>}
-            <div className="mt-3 flex gap-2">
-              <button onClick={withdraw} disabled={confirmText !== '탈퇴합니다' || withdrawPending}
-                aria-busy={withdrawPending} className={`min-h-11 rounded bg-danger px-4 text-sm text-on-brand disabled:opacity-50 ${controlClass}`}>
-                {withdrawPending ? '삭제 중' : '영구 삭제'}
-              </button>
-              <button onClick={() => { setWithdrawing(false); setConfirmText(''); setWithdrawError(null); }}
-                className={`min-h-11 rounded border border-line px-4 text-sm ${controlClass}`}>취소</button>
-            </div>
-          </div>
-        )}
-      </section>
+      <PasswordChangeForm />
+      <WithdrawSection />
     </main>
   );
 }

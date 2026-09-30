@@ -30,6 +30,7 @@
   * 소셜 로그인: 카카오는 서버 라우트 `/api/bff/oauth/kakao/start`(state 발급→카카오 302)와 `/api/bff/oauth/kakao/callback`(state 대조→BE 코드교환→쿠키)로 처리. CSRF `state`는 서버 생성·httpOnly 쿠키(`oauth_state`)·단일사용. 신규 회원은 정식 access/refresh가 아닌 짧은 수명의 온보딩 티켓으로 닉네임 설정·필수 동의 화면에 진입하고, 완료 시 정식 토큰을 발급한다. BE `OnboardingCompletionFilter`가 완료 전 일반 API를 막는다. `KAKAO_CLIENT_ID`/`KAKAO_REDIRECT_URI`는 서버 env.
   * 프로필: `/profile`(조회/수정 모드) + BFF `PUT /api/bff/me/profile`(악기·자기소개), `PUT /api/bff/me/profile/image`(멀티파트 즉시 업로드), `GET /api/bff/profile-options`. 멀티파트 위해 `beFetch`는 body가 FormData면 content-type을 붙이지 않는다.
   * 화면 라우트는 데이터 요청·상태·lifecycle을 조합하고, 재사용 가능한 화면 조각은 `components/<domain>/`에 둔다. 통신·스크롤처럼 ref와 cleanup을 공유하는 orchestration은 근거 없이 UI 컴포넌트나 범용 hook으로 옮기지 않는다.
+  * 복잡한 화면을 기능 단위로 분리할 때는 `features/<domain>/` 아래에 화면 조각(`components`), 상태 조정(`hooks`), 화면 전용 모델(`model`), 기존 HTTP primitive를 호출하는 어댑터(`api`)를 둔다. 경로 진입점인 `app/**/page.tsx`는 조립만 담당하며, BFF 라우트는 파일 시스템 경로 유지를 위해 이동하지 않는다. 현재 `/profile`에 적용했다.
 * 동일 BE API를 모바일 앱이 재사용할 수 있도록 API 소비 방식을 플랫폼 독립적으로 유지한다.
 
 ---
