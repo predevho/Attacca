@@ -2,6 +2,14 @@
 
 완료된 작업 기록.
 
+* [x] (2026-09-30) TODO 상태표의 현재성과 문서 정본을 1차 정리했다.
+  * `TODO-DOING.md`에서 9월 17~22일에 끝난 배포 전환 기록을 현재 진행 항목에서 분리했다. 상세 이력은 기존 완료 기록·작업 로그·운영 인벤토리에 보존한다.
+  * 문서 백로그 전체 현행성 대조는 `TODO-DOING.md`에서 계속 진행하며, README 화면 캡처는 `TODO-READY.md`에 남겼다.
+  * `TODO-BACKLOG.md`에서 RDS 전환 완료와 SSH push 배포 미도입을 현재 구성에 맞게 정정했다. 미완료 항목은 승인된 계획이 아니라 후보이며 착수 전 재검증해야 한다고 명시했다.
+  * `CONTEXT.md`의 오래된 배포 계획을 과거 메모로 구분하고 현재 상태표·아키텍처 정본을 안내했다.
+  * 코드 확인으로 목록 보정/권한 공용화와 테마 선택을 완료 처리했고, S3 저장소는 구현 존재와 운영 실연동 미검증을 분리해 `DEPLOY.md`를 바로잡았다.
+  * 백로그 전체 항목의 코드·운영 대조는 후속 작업으로 남겼다. 이 정리는 문서 상태표만 대상으로 했으며 코드·인프라는 변경하지 않았다.
+
 * [x] (2026-09-29) 버튼 상호작용 피드백과 삭제 확인을 보완했다.
   * 활성 버튼과 버튼 역할 요소에 클릭 가능 커서, hover/active 피드백을 전역 적용하고 비활성 상태는 `not-allowed`로 구분했다.
   * 게시글·댓글·공연·구인 삭제에 확인창을 추가했다. 취소하면 삭제 API를 호출하지 않으며, 관리자 공지 삭제의 기존 확인 흐름은 유지한다.
@@ -414,3 +422,20 @@
 * [x] (2026-09-30) 기술 스택 배지와 현재 스키마 ERD 문서화
   * README 기술 스택을 실제 버전·운영 상태 기준의 배지형 섹션으로 정리했다.
   * Flyway V1~V9 기준 24개 테이블과 물리 FK·논리 관계·보존 테이블을 `docs/ERD.md`에 기록했다.
+* [x] (2026-09-30) README 포트폴리오 구조와 시스템 아키텍처 기준 문서화
+  * README를 프로젝트 소개·핵심 기능·기술 스택·시스템 아키텍처·ERD 중심으로 재배치했다.
+  * `docs/system-architecture.md`에 현재 운영 요청 흐름과 Figma 표현 기준을 기록했다.
+  * Mermaid 문서를 구조의 정본으로 유지하고 Figma 산출물은 포트폴리오 표현으로 분리했다.
+* [x] (2026-09-30) Figma 시스템 아키텍처 다이어그램 제작
+  * 기존 Pokade Figma 파일에 `Attacca Architecture` 페이지와 1600×900 아키텍처 프레임을 추가했다.
+  * Client·Delivery·Application·State·External 레이어와 현재 운영 흐름을 시각화했다.
+  * 당시 문서의 RDS 미도입 표기는 잘못된 것으로 2026-09-30 재검토에서 확인했다. 현재 RDS는 운영 구성이고, Blue/Green·외부 STOMP broker는 미도입으로 분리한다.
+* [x] (2026-09-30) Figma Page 1 아키텍처 정합성 수정
+  * Page 1의 복사 프레임 `77:2`를 Next.js/Vercel·Nginx·Spring Boot·MySQL·Redis·EC2 로컬 볼륨·Kakao OAuth2 기준으로 갱신했다.
+  * Pokade 전용 카드·거래·RDS·S3·Blue/Green·외부 서비스 표기를 제거하거나 현재 상태에 맞게 교체했다.
+  * 최종 캔버스에서 BFF 잔여 아이콘과 도메인 라벨 잘림을 수정하고 시각 검증했다.
+* [x] (2026-09-30) 운영 아키텍처 사실관계 최종 재검증
+  * Terraform·운영 인벤토리·Compose·배포 갱신 스크립트와 README·상세 Mermaid·Figma Page 1을 다시 대조했다.
+  * RDS 현재 운영, EC2 FE rollback 후보, BE 담당 WebSocket origin/STOMP 인증, Kakao callback 방향을 일치시켰다.
+  * access JWT cookie와 opaque `refresh_session` cookie, Redis SHA-256 저장 키·TTL을 구분해 표현했다.
+  * 배포 자동 확인(revision 일치·BE health)과 수동 browser smoke를 구분하고, Blue/Green·외부 broker는 미도입으로 남겼다.

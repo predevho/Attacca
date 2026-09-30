@@ -4,6 +4,10 @@
 
 ---
 
+* 2026-09-30 — **문서 상태표와 정본을 정리하고 백로그 감사를 이어가고 있다.** 완료된 9월 배포 전환 이력을 현재 진행 목록에서 분리하고, RDS 전환·SSH push 배포 문구를 실제 운영 방식에 맞췄다. `PageRequestPolicy`·`AuthorizationRoles`와 시스템/라이트/다크 테마가 구현된 것을 확인해 오래된 미완료 항목을 완료 처리했다. S3는 코드에 구현되어 있지만 운영 실연동은 검증되지 않았음을 `DEPLOY.md`에 반영했다. 백로그 전체 항목의 현행성 대조는 `TODO-DOING.md`에서 계속 진행한다.
+
+* 2026-09-30 — **운영 아키텍처의 사실 오류를 재검토해 문서와 Figma를 정합화했다.** Terraform과 운영 구성 근거상 RDS MySQL 8.4는 이미 운영 중이며 EC2 컨테이너가 아니라 별도 관리형 DB다. README와 상세 문서에서 RDS를 미도입으로 적은 문구를 바로잡고, Vercel 공개 FE와 EC2 rollback FE 후보를 구분했다. OAuth callback 방향을 Kakao→Vercel BFF로 정정하고, WebSocket origin allowlist/STOMP 인증은 BE 책임, Nginx는 TLS·proxy·upgrade 책임으로 분리했다. access JWT 쿠키와 opaque `refresh_session` 쿠키, Redis의 SHA-256 키·TTL도 구분해 표기했다. 배포 자동 검증은 BE/FE image revision 일치와 BE health이며 browser smoke는 수동 확인으로 명시했다. Page 1 운영 프레임에도 동일 기준과 `EC2 FE 후보` rollback 표기를 반영하고 전체 캔버스를 시각 확인했다.
+
 * 2026-09-29 — **주요 버튼의 상호작용 피드백과 삭제 확인을 보완했다.** 활성 버튼·역할 버튼은 전역 커서와 hover/active 피드백을 제공하고, 비활성 버튼은 `not-allowed`로 구분한다. 게시글·댓글·공연·구인 삭제는 확인 취소 시 API를 호출하지 않으며, 공지 삭제의 기존 확인창은 유지한다. FE 전체 98개 파일·582개 테스트와 타입 검사를 통과했다.
 
 * 2026-09-29 — **운영 첨부 기능 스모크 검증을 완료했다.** API 호스트 파일 URL, 이미지 모달 미리보기, PDF 링크, 잘못된 형식·10MB 초과 차단을 확인했다. 상호작용 상태의 색상 대비 재점검은 기능 안정화 이후 후순위로 남겼다.
@@ -174,3 +178,7 @@
 * 2026-09-30 — **에이전트 코딩 하네스 포트폴리오 기록.** `AGENTS.md`·Constitution/Statute·TODO 상태·TDD와 자동 검증·운영 smoke·사람의 운영 승인 절차를 하나의 작업 하네스로 정리했다. `docs/portfolio/attacca-agent-harness.md`에 작업 단계, 사람/에이전트 책임, BFF 합성·staging 폐기·refresh session·IMPORT 폐기·프로필 기능 분리·첨부 색상 게이트 사례와 과장하면 안 되는 한계를 기록했다. README에는 요약과 링크를 추가했다. 문서 작업이며 커밋·푸시는 하지 않았다.
 * 2026-09-30 — **운영 공지 등록 확인.** 사용자가 어드민 공지 관리 기능과 등록된 공지의 노출이 정상이라고 확인했다. 추가 등록은 생략하고 `TODO-READY`의 운영 공지 3건 항목을 완료 처리했다.
 * 2026-09-30 — **기술 스택 배지와 ERD 문서화.** README의 기술 스택을 Backend·Database & Infra·Frontend·CI / Delivery 배지형 섹션으로 정리하고, 실제 현재 버전과 운영 중인 구성·미검증 항목을 구분했다. Flyway V1~V9와 엔티티 관계를 대조해 24개 테이블 ERD를 `docs/ERD.md`에 작성했으며, 물리 FK·논리 관계·폐기 후 보존 중인 IMPORT 테이블을 구분했다.
+* 2026-09-30 — **README 포트폴리오 구조와 시스템 아키텍처 문서화.** 참고 README에서 공통적으로 사용하는 프로젝트 소개·핵심 기능·기술 스택·시스템 아키텍처·ERD 중심의 읽기 순서를 Attacca README에 적용했다. 현재 운영 구성(Vercel FE, EC2 Nginx·Spring Boot·Redis·MySQL·로컬 업로드 볼륨, Kakao OAuth2)을 Mermaid로 정리하고, `docs/system-architecture.md`에 요청 흐름·현재/미도입 경계·Figma 표현 기준을 기록했다. Figma 산출물은 Mermaid 구조를 시각화하는 다음 백로그로 남겼으며, RDS·Blue/Green·외부 broker를 현재 구성처럼 표현하지 않았다.
+* 2026-09-30 — **Figma 시스템 아키텍처 다이어그램 제작.** 사용자가 제공한 기존 Pokade Figma 파일의 `Attacca Architecture` 페이지에 1600×900 프레임을 추가했다. Client·Delivery·Application·State·External 레이어, HTTPS·WSS·API·저장소 흐름을 표현하고, 단일 Simple Broker·로컬 업로드·미도입 확장 항목을 구분했다. 기존 `Page 1`과 Pokade 프레임은 수정하지 않았으며, 문서의 Mermaid 아키텍처를 구조 정본으로 유지한다.
+* 2026-09-30 — **Figma Page 1 아키텍처 정합성 수정.** 사용자가 Page 1에 복사해 둔 `아타카 아키텍쳐` 프레임(`77:2`)을 현재 Attacca 기준으로 갱신했다. Next.js/Vercel·Nginx·Spring Boot 3.4.5·MySQL 8.4·Redis refresh session·EC2 로컬 업로드·Kakao OAuth2를 남기고, Pokade 전용 거래·RDS·S3·Blue/Green·외부 서비스 표기는 제거하거나 보류 상태로 구분했다. 아이콘 잔여와 도메인 라벨 잘림을 최종 캔버스에서 확인했다.
+* 2026-09-30 — **Figma Page 1 아키텍처 정렬 보정.** 외부 연동 열에 남아 있던 빈 카드(`77:183`)를 숨기고, Kakao OAuth2 카드(`77:194`)와 내부 아이콘·텍스트를 다른 저장소 카드와 같은 상단 기준선으로 맞췄다.

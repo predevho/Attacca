@@ -9,11 +9,33 @@
 
 ---
 
+## 목차
+
+- [프로젝트 소개](#프로젝트-소개)
+- [핵심 기능](#핵심-기능)
+- [기술 스택](#기술-스택)
+- [시스템 아키텍처](#시스템-아키텍처)
+- [ERD](#erd)
+- [실행](#실행)
+- [테스트](#테스트)
+- [현재 상태](#현재-상태)
+- [문서](#문서)
+
+## 프로젝트 소개
+
+| 구분 | 내용 |
+|---|---|
+| 프로젝트 형태 | 개인 프로젝트 |
+| 서비스 | 음악인 커뮤니티 |
+| 핵심 도메인 | 회원·피드·공연·구인·채팅·공지·인증 연주자 |
+| 운영 주소 | [attacca.site](https://attacca.site) |
+| 개발 방식 | 문서 기반 에이전트 코딩 하네스 |
+
 ## 이 프로젝트의 성격
 
 **LLM 에이전트로 개발한 프로젝트입니다.** 코드보다 먼저 **문서**가 있고, 에이전트는 그 문서를 근거로만 작업합니다.
 
-`docs/`에는 문서 26개와 학습 기록(TIL) 13개가 있고, 다음 두 층으로 나뉩니다.
+`docs/`에는 프로젝트 원칙·구현 규칙·작업 기록·학습 기록이 있으며, 설계 원칙과 구현 규칙은 다음 두 층으로 나뉩니다.
 
 | 층 | 파일 | 역할 |
 |---|---|---|
@@ -40,7 +62,7 @@ CI와 운영 smoke를 단계별 게이트로 사용하고, 결정 이유와 미�
 
 ---
 
-## 화면
+## 핵심 기능
 
 | 화면 | 경로 | 설명 |
 |---|---|---|
@@ -72,7 +94,7 @@ CI와 운영 smoke를 단계별 게이트로 사용하고, 결정 이유와 미�
 ![JWT](https://img.shields.io/badge/JWT-0.12.6-000000?logo=jsonwebtokens&logoColor=white)
 ![Gradle](https://img.shields.io/badge/Gradle-8.11.1-02303A?logo=gradle&logoColor=white)
 
-- Spring Security + JWT access token + Redis allowlist 기반 refresh session rotation + 카카오 OAuth2
+- Spring Security + 30분 JWT `access_token` HttpOnly 쿠키 + 14일 opaque `refresh_session` HttpOnly 쿠키/Redis SHA-256 allowlist rotation + 카카오 OAuth2
 - WebSocket(STOMP) — 단일 BE 인스턴스의 인메모리 Simple Broker
 - Spring Data JPA, Bean Validation, Actuator
 - 파일 저장 추상화(`FileStorage`) — 현재 EC2 Docker volume 로컬 저장, S3 구현은 미검증
@@ -87,10 +109,11 @@ CI와 운영 smoke를 단계별 게이트로 사용하고, 결정 이유와 미�
 ![AWS EC2](https://img.shields.io/badge/AWS-EC2-FF9900?logo=amazonaws&logoColor=white)
 ![Terraform](https://img.shields.io/badge/Terraform-Infrastructure-844FBA?logo=terraform&logoColor=white)
 
-- 운영 경로: Vercel FE / AWS EC2의 Nginx·Spring BE·WebSocket·Redis
+- 운영 경로: Vercel 공개 FE / AWS EC2의 Nginx·Spring BE·WebSocket·Redis / 별도 AWS RDS MySQL
 - 스키마 변경: Flyway + `ddl-auto: validate`
 - 업로드: EC2 Docker volume 로컬 저장. S3 전환과 백업 정책은 별도 검증 항목
-- RDS·Blue/Green은 현재 운영 스택으로 과장하지 않고, 확장 검토 항목으로 관리
+- EC2의 FE 컨테이너는 롤백 후보로 유지하며 공개 FE 경로로 사용하지 않음
+- Blue/Green과 다중 BE는 외부 STOMP broker relay·공유 presence 설계 전까지 보류
 
 ### Frontend
 
@@ -113,13 +136,50 @@ CI와 운영 smoke를 단계별 게이트로 사용하고, 결정 이유와 미�
 
 - GitHub Actions가 BE·FE를 검사하고 같은 commit SHA의 이미지를 GHCR에 게시
 - EC2 systemd pull timer가 이미지를 확인해 컨테이너를 갱신
-- 배포 후 컨테이너 health, image revision, 브라우저 smoke를 별도로 검증
+- EC2 updater가 BE·FE 이미지 revision 일치와 BE health를 자동 확인
+- 브라우저 smoke는 자동 CI 게이트가 아니라 배포 후 수동 확인
 
 데이터베이스 테이블과 관계는 [ERD 문서](docs/ERD.md)에서 확인할 수 있습니다.
 
 ---
 
-## 아키텍처
+## 시스템 아키텍처
+
+현재 공개 웹은 Vercel의 Next.js 프론트엔드에서 제공됩니다. AWS EC2에는 Nginx·Spring Boot·WebSocket·Redis·로컬 업로드 볼륨이 있고, MySQL은 EC2 컨테이너가 아닌 별도 AWS RDS에서 운영됩니다. EC2의 FE 컨테이너는 롤백 후보로 남아 있지만 공개 트래픽 경로는 아닙니다. 브라우저는 일반 API를 Next.js BFF를 통해 호출하고, 실시간 채팅은 EC2의 WebSocket endpoint에 직접 연결합니다.
+
+```mermaid
+flowchart LR
+    Browser["Browser"]
+    Vercel["Vercel<br/>Next.js App Router + BFF"]
+    Nginx["AWS EC2 Nginx<br/>TLS / API routing / WS upgrade"]
+    BE["Spring Boot BE<br/>REST + STOMP"]
+    Redis["Redis 7<br/>Refresh session allowlist"]
+    RDS["AWS RDS<br/>MySQL 8.4 · Flyway schema"]
+    Volume["Docker volume<br/>Local uploads"]
+    Kakao["Kakao OAuth2"]
+
+    Browser -->|"HTTPS UI / BFF"| Vercel
+    Browser -->|"WSS chat"| Nginx
+    Vercel -->|"HTTPS API"| Nginx
+    Vercel -->|"OAuth authorize start"| Kakao
+    Kakao -->|"OAuth callback"| Vercel
+    Nginx --> BE
+    BE --> RDS
+    BE --> Redis
+    BE --> Volume
+```
+
+상세 다이어그램과 Figma로 옮길 때의 레이어 기준은 [시스템 아키텍처 문서](docs/system-architecture.md)에 정리했습니다. 포트폴리오용 [Figma 시스템 아키텍처](https://www.figma.com/design/zMipjdKveCpZY3HqIDYaQx/Pokade-%25EB%2590%259C%25ED%2591%259C---%25EC%258A%AC%25EB%259D%25BC%25EC%259D%B4%25EB%2593%259C-%25EC%2586%258C%25EC%258A%A4?node-id=74-3&p=f)는 별도 페이지에 추가했으며, 저장소의 Mermaid 문서를 구조의 기준으로 유지합니다.
+
+> 현재 RDS는 운영 중인 관리형 MySQL입니다. 채팅은 단일 BE 인스턴스의 인메모리 Simple Broker를 사용합니다. 따라서 Blue/Green과 다중 인스턴스는 외부 STOMP broker relay와 공유 presence 설계가 선행되어야 하며, 현재 운영 구성으로 표현하지 않습니다.
+
+Page 1에 복사해 둔 [Attacca 운영 아키텍처 프레임](https://www.figma.com/design/zMipjdKveCpZY3HqIDYaQx?node-id=77-2&p=f)은 현재 운영 구성에 맞게 갱신했습니다. 기존 별도 Figma 페이지는 레이어 검토용 보조 산출물로 유지합니다.
+
+## ERD
+
+Flyway V1~V9를 기준으로 현재 테이블, 물리 FK, 논리적 도메인 협력 관계를 정리한 [ERD 문서](docs/ERD.md)를 제공합니다.
+
+## 도메인 및 설계 원칙
 
 ### 도메인 7개
 
@@ -250,3 +310,4 @@ BE 7개 도메인과 FE 전 화면이 동작하고, 운영 경로(`attacca.site`
 | `docs/TIL/` | 학습 기록 |
 | `docs/portfolio/attacca-agent-harness.md` | 에이전트 코딩 하네스, 검증 게이트, 실제 적용 사례 |
 | `docs/ERD.md` | Flyway 기준 현재 데이터베이스 테이블과 관계 |
+| `docs/system-architecture.md` | 현재 운영 시스템 흐름과 Figma 표현 기준 |
