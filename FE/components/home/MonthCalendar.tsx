@@ -29,6 +29,8 @@ export function MonthCalendar({
   entries,
   today,
   isLoading,
+  error,
+  onRetry,
   onShiftMonth,
 }: {
   year: number;
@@ -37,6 +39,8 @@ export function MonthCalendar({
   /** 오늘이 이 달에 속할 때의 '일'. 아니면 null. */
   today: number | null;
   isLoading: boolean;
+  error: string | null;
+  onRetry: () => void;
   onShiftMonth: (delta: number) => void;
 }) {
   const cells = buildMonthGrid(year, month);
@@ -143,7 +147,19 @@ export function MonthCalendar({
           </p>
         )}
         {isLoading && <p className="px-4 pb-4 text-sm text-ink-faint">불러오는 중...</p>}
-        {!isLoading && selectedEntries.length === 0 && (
+        {!isLoading && error && (
+          <div role="alert" className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-4 py-4 text-sm">
+            <p className="text-danger">일정을 불러오지 못했습니다.</p>
+            <button
+              type="button"
+              onClick={onRetry}
+              className="rounded border border-line px-3 py-2 font-medium transition-colors hover:bg-surface-muted"
+            >
+              일정 다시 시도
+            </button>
+          </div>
+        )}
+        {!isLoading && !error && selectedEntries.length === 0 && (
           <div className="px-4 pb-6">
             {/* 이번 달이 비어도 지난 공연은 있을 수 있다. 그쪽으로 길을 낸다. */}
             <p className="text-sm text-ink-faint">이번 달 일정이 없습니다.</p>

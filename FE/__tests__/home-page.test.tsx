@@ -195,7 +195,53 @@ describe('홈', () => {
   it('조회가 실패해도 화면이 로딩에 멈추지 않는다', async () => {
     getBff.mockResolvedValue({ ok: false, message: '서버에 연결할 수 없습니다.' });
     render(<HomePage />);
-    expect(await screen.findByText('아직 게시글이 없습니다.')).toBeInTheDocument();
-    expect(screen.getByText('이번 달 일정이 없습니다.')).toBeInTheDocument();
+    expect(await screen.findByText('게시글을 불러오지 못했습니다.')).toBeInTheDocument();
+    expect(screen.getByText('일정을 불러오지 못했습니다.')).toBeInTheDocument();
+  });
+
+  it('게시글 조회 실패를 빈 상태와 구분하고 재시도할 수 있다', async () => {
+    let feedAttempt = 0;
+    getBff.mockImplementation(async (path: string) => {
+      if (path.startsWith('/api/bff/public/feed/posts')) {
+        feedAttempt += 1;
+        return feedAttempt === 1
+          ? { ok: false, message: '일시적인 오류' }
+          : { ok: true, data: page([LATEST_POST]), message: null };
+      }
+      if (path.startsWith('/api/bff/public/performances')) return { ok: true, data: page([PERFORMANCE]), message: null };
+      if (path.startsWith('/api/bff/public/notices')) return { ok: true, data: page([NOTICE]), message: null };
+      if (path.startsWith('/api/bff/public/calendar')) return { ok: true, data: CALENDAR, message: null };
+      return { ok: false, message: null };
+    });
+
+    render(<HomePage />);
+
+    expect(await screen.findByText('게시글을 불러오지 못했습니다.')).toBeInTheDocument();
+    expect(screen.queryByText('아직 게시글이 없습니다.')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '게시글 다시 시도' }));
+    expect(await screen.findByText(LATEST_POST.content)).toBeInTheDocument();
+  });
+
+  it('일정 조회 실패를 빈 상태와 구분하고 재시도할 수 있다', async () => {
+    let calendarAttempt = 0;
+    getBff.mockImplementation(async (path: string) => {
+      if (path.startsWith('/api/bff/public/calendar')) {
+        calendarAttempt += 1;
+        return calendarAttempt === 1
+          ? { ok: false, message: '일시적인 오류' }
+          : { ok: true, data: CALENDAR, message: null };
+      }
+      if (path.startsWith('/api/bff/public/performances')) return { ok: true, data: page([PERFORMANCE]), message: null };
+      if (path.startsWith('/api/bff/public/notices')) return { ok: true, data: page([NOTICE]), message: null };
+      if (path.startsWith('/api/bff/public/feed/posts')) return { ok: true, data: page([LATEST_POST]), message: null };
+      return { ok: false, message: null };
+    });
+
+    render(<HomePage />);
+
+    expect(await screen.findByText('일정을 불러오지 못했습니다.')).toBeInTheDocument();
+    expect(screen.queryByText('이번 달 일정이 없습니다.')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '일정 다시 시도' }));
+    expect(await screen.findByText('심사 결과 발표')).toBeInTheDocument();
   });
 });

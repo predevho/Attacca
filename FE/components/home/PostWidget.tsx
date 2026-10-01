@@ -18,11 +18,15 @@ export function PostWidget({
   posts,
   sort,
   isLoading,
+  error,
+  onRetry,
   onSortChange,
 }: {
   posts: PublicPost[];
   sort: PostSort;
   isLoading: boolean;
+  error: string | null;
+  onRetry: () => void;
   onSortChange: (sort: PostSort) => void;
 }) {
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -88,7 +92,20 @@ export function PostWidget({
       >
         {isLoading && <p className="px-4 pb-4 text-sm text-ink-faint">불러오는 중...</p>}
 
-        {!isLoading && posts.length === 0 && (
+        {!isLoading && error && (
+          <div role="alert" className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-4 py-4 text-sm">
+            <p className="text-danger">게시글을 불러오지 못했습니다.</p>
+            <button
+              type="button"
+              onClick={onRetry}
+              className="rounded border border-line px-3 py-2 font-medium transition-colors hover:bg-surface-muted"
+            >
+              게시글 다시 시도
+            </button>
+          </div>
+        )}
+
+        {!isLoading && !error && posts.length === 0 && (
           <div className="px-4 pb-6">
             {/* 빈 문구만 두면 막다른 길이다. 무엇을 할 수 있는지 함께 준다. */}
             <p className="text-sm text-ink-faint">아직 게시글이 없습니다.</p>
@@ -99,7 +116,7 @@ export function PostWidget({
         )}
 
         <ul>
-          {posts.map((post) => (
+          {!error && posts.map((post) => (
             <li key={post.id} className="border-t border-line">
               <Link
                 href={`/feed/${post.id}`}

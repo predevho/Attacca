@@ -24,8 +24,12 @@ export function useHomePageData() {
   const [posts, setPosts] = useState<PublicPost[]>([]);
   const [sort, setSort] = useState<PostSort>('LATEST');
   const [postsLoading, setPostsLoading] = useState(true);
+  const [postsError, setPostsError] = useState<string | null>(null);
+  const [postsRetryKey, setPostsRetryKey] = useState(0);
   const [entries, setEntries] = useState<CalendarEntry[]>([]);
   const [calendarLoading, setCalendarLoading] = useState(true);
+  const [calendarError, setCalendarError] = useState<string | null>(null);
+  const [calendarRetryKey, setCalendarRetryKey] = useState(0);
   const [heroError, setHeroError] = useState(false);
   const [heroRetryKey, setHeroRetryKey] = useState(0);
 
@@ -62,25 +66,53 @@ export function useHomePageData() {
 
   useEffect(() => {
     let cancelled = false;
-    getBff<PageResponse<PublicPost>>(`/api/bff/public/feed/posts?sort=${sort}&size=8`).then((response) => {
-      if (cancelled) return;
-      setPosts(response.ok ? (response.data as PageResponse<PublicPost>).content : []);
-      setPostsLoading(false);
-    });
+    getBff<PageResponse<PublicPost>>(`/api/bff/public/feed/posts?sort=${sort}&size=8`)
+      .then((response) => {
+        if (cancelled) return;
+        if (response.ok && response.data) {
+          setPosts(response.data.content);
+          setPostsError(null);
+        } else {
+          setPosts([]);
+          setPostsError(response.message ?? '게시글을 불러오지 못했습니다.');
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setPosts([]);
+        setPostsError('게시글을 불러오지 못했습니다.');
+      })
+      .finally(() => {
+        if (!cancelled) setPostsLoading(false);
+      });
     return () => { cancelled = true; };
-  }, [sort]);
+  }, [sort, postsRetryKey]);
 
   useEffect(() => {
     let cancelled = false;
     const { from, to } = monthRange(year, month);
     const query = `from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
-    getBff<CalendarEntry[]>(`/api/bff/public/calendar?${query}`).then((response) => {
-      if (cancelled) return;
-      setEntries(response.ok ? (response.data as CalendarEntry[]) : []);
-      setCalendarLoading(false);
-    });
+    getBff<CalendarEntry[]>(`/api/bff/public/calendar?${query}`)
+      .then((response) => {
+        if (cancelled) return;
+        if (response.ok && response.data) {
+          setEntries(response.data);
+          setCalendarError(null);
+        } else {
+          setEntries([]);
+          setCalendarError(response.message ?? '일정을 불러오지 못했습니다.');
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setEntries([]);
+        setCalendarError('일정을 불러오지 못했습니다.');
+      })
+      .finally(() => {
+        if (!cancelled) setCalendarLoading(false);
+      });
     return () => { cancelled = true; };
-  }, [year, month]);
+  }, [year, month, calendarRetryKey]);
 
   const onRetryHero = useCallback(() => {
     setHeroError(false);
@@ -89,12 +121,29 @@ export function useHomePageData() {
 
   const onShiftMonth = useCallback((delta: number) => {
     setCalendarLoading(true);
+    setCalendarError(null);
+    setEntries([]);
     setMonth((current) => shiftMonth(current.year, current.month, delta));
   }, []);
 
   const onSortChange = useCallback((next: PostSort) => {
+    if (next === sort) return;
     setPostsLoading(true);
+    setPostsError(null);
+    setPosts([]);
     setSort(next);
+  }, [sort]);
+
+  const onRetryPosts = useCallback(() => {
+    setPostsError(null);
+    setPostsLoading(true);
+    setPostsRetryKey((key) => key + 1);
+  }, []);
+
+  const onRetryCalendar = useCallback(() => {
+    setCalendarError(null);
+    setCalendarLoading(true);
+    setCalendarRetryKey((key) => key + 1);
   }, []);
 
   return {
@@ -104,8 +153,12 @@ export function useHomePageData() {
     posts,
     sort,
     postsLoading,
+    postsError,
+    onRetryPosts,
     entries,
     calendarLoading,
+    calendarError,
+    onRetryCalendar,
     heroError,
     onRetryHero,
     onShiftMonth,

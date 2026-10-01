@@ -66,13 +66,13 @@ describe('HeroCarousel', () => {
 
 describe('MonthCalendar', () => {
   it('일정이 있는 날짜의 종류와 건수를 접근성 이름으로 전달한다', () => {
-    render(<MonthCalendar year={2026} month={9} entries={entries} today={12} isLoading={false} onShiftMonth={vi.fn()} />);
+    render(<MonthCalendar year={2026} month={9} entries={entries} today={12} isLoading={false} error={null} onRetry={vi.fn()} onShiftMonth={vi.fn()} />);
     expect(screen.getByRole('button', { name: '9월 12일, 공연 1건, 공지 일정 1건' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '9월 20일, 공연 1건' })).toBeInTheDocument();
   });
 
   it('날짜를 선택하면 해당 날짜의 일정 목록과 연결한다', () => {
-    render(<MonthCalendar year={2026} month={9} entries={entries} today={12} isLoading={false} onShiftMonth={vi.fn()} />);
+    render(<MonthCalendar year={2026} month={9} entries={entries} today={12} isLoading={false} error={null} onRetry={vi.fn()} onShiftMonth={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: '9월 20일, 공연 1건' }));
     const list = screen.getByRole('region', { name: '선택한 날짜 일정' });
     expect(within(list).getByText('다른 공연')).toBeInTheDocument();
@@ -82,7 +82,7 @@ describe('MonthCalendar', () => {
 
 describe('PostWidget', () => {
   it('최신글과 인기글을 접근 가능한 탭과 연결된 패널로 제공한다', () => {
-    render(<PostWidget posts={posts} sort="LATEST" isLoading={false} onSortChange={vi.fn()} />);
+    render(<PostWidget posts={posts} sort="LATEST" isLoading={false} error={null} onRetry={vi.fn()} onSortChange={vi.fn()} />);
 
     const tablist = screen.getByRole('tablist', { name: '게시글 정렬' });
     const latest = within(tablist).getByRole('tab', { name: '최신글' });
@@ -96,7 +96,7 @@ describe('PostWidget', () => {
 
   it('탭에서 방향키로 다음 탭에 포커스를 이동하고 선택을 요청한다', () => {
     const onSortChange = vi.fn();
-    render(<PostWidget posts={posts} sort="LATEST" isLoading={false} onSortChange={onSortChange} />);
+    render(<PostWidget posts={posts} sort="LATEST" isLoading={false} error={null} onRetry={vi.fn()} onSortChange={onSortChange} />);
 
     const latest = screen.getByRole('tab', { name: '최신글' });
     const popular = screen.getByRole('tab', { name: '인기글' });
@@ -108,7 +108,7 @@ describe('PostWidget', () => {
   });
 
   it('게시글 본문과 메타 정보를 모바일에서도 줄바꿈 가능한 레이아웃으로 렌더링한다', () => {
-    render(<PostWidget posts={posts} sort="LATEST" isLoading={false} onSortChange={vi.fn()} />);
+    render(<PostWidget posts={posts} sort="LATEST" isLoading={false} error={null} onRetry={vi.fn()} onSortChange={vi.fn()} />);
 
     const link = screen.getByRole('link', { name: /모바일에서도 본문이 끝까지/ });
     expect(link).toHaveClass('items-start');

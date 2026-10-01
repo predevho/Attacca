@@ -20,8 +20,12 @@ export default function HomePage() {
     posts,
     sort,
     postsLoading,
+    postsError,
+    onRetryPosts,
     entries,
     calendarLoading,
+    calendarError,
+    onRetryCalendar,
     heroError,
     onRetryHero,
     onShiftMonth,
@@ -77,19 +81,21 @@ export default function HomePage() {
       <div className="mt-8 grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <section aria-labelledby="community-heading" className="min-w-0">
           <div className="mb-3 flex items-center justify-between">
-            <h2 id="community-heading" className="text-sm font-semibold uppercase tracking-wide text-ink-muted">커뮤니티 피드</h2>
+            <h2 id="community-heading" className="text-base font-semibold text-ink">커뮤니티 피드</h2>
             <span className="text-xs text-ink-faint">새로운 대화</span>
           </div>
           <PostWidget
             posts={posts}
             sort={sort}
             isLoading={postsLoading}
+            error={postsError}
+            onRetry={onRetryPosts}
             onSortChange={onSortChange}
           />
         </section>
         <section aria-labelledby="schedule-heading">
           <div className="mb-3 flex items-center justify-between">
-            <h2 id="schedule-heading" className="text-sm font-semibold uppercase tracking-wide text-ink-muted">월간 일정</h2>
+            <h2 id="schedule-heading" className="text-base font-semibold text-ink">월간 일정</h2>
             <span className="text-xs text-ink-faint">공연 · 공지</span>
           </div>
           <MonthCalendar
@@ -98,6 +104,8 @@ export default function HomePage() {
             entries={entries}
             today={today}
             isLoading={calendarLoading}
+            error={calendarError}
+            onRetry={onRetryCalendar}
             onShiftMonth={onShiftMonth}
           />
         </section>
