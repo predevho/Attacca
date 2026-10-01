@@ -142,7 +142,6 @@
 body {
   background: var(--paper);
   color: var(--ink);
-  font-family: Arial, Helvetica, sans-serif;
 }
 
 /* 활성 버튼은 클릭 가능 여부를 커서와 짧은 hover/active 피드백으로 함께 알린다. */
@@ -155,6 +154,8 @@ button:not(:disabled),
 button:not(:disabled):hover,
 [role='button']:not([aria-disabled='true']):hover {
   filter: brightness(0.96);
+  outline: 1px solid var(--focus);
+  outline-offset: 1px;
 }
 
 button:not(:disabled):active,
@@ -165,4 +166,9 @@ button:not(:disabled):active,
 button:disabled,
 [role='button'][aria-disabled='true'] {
   cursor: not-allowed;
+}
+
+:where(a, button, input, textarea, select, [role='button']):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
