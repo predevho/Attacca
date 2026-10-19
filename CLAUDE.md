@@ -51,6 +51,17 @@ CONTEXT.md 규칙
 - docs/DOMAIN-MEMBER-STATUTE.md : 회원 도메인 규칙
 - docs/DOMAIN-VERIFIED-PERFORMER-CONSTITUTION.md : 인증 연주자 도메인 원칙
 - docs/DOMAIN-VERIFIED-PERFORMER-STATUTE.md : 인증 연주자 도메인 규칙
+- docs/DOMAIN-FEED-CONSTITUTION.md : 피드 도메인 원칙
+- docs/DOMAIN-FEED-STATUTE.md : 피드 도메인 규칙
+- docs/DOMAIN-PERFORMANCE-CONSTITUTION.md : 공연 도메인 원칙
+- docs/DOMAIN-PERFORMANCE-STATUTE.md : 공연 도메인 규칙
+- docs/DOMAIN-RECRUITMENT-CONSTITUTION.md : 구인 도메인 원칙
+- docs/DOMAIN-RECRUITMENT-STATUTE.md : 구인 도메인 규칙
+- docs/DOMAIN-CHAT-CONSTITUTION.md : 채팅 도메인 원칙
+- docs/DOMAIN-CHAT-STATUTE.md : 채팅 도메인 규칙
+- docs/DOMAIN-NOTICE-CONSTITUTION.md : 공지 도메인 원칙
+- docs/DOMAIN-NOTICE-STATUTE.md : 공지 도메인 규칙
+- docs/DOMAIN-IMPORT-CONSTITUTION.md / DOMAIN-IMPORT-STATUTE.md : 외부 반입 도메인 (2026-09-26 폐기, 과거 기록으로만 보존)
 
 ---
 

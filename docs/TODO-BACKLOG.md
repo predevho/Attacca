@@ -96,6 +96,8 @@
 * [x] ~~BE: 오프셋 페이징 응답을 안정적 `PageResponse<T>` DTO로 공통화~~ — 2026-09-27 완료. VERIFIED-PERFORMER 어드민 목록·PERFORMANCE 목록을 기존 공통 DTO로 전환하고, FE의 `number` 의존도 `page` 계약으로 바꿨다. 다른 도메인은 별도 전환 작업으로 남긴다.
 * [x] ~~FEED/PERFORMANCE: 목록 크기 보정·관리자 판별 공용화~~ — 2026-09-29 `PageRequestPolicy`와 `AuthorizationRoles`로 통합했다. 회원 검색·고정 공지는 다른 범위 규칙이라 제외했다. 상세: `TODO-DONE.md`의 2026-09-29 기록.
 * [x] ~~FEED: `VerificationApplicationRepository.findApprovedMemberIds`의 JPQL이 enum을 FQN 리터럴로 사용~~ — 2026-09-29 완료. `findMemberIdsByStatus(ids, status)`가 `@Param`으로 enum을 바인딩하며, 인증 연주자 서비스는 기존처럼 `APPROVED`만 전달한다. 리포지터리 테스트로 승인 회원 ID 배치 조회 결과를 고정했다.
+* [ ] BE: 공통 패키지(`global`)가 특정 도메인 저장소를 직접 참조 — `security/onboarding/OnboardingCompletionFilter`가 `MemberRepository`를, `websocket/StompAuthChannelInterceptor`·`ChatPresenceEventListener`가 `ChatParticipantRepository`(·`ChatParticipant`)를 import한다. 공통이 도메인을 모르는 방향이 일반적이지만 현재 금지 규칙은 없고 동작 문제도 없다. 정리한다면 도메인 서비스가 구현하는 공통 인터페이스(예: 기존 `MemberRoleProvider` 방식)로 뒤집는 것을 검토. 2026-10-19 구조 파악 중 식별, 후순위.
+* [ ] BE: `OnboardingCompletionFilter`가 인증된 요청마다 회원을 DB에서 1회 조회 — 가입 완료 직후 기존 토큰으로 바로 쓰게 하려는 의도된 설계(필터 주석)지만, 요청 수에 비례해 조회가 늘어난다. 현재 규모에서는 영향 없음. 트래픽이 생기면 측정 후 판단(가설). 2026-10-19 구조 파악 중 식별, 후순위.
 
 * [ ] HSTS 적용 검토 — 지금은 헤더가 없다. 넣으면 브라우저가 이후 https만 쓰지만, HTTPS가 깨졌을 때 되돌리기 어려워진다(max-age 동안 http 접속 불가). 짧은 max-age로 시작해 늘리는 방식 검토. `includeSubDomains`/`preload`는 신중히.
 * [ ] 접속 로그·모니터링 — 지금은 컨테이너 로그가 전부. 배포 자동화까지 됐으니 실패를 알아챌 수단이 필요하다.
