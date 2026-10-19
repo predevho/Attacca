@@ -178,3 +178,27 @@ CONTEXT.md 규칙
 - 날짜 속성은 확장 형식 `date:<속성>:start`, 멀티셀렉트는 JSON 배열 문자열로 넣는다.
 - 노션 접근 불가(커넥터 미연결/다른 PC 등)면 건너뛰고 `docs/`에만 반영한 뒤 그 사실을 보고한다.
 - docs/ 반영이 우선이며, 노션은 그 뒤에 맞춰 갱신한다(둘이 어긋나면 docs/ 기준).
+
+---
+
+## Agent skills
+
+Matt Pocock 스킬(`.claude/skills/`)을 쓴다. 출처·목록·갱신 방법은 `.claude/skills/README.md`.
+2026-10-19 이전 superpowers 방식의 설계·계획(`docs/superpowers/`)은 과거 기록으로 보존한다.
+
+### Issue tracker
+
+기능 설명과 작업 단위는 `docs/features/<기능>/` 아래 마크다운으로 관리한다(GitHub Issues 미사용). See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+단일 컨텍스트. 용어집은 루트 `GLOSSARY.md`, 결정 기록은 `docs/adr/` 대신 AI-MAJOR-EVENT·DOMAIN-*-CONSTITUTION. See `docs/agents/domain.md`.
+
+### 스킬 사용 규칙
+
+- 스킬 산출물(질문, 스펙, 티켓, 용어집, 리뷰, 보고)은 모두 한국어로 쓴다. 스킬 원문은 영어 그대로 둔다.
+- 이 CLAUDE.md의 규칙이 스킬 지시보다 우선한다. 스킬의 "커밋하라" 지시(`implement` 등)는 따르지 않고, 커밋·푸시는 사용자가 요청할 때만 한다.
+- 결정은 사용자에게 묻는다: 지금 정할 수 있는 질문을 묶어서, 질문마다 추천 답을 붙인다. 코드로 확인할 수 있는 사실은 직접 확인한다.
+- 테스트를 쓰기 전에 검증 지점(seam)을 사용자와 합의한다.
+- 구현은 티켓 단위로 멈춘다. 무엇을 왜 바꿨는지 설명하고 승인을 받은 뒤 다음 티켓으로 넘어간다.
+- 스킬을 쓴 작업은 `docs/AI-ACTION-LOGS.md` 항목 끝에 `[스킬: 이름, 이름]`을 붙인다. 개편이 끝난 뒤 과정 회고에 쓴다.

@@ -4,6 +4,8 @@
 
 ---
 
+* 2026-10-19 — **Matt Pocock 스킬을 도입하고 저장소에 맞게 설정했다.** superpowers와 비교한 뒤 사용자가 Matt Pocock 방식을 선택했다. 13개 스킬을 `.claude/skills/`에 복사하고(원본 49dd158, MIT 고지 포함), 설정 스킬 절차대로 탐색·초안·확인을 거쳐 `docs/agents/issue-tracker.md`(`docs/features/` 마크다운), `docs/agents/domain.md`(GLOSSARY + AI-MAJOR-EVENT를 ADR 대신 사용), `CLAUDE.md` `## Agent skills` 절을 작성했다. 제품 코드 변경 없음. [스킬: setup-matt-pocock-skills, grilling]
+
 * 2026-10-19 — **회원 페이지 설계 승인에 따라 도메인 문서를 반영했다.** 원칙: 회원 페이지는 MEMBER 소유, VERIFIED-PERFORMER는 인증 뱃지 제공(ARCHITECTURE-CONSTITUTION §3, MEMBER·VERIFIED-PERFORMER CONSTITUTION). 규칙: MEMBER STATUTE §3.2.2 회원 페이지 조회, FEED STATUTE §13 `authorId`, PERFORMANCE STATUTE §13 `organizerId`, CHAT CONSTITUTION 1:1 진입점. 모두 "구현 전"으로 표시했다. 제품 코드 변경 없음.
 
 * 2026-10-19 — **회원 페이지 설계 초안을 작성했다.** 사용자가 승인한 결정 3건(로그인 회원만 · 모든 회원 대상, MEMBER 소유 · 1단계는 프로필 + 공연·글)을 바탕으로 API(신규 1개, 기존 목록에 `authorId`·`organizerId` 선택 파라미터), BFF(신규 1개), 화면(`/members/[id]`, `AuthorBadge` 링크), 바꿀 도메인 문서 목록, 테스트 계획을 정리했다. DB 변경 없음. 도메인 문서와 코드는 승인 전이라 바꾸지 않았다. 정본: `docs/superpowers/specs/2026-10-19-member-page-design.md`.

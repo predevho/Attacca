@@ -4,6 +4,26 @@
 
 ---
 
+## 2026-10-19 — AI 작업 방식을 superpowers에서 Matt Pocock 스킬로 전환
+
+### 배경
+* 이 프로젝트는 superpowers 스킬(brainstorming → writing-plans → subagent-driven-development)로 대부분 만들어졌다. 서브에이전트가 계획을 멈추지 않고 끝까지 실행하는 방식이라 빠르지만, 사용자가 중간 결정과 코드를 따라가기 어려웠다.
+* 사용자 목표는 "설계와 코드를 이해하면서 조금씩 개선"이다.
+
+### 결정
+* Matt Pocock 스킬(mattpocock/skills, 기준 커밋 49dd158) 중 13개만 프로젝트 `.claude/skills/`에 복사해 쓴다. 플러그인 자동 업데이트는 쓰지 않는다.
+* 기존 문서 체계를 유지하도록 연결한다: 이슈 트래커는 `docs/features/` 마크다운, 용어집은 루트 `GLOSSARY.md`(필요할 때 생성), 결정 기록은 `docs/adr/` 대신 이 문서와 DOMAIN-*-CONSTITUTION.
+* `CLAUDE.md` 규칙이 스킬보다 우선한다. 산출물은 한국어, 커밋은 요청 시에만, 구현은 티켓 단위로 멈추고 승인받는다.
+* `docs/superpowers/`의 설계 31개·계획 33개는 과거 기록으로 보존한다.
+* 진행 중 쓴 스킬을 작업 로그에 `[스킬: …]`로 표시하고, 개편이 끝나면 과정 회고 문서와 `retro`를 진행한다.
+
+### 트레이드오프
+* 얻는 것: 결정을 사용자가 직접 내리고(grilling), 테스트 지점을 먼저 합의(tdd)해 이해하며 진행한다.
+* 잃는 것: 자동 진행 속도. 스킬 원문 갱신은 직접 비교해 반영해야 한다.
+* 정본: `CLAUDE.md` `## Agent skills`, `.claude/skills/README.md`, `docs/agents/*.md`.
+
+---
+
 ## 2026-10-19 — 구조 파악 결론과 사람 중심 연결 착수
 
 ### 판단
