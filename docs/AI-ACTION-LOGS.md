@@ -4,6 +4,8 @@
 
 ---
 
+* 2026-10-19 — **구조 파악 중 식별한 후순위 항목 3건을 백로그에 기록했다.** 채팅 입장 시 이력 조회와 구독 사이 메시지 누락 가능성, 재연결 후 끊긴 동안의 메시지 미조회, 커서 페이징 공통 부품(BE `CursorPage`, FE `CursorPage`·`useInfiniteList`)이 피드 도메인 안에 있는 문제다. 모두 코드 읽기로 식별했고 재현·수정은 하지 않았다. 제품 코드 변경 없음.
+
 * 2026-09-30 — **문서 상태표와 정본을 정리하고 백로그 감사를 이어가고 있다.** 완료된 9월 배포 전환 이력을 현재 진행 목록에서 분리하고, RDS 전환·SSH push 배포 문구를 실제 운영 방식에 맞췄다. `PageRequestPolicy`·`AuthorizationRoles`와 시스템/라이트/다크 테마가 구현된 것을 확인해 오래된 미완료 항목을 완료 처리했다. S3는 코드에 구현되어 있지만 운영 실연동은 검증되지 않았음을 `DEPLOY.md`에 반영했다. 백로그 전체 항목의 현행성 대조는 `TODO-DOING.md`에서 계속 진행한다.
 
 * 2026-09-30 — **운영 아키텍처의 사실 오류를 재검토해 문서와 Figma를 정합화했다.** Terraform과 운영 구성 근거상 RDS MySQL 8.4는 이미 운영 중이며 EC2 컨테이너가 아니라 별도 관리형 DB다. README와 상세 문서에서 RDS를 미도입으로 적은 문구를 바로잡고, Vercel 공개 FE와 EC2 rollback FE 후보를 구분했다. OAuth callback 방향을 Kakao→Vercel BFF로 정정하고, WebSocket origin allowlist/STOMP 인증은 BE 책임, Nginx는 TLS·proxy·upgrade 책임으로 분리했다. access JWT 쿠키와 opaque `refresh_session` 쿠키, Redis의 SHA-256 키·TTL도 구분해 표기했다. 배포 자동 검증은 BE/FE image revision 일치와 BE health이며 browser smoke는 수동 확인으로 명시했다. Page 1 운영 프레임에도 동일 기준과 `EC2 FE 후보` rollback 표기를 반영하고 전체 캔버스를 시각 확인했다.

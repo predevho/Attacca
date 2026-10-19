@@ -44,6 +44,8 @@
 * [x] ~~FE 채팅: 이력 더 보기 + 스크롤 하단 고정~~ — 2026-09-09 해소. `nextCursor`를 써서 과거를 앞에 붙이고(중복 제거·오름차순 유지) **스크롤 위치를 보정**한다. 새 메시지는 이미 바닥 근처일 때만 따라간다(`shouldStickToBottom`).
 * [x] ~~배포 시 `NEXT_PUBLIC_BE_WS_URL`을 실제 BE WS 주소(wss)로 설정 + Nginx WebSocket 프록시.~~ — 2026-09-21 완료. 운영 웹은 Vercel, API·WebSocket은 EC2 `wss://api.attacca.site/ws`로 분리했고 운영 브라우저에서 101 handshake와 채팅 송수신을 확인했다. 현재 주소 정본은 `docs/ops/inventory/2026-09-21-production-state.md`다.
 * [x] ~~FE 채팅: 이력 날짜 구분과 표시 시간대 정합성~~ — 2026-09-29 완료. BE JVM/Flyway 시각 보정과 FE 날짜 구분선·KST 표시를 적용하고 운영 기동·브라우저 화면을 확인했다. 상세: `docs/TODO-DONE.md`의 2026-09-29 기록.
+* [ ] FE 채팅: 입장 시 이력 조회와 구독 사이 메시지 누락 가능성 — `app/chat/[id]/page.tsx`의 `init()`이 이력(REST)을 먼저 받고 그 뒤에 `socket.connect`·`subscribeRoom`을 건다. 두 시점 사이에 브로드캐스트된 메시지는 화면에 붙지 않을 수 있다. 일반적인 처리는 구독을 먼저 걸고 이력을 받은 뒤 id로 중복 제거하는 것(`mergeMessages`가 이미 id 기준 병합). 2026-10-19 구조 파악 중 코드 읽기로 식별, 실제 재현은 하지 않았다. 후순위.
+* [ ] FE 채팅: 재연결 후 끊긴 동안의 메시지를 다시 불러오지 않음 — `lib/chat/stompClient.ts`는 `reconnectDelay: 3000`으로 자동 재연결·재구독만 하고, 끊긴 동안 저장된 메시지(DB에는 있음)는 새로고침 전까지 화면에 보이지 않는 것으로 보인다. 일반적인 처리는 재연결 시 마지막으로 받은 메시지 이후를 REST로 한 번 더 조회해 병합하는 것. 2026-10-19 구조 파악 중 코드 읽기로 식별, 실제 재현은 하지 않았다. 모바일처럼 연결이 자주 끊기는 환경에서 드러날 수 있다. 후순위.
 
 ## 기능
 
@@ -67,6 +69,8 @@
 * [x] ~~FE: 카카오 실제 로그인 왕복 수동 검증~~ — 2026-07-15 완료. 실제 카카오 앱 키/Client Secret/Redirect URI/이메일 동의로 브라우저 왕복 성공(로그인→/dashboard). 개인 개발자 비즈 앱 전환, redirect_uri는 `/config/callback`에 등록.
 
 ## FE 공통 (정리)
+
+* [ ] BE+FE: 커서 페이징 공통 부품이 피드 도메인 안에 있음 — BE `domain/feed/dto/CursorPage`를 채팅(`ChatMessageService`·`ChatRoomController`)이 import해 쓰고, FE `lib/feed/types.ts`의 `CursorPage`와 `lib/feed/useInfiniteList.ts`를 채팅·공연·구인·인증 심사 화면이 함께 쓴다. 동작 문제는 없고 위치가 역할(공통 부품)을 잘못 알려주는 문제다 — 피드만 고친다고 생각하고 바꾸면 다른 목록이 함께 깨질 수 있다. 정리한다면 BE는 `global/common`(같은 성격의 `PageResponse`가 이미 있음), FE는 공통 위치로 옮긴다. 2026-10-19 구조 파악 중 식별, 사용자가 후순위로 지정.
 
 * [x] ~~FE: BFF 라우트 status 폴백~~ — 2026-09-09 해소. 12개 라우트가 `res.status || 200`이라 **BE 연결 실패가 HTTP 200으로 나가고 있었다**(테스트로 12건 전부 재현). 순수 패스스루 8개는 `proxyAuthed`로 흡수하고, 쿠키를 함께 손대는 4개(login·signup·탈퇴·비밀번호)는 `bffResultJson` 헬퍼로 응답 생성만 모았다. **`bffResultJson`은 일부러 `data`를 싣지 않는다** — 로그인·비밀번호 변경 응답의 data에는 토큰이 들어 있어 그대로 내보내면 BFF 3계층 격리가 깨진다. 그 성질을 지키는 테스트도 함께 넣었다. 원문:  — 모든 BFF 라우트가 `{ status: res.status || 200 }`을 써서 BE 연결 실패(`beFetch` status 0)를 HTTP 200으로 응답한다. 현재 클라이언트는 바디의 `ok`로 판단해 무해하나, status 기준 소비처가 생기면 오작동. `res.status || 502`(또는 `=== 0 ? 502`)로 login/signup/logout/me/oauth·프로필 등 전체를 한 번에 정리. (2026-07-16 프로필 리뷰에서 식별) *(신규 피드 라우트는 `proxyAuthed` 헬퍼로 이미 502 처리 — 기존 인증/프로필 라우트만 남음)*
 
