@@ -111,6 +111,7 @@ com.back.domain.feed
 
 * `POST /posts` : 작성. body `{content}`. → `PostResponse`.
 * `GET /posts?cursor=&size=` : 타임라인(커서, 최신순). → `{items:[PostResponse], nextCursor}`.
+  * 선택 `authorId`를 주면 그 회원의 글만 같은 규칙으로 준다(2026-10-19 확정, §13).
 * `GET /posts/{id}` : 단건. 삭제/없음이면 `POST_NOT_FOUND`. → `PostResponse`.
 * `PUT /posts/{id}` : 수정(작성자만, 아니면 403). body `{content}`. → `PostResponse`.
 * `DELETE /posts/{id}` : 삭제(작성자 또는 ADMIN). soft delete. → 성공.
@@ -193,3 +194,17 @@ com.back.domain.feed
   * `author`는 `PublicMemberDisplay`(회원 id 없음), `updatedAt`도 담지 않는다.
   * 게시글에는 제목이 없다(`content`만). 홈 위젯의 한 줄 표시는 FE가 잘라 쓴다.
 * 목록 `size` 기본 20 / 최대 50. 빈 목록일 때 카운트 배치 조회에 `in ()`을 던지지 않도록 서비스에서 가드한다.
+
+---
+
+## 13. 작성자별 글 목록 (2026-10-19 확정, 구현 전)
+
+MEMBER 회원 페이지(DOMAIN-MEMBER-STATUTE §3.2.2)가 "이 사람의 글"을 보여 주기 위해 쓴다.
+설계 근거: `docs/superpowers/specs/2026-10-19-member-page-design.md`.
+
+* 기존 타임라인 `GET /api/feed/posts`에 **선택 파라미터 `authorId`**를 더한다. 새 엔드포인트를 만들지 않는다 — 응답 모양(`CursorPage<PostResponse>`)과 FE 목록 부품을 그대로 쓰기 위해서다.
+  * `authorId`가 없으면 기존 전역 타임라인과 **결과가 같아야 한다**(회귀 테스트로 고정).
+  * 있으면 `WHERE deletedAt IS NULL AND authorId = ? AND (cursor==null OR id < cursor) ORDER BY id DESC LIMIT size+1`. 커서 규칙은 §6과 같다.
+* 인증 경로에만 둔다. 공개 목록(`/api/public/feed/posts`, §12)에는 더하지 않는다 — 공개 응답에는 회원 id가 없어 작성자를 지정할 수 없다.
+* 없는 회원·탈퇴 회원의 id를 주면 에러가 아니라 해당 글 목록(대개 빈 목록 또는 남은 글)을 준다. 회원 존재 확인은 회원 페이지 조회(MEMBER)가 맡는다.
+* `author_id` 인덱스는 지금 추가하지 않는다. 데이터 규모가 작아 필요 없고, 1단계의 "DB 변경 없음"을 지키기 위해서다. 데이터가 늘면 측정 후 Flyway로 추가를 검토한다.

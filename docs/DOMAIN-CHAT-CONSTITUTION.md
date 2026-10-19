@@ -44,6 +44,7 @@
 * **MEMBER**: 방 참여자·메시지 발신자는 회원이다. 표시정보(닉네임·인증뱃지)는 MEMBER가 소유하며, 이 도메인은 서비스 계층(`MemberQueryService.findDisplaysByIds`)으로 협력해 조회만 한다. WebSocket 인증도 MEMBER/보안 인프라의 `JwtProvider`를 재사용한다.
 * **VERIFIED-PERFORMER**: 참여자·발신자의 인증 뱃지는 `MemberDisplay.verified`(MEMBER가 VERIFIED-PERFORMER와 협력해 채우는 값)를 통해 파생된다. 소유·관리는 VERIFIED-PERFORMER에 남는다.
 * **RECRUITMENT**: 현재 연결 없음(독립). 구인 지원자↔작성자 채팅 연계는 실수요 시 확장한다(RECRUITMENT 범위 밖 명시 항목).
+* **MEMBER 회원 페이지 (2026-10-19 확정, 구현 전)**: 회원 페이지의 "메시지 보내기"가 1:1 대화 진입점이 된다. 기존 방 생성 API(`type: DIRECT, participantIds: [상대 id]`)를 그대로 쓰며, 같은 상대와의 방이 있으면 그 방을 돌려주는 기존 규칙을 따른다. 이 도메인의 API·데이터는 바뀌지 않는다. 근거: DOMAIN-MEMBER-STATUTE §3.2.2.
 
 ---
 

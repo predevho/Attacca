@@ -91,6 +91,7 @@ com.back.domain.performance
 
 * `POST /` : 등록(인증 연주자 또는 어드민). body `{title, description, performedAt, venue, program, ticketInfo, ticketUrl}`. 자격 없으면 403-02. → `PerformanceResponse`.
 * `GET /?scope=UPCOMING|PAST|ALL&page=&size=` : 목록(페이징). → `Page<PerformanceResponse>`.
+  * 선택 `organizerId`를 주면 그 회원이 주최한 공연만 같은 `scope` 규칙으로 준다(2026-10-19 확정, §13).
 * `GET /{id}` : 단건 상세. 삭제/없음이면 `PERFORMANCE_NOT_FOUND`. → `PerformanceResponse`.
 * `PUT /{id}` : 수정(주최자만, 아니면 403). body 는 등록과 동일(전체 교체). → `PerformanceResponse`.
 * `DELETE /{id}` : 삭제(주최자 또는 ADMIN). soft delete. → 성공.
@@ -156,3 +157,17 @@ com.back.domain.performance
   * `organizer`는 `PublicMemberDisplay` — **회원 id 없음**. 인증 응답의 `MemberDisplay`를 재사용하면 `@JsonProperty("id")`로 회원 id가 새므로 쓰지 않는다.
   * `updatedAt`은 담지 않는다(내부 상태).
 * 목록 `size` 기본 20 / 최대 50.
+
+---
+
+## 13. 주최자별 공연 목록 (2026-10-19 확정, 구현 전)
+
+MEMBER 회원 페이지(DOMAIN-MEMBER-STATUTE §3.2.2)가 "이 사람의 공연"을 보여 주기 위해 쓴다.
+설계 근거: `docs/superpowers/specs/2026-10-19-member-page-design.md`.
+
+* 기존 인증 목록 `GET /api/performances`에 **선택 파라미터 `organizerId`**를 더한다. 새 엔드포인트를 만들지 않는다.
+  * `scope`(UPCOMING·PAST·ALL) 규칙과 정렬은 §6 그대로 적용한다. 회원 페이지는 기본값 UPCOMING(가까운 공연 먼저)을 쓴다.
+  * `organizerId`가 없으면 기존 목록과 **결과가 같아야 한다**(회귀 테스트로 고정).
+* 인증 경로에만 둔다. 공개 목록(§12)에는 더하지 않는다 — 공개 응답에는 회원 id가 없다.
+* 없는 회원·탈퇴 회원의 id를 주면 에러가 아니라 해당 목록을 준다. 회원 존재 확인은 MEMBER가 맡는다.
+* `organizer_id` 인덱스는 지금 추가하지 않는다(DOMAIN-FEED-STATUTE §13과 같은 이유).
